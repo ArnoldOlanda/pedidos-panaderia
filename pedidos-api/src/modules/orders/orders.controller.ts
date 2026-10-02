@@ -1,7 +1,11 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -13,6 +17,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import type { JwtUser } from '../auth/strategies/jwt.strategy';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { Order } from './order.entity';
 
 interface AuthedRequest extends Request {
@@ -32,5 +37,33 @@ export class OrdersController {
     @Req() req: AuthedRequest,
   ): Promise<Order> {
     return this.orders.create(dto, req.user.id);
+  }
+
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  async mine(@Req() req: AuthedRequest): Promise<Order[]> {
+    return this.orders.listMine(req.user.id);
+  }
+
+  @Get('by-product/:productId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('VENDEDOR')
+  async byProduct(
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Req() req: AuthedRequest,
+  ): Promise<Order[]> {
+    return this.orders.listByProduct(productId, req.user.id);
+  }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('VENDEDOR')
+  @HttpCode(200)
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateOrderStatusDto,
+    @Req() req: AuthedRequest,
+  ): Promise<Order> {
+    return this.orders.updateStatus(id, dto.status, req.user.id);
   }
 }
