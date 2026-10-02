@@ -68,9 +68,19 @@ tailwind.config.js # content paths + theme extend
 postcss.config.js  # tailwindcss + autoprefixer
 ```
 
+## Client infrastructure (task 3.4)
+
+- `axios` instance at `src/lib/api.ts` — base `/api`, `withCredentials: true` (JWT cookie auth).
+- `@tanstack/react-query` client at `src/lib/query-client.ts` — no retry on 4xx, `staleTime` 30s, no refetch on focus.
+- `react-router-dom` v6 — `createBrowserRouter` in `src/router.tsx`, routes for `/login`, `/orders`, `/vendor/*`, plus 404.
+- `zustand` auth store at `src/store/auth.ts` — holds user + status (`idle | loading | authenticated | unauthenticated`); no login/logout methods (those land in 3.5).
+- `Layout` + `ProtectedRoute` shells — header nav, redirect to `/login` when unauthenticated.
+
+Vite dev proxy already rewrites `/api/*` → `http://localhost:3000` (override via `VITE_API_PROXY_TARGET`).
+Cookies are sent automatically; the frontend never sees the JWT. Auth state derives from `GET /api/auth/me` (wired in 3.5).
+
 ## What this scaffold does NOT include (arrives in later tasks)
 
-- Router, query client, state store, axios client — task 3.4
 - Login page — task 3.5
 - PWA manifest, service worker — task 3.10
 - i18n — UI strings are Spanish-only (Lima pilot users)
