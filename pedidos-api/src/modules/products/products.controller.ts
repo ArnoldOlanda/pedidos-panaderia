@@ -1,8 +1,11 @@
 import {
+  Body,
   Controller,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +15,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import type { JwtUser } from '../auth/strategies/jwt.strategy';
 import { ProductsService } from './products.service';
+import { CreateProductDto } from './dto/create-product.dto';
+import { Product } from './product.entity';
 
 interface AuthedRequest extends Request {
   user: JwtUser;
@@ -36,5 +41,16 @@ export class ProductsController {
   @Get(':id')
   findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<unknown> {
     return this.service.findOnePublic(id);
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('VENDEDOR')
+  @HttpCode(201)
+  create(
+    @Body() dto: CreateProductDto,
+    @Req() req: AuthedRequest,
+  ): Promise<Product> {
+    return this.service.create(dto, req.user.id);
   }
 }
