@@ -5,8 +5,8 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 ## Status
 
 - Started: 2026-10-02
-- Current task: 2.1
-- Branch: main
+- Current task: 2.2
+- Branch: feat/odd-2-1-recipe-module
 
 ## Tasks
 
@@ -19,7 +19,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 
 ### Milestone 2 — Recipes + products + orders (Week 2)
 
-- [ ] **2.1** — Recipe entity + cost formula + CRUD
+- [x] **2.1** — Recipe entity + cost formula + CRUD
 - [ ] **2.2** — Product entity + public catalog endpoints
 - [ ] **2.3** — Vendor publishes product (POST /api/products)
 - [ ] **2.4** — Order entity + buyer places order + window validation
@@ -61,3 +61,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 1.2 done — deaca5f — TypeORM + User entity + first migration -->
 <!-- 2026-10-02: 1.3 done — e9a920e — auth module: DNI login + JWT cookie + role guards -->
 <!-- 2026-10-02: 1.4 done — e2db9a4 — seed script idempotent + pilot DNIs in README -->
+<!-- 2026-10-02: 2.1 done — c79f84b — recipe entity + cost formula + CRUD -->
