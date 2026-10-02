@@ -6,7 +6,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 
 - Started: 2026-10-02
 - Current task: 2.3
-- Branch: feat/odd-2-2-product-module
+- Branch: main
 
 ## Tasks
 
