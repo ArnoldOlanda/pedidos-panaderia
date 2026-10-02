@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './app.controller';
+import { validateEnv } from './config/validate-env';
 import { AuthModule } from './modules/auth/auth.module';
 import { Order } from './modules/orders/order.entity';
 import { OrdersModule } from './modules/orders/orders.module';
@@ -16,10 +18,20 @@ import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      cache: true,
+      validate: validateEnv,
+    }),
     TypeOrmModule.forRootAsync({
-      useFactory: () => ({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        url: process.env.DATABASE_URL,
+        host: config.getOrThrow<string>('DB_HOST'),
+        port: parseInt(config.getOrThrow<string>('DB_PORT'), 10),
+        database: config.getOrThrow<string>('DB_DATABASE'),
+        username: config.getOrThrow<string>('DB_USERNAME'),
+        password: config.getOrThrow<string>('DB_PASSWORD'),
         entities: [User, Recipe, Product, Order, PushSubscription],
         synchronize: false,
         migrations: ['dist/database/migrations/*.js'],

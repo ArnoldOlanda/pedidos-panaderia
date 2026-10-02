@@ -1,20 +1,17 @@
-import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
-  const webOrigin = process.env.WEB_ORIGIN;
-  if (!webOrigin) {
-    throw new Error('WEB_ORIGIN env var is required (e.g. http://localhost:5173)');
-  }
-
   const app = await NestFactory.create(AppModule);
+  const config = app.get(ConfigService);
 
   app.setGlobalPrefix('api');
   app.use(cookieParser());
   app.enableCors({
-    origin: webOrigin,
+    origin: config.getOrThrow<string>('WEB_ORIGIN'),
     credentials: true,
   });
   app.useGlobalPipes(
@@ -24,7 +21,7 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  const port = Number(process.env.PORT ?? 3000);
+  const port = Number(config.get<string>('PORT') ?? 3000);
   await app.listen(port);
 }
 

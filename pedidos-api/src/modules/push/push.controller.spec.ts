@@ -1,8 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { JwtUser } from '../auth/strategies/jwt.strategy';
+import { validateEnv } from '../../config/validate-env';
 import { PushSubscriptionsService } from './push-subscriptions.service';
 import { PushController } from './push.controller';
 jest.mock('@nestjs/typeorm', () => ({ InjectRepository: () => () => undefined, getRepositoryToken: () => 'PUSH_SUBSCRIPTIONS_REPO' }));
@@ -23,8 +25,27 @@ describe('PushController', () => {
   const subs = { subscribe: jest.fn(), unsubscribe: jest.fn(), listForUser: jest.fn() };
   beforeEach(async () => {
     FakeAuthGuard.authed = true;
+    process.env.DB_HOST = 'localhost';
+    process.env.DB_PORT = '5432';
+    process.env.DB_DATABASE = 'test';
+    process.env.DB_USERNAME = 'test';
+    process.env.DB_PASSWORD = 'test';
+    process.env.JWT_SECRET = 'abcdefghijklmnop';
+    process.env.VAPID_SUBJECT = 'mailto:test@example.com';
+    process.env.VAPID_PUBLIC_KEY = 'BPubxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    process.env.VAPID_PRIVATE_KEY = 'privxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    process.env.WEB_ORIGIN = 'http://localhost:5173';
     [subs.subscribe, subs.unsubscribe, subs.listForUser].forEach((m) => m.mockReset());
-    const mod = await Test.createTestingModule({ controllers: [PushController], providers: [{ provide: PushSubscriptionsService, useValue: subs }] })
+    const mod = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          ignoreEnvFile: true,
+          validate: validateEnv,
+        }),
+      ],
+      controllers: [PushController],
+      providers: [{ provide: PushSubscriptionsService, useValue: subs }],
+    })
       .overrideGuard(JwtAuthGuard).useClass(FakeAuthGuard).compile();
     app = mod.createNestApplication({ logger: false });
     app.setGlobalPrefix('api');

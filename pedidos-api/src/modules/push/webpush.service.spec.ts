@@ -1,5 +1,7 @@
+import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import webpush = require('web-push');
+import { validateEnv } from '../../config/validate-env';
 import { PushSubscriptionsService } from './push-subscriptions.service';
 import { WebpushService } from './webpush.service';
 jest.mock('web-push', () => ({ setVapidDetails: jest.fn(), sendNotification: jest.fn() }));
@@ -13,11 +15,29 @@ describe('WebpushService', () => {
   const send = webpush.sendNotification as jest.Mock;
   beforeEach(async () => {
     send.mockReset();
+    process.env.DB_HOST = 'localhost';
+    process.env.DB_PORT = '5432';
+    process.env.DB_DATABASE = 'test';
+    process.env.DB_USERNAME = 'test';
+    process.env.DB_PASSWORD = 'test';
+    process.env.JWT_SECRET = 'abcdefghijklmnop';
     process.env.VAPID_SUBJECT = 'mailto:test@example.com';
-    process.env.VAPID_PUBLIC_KEY = 'BPub';
-    process.env.VAPID_PRIVATE_KEY = 'priv';
+    process.env.VAPID_PUBLIC_KEY = 'BPubxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    process.env.VAPID_PRIVATE_KEY = 'privxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    process.env.WEB_ORIGIN = 'http://localhost:5173';
     subscriptions = { listForUser: jest.fn(), unsubscribe: jest.fn() };
-    const mod = await Test.createTestingModule({ providers: [WebpushService, { provide: PushSubscriptionsService, useValue: subscriptions }] }).compile();
+    const mod = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          ignoreEnvFile: true,
+          validate: validateEnv,
+        }),
+      ],
+      providers: [
+        WebpushService,
+        { provide: PushSubscriptionsService, useValue: subscriptions },
+      ],
+    }).compile();
     service = mod.get(WebpushService);
     service.onModuleInit();
   });
