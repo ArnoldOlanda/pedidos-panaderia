@@ -5,7 +5,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 ## Status
 
 - Started: 2026-10-02
-- Current task: 2.3
+- Current task: 2.4
 - Branch: main
 
 ## Tasks
@@ -21,7 +21,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 
 - [x] **2.1** — Recipe entity + cost formula + CRUD
 - [x] **2.2** — Product entity + public catalog endpoints
-- [ ] **2.3** — Vendor publishes product (POST /api/products)
+- [x] **2.3** — Vendor publishes product (POST /api/products)
 - [ ] **2.4** — Order entity + buyer places order + window validation
 - [ ] **2.5** — Order listing + status state machine (vendor)
 - [ ] **2.6** — Auto-close scheduler (`*/5 * * * *`)
@@ -63,3 +63,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 1.4 done — e2db9a4 — seed script idempotent + pilot DNIs in README -->
 <!-- 2026-10-02: 2.1 done — c79f84b — recipe entity + cost formula + CRUD -->
 <!-- 2026-10-02: 2.2 done — 5fd4d8d — product entity + public catalog + mine/today -->
+<!-- 2026-10-02: 2.3 done — aff70ab — vendor publish product POST -->
