@@ -6,3 +6,4 @@ dist/
 .netlify
 .cache
 coverage/
+.atl/
