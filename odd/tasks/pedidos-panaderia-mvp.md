@@ -57,4 +57,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 ## Progress Log
 
 <!-- entries appended here after each task lands -->
-<!-- 2026-10-02: 1.1 done — <commit-hash> — bootstrap NestJS + health endpoint -->
+<!-- 2026-10-02: 1.1 done — 7bd197e — bootstrap NestJS + health endpoint -->
