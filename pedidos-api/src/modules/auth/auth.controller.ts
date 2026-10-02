@@ -8,6 +8,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { AuthService, JwtPayload } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -25,7 +26,10 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Post('login')
   @HttpCode(200)
@@ -34,7 +38,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ user: unknown }> {
     const { user, token } = await this.auth.login(dto);
-    const isProd = process.env.NODE_ENV === 'production';
+    const isProd = this.config.get<string>('NODE_ENV') === 'production';
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       sameSite: isProd ? 'none' : 'lax',

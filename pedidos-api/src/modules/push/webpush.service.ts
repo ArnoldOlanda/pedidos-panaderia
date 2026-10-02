@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import webpush = require('web-push');
 import { PushSubscriptionsService } from './push-subscriptions.service';
 
@@ -21,18 +22,15 @@ export class WebpushService implements OnModuleInit {
 
   constructor(
     private readonly subscriptions: PushSubscriptionsService,
+    private readonly config: ConfigService,
   ) {}
 
   onModuleInit(): void {
-    const subject = process.env.VAPID_SUBJECT;
-    const publicKey = process.env.VAPID_PUBLIC_KEY;
-    const privateKey = process.env.VAPID_PRIVATE_KEY;
-
-    if (!subject || !publicKey || !privateKey) {
-      throw new Error(
-        'Web Push VAPID keys are missing. Set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_SUBJECT in your .env. Generate with: npx web-push generate-vapid-keys',
-      );
-    }
+    // Advisory from ODD-3.1: fail fast when VAPID is missing rather than
+    // surface a confusing 500 on the first push send.
+    const subject = this.config.getOrThrow<string>('VAPID_SUBJECT');
+    const publicKey = this.config.getOrThrow<string>('VAPID_PUBLIC_KEY');
+    const privateKey = this.config.getOrThrow<string>('VAPID_PRIVATE_KEY');
 
     webpush.setVapidDetails(subject, publicKey, privateKey);
     this.initialized = true;

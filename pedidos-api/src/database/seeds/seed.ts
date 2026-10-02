@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import { loadAndValidateEnvSync } from '../../config/validate-env';
 import { User, UserRole } from '../../modules/users/user.entity';
 
 const VENDORS: Array<Pick<User, 'dni' | 'name'> & { role: UserRole }> = [
@@ -14,18 +15,19 @@ const BUYERS: Array<Pick<User, 'dni' | 'name'> & { role: UserRole }> = [
 
 const ALL = [...VENDORS, ...BUYERS];
 
+// Synchronous top-level validation: throws aggregated EnvValidationError
+// listing every missing/invalid field at once when env is incomplete.
+const env = loadAndValidateEnvSync();
+
 const ds = new DataSource({
   type: 'postgres',
-  url: process.env.DATABASE_URL,
+  url: env.DATABASE_URL,
   entities: [User],
   synchronize: false,
   logging: false,
 });
 
 async function main(): Promise<void> {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is required');
-  }
   await ds.initialize();
   const repo = ds.getRepository(User);
   let created = 0;
