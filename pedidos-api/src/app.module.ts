@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './app.controller';
+import { AuthModule } from './modules/auth/auth.module';
 import { User } from './modules/users/user.entity';
 import { UsersModule } from './modules/users/users.module';
 
@@ -17,6 +18,7 @@ import { UsersModule } from './modules/users/users.module';
       }),
     }),
     UsersModule,
+    AuthModule,
   ],
   controllers: [HealthController],
 })
