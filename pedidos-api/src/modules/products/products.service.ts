@@ -41,6 +41,17 @@ export class ProductsService {
     return p;
   }
 
+  async closeExpired(): Promise<{ closedCount: number }> {
+    const candidates = await this.repo.find({ where: { closed: false } });
+    const now = Date.now();
+    const expired = candidates.filter((p) => p.closesAt.getTime() <= now);
+    for (const p of expired) {
+      p.closed = true;
+      await this.repo.save(p);
+    }
+    return { closedCount: expired.length };
+  }
+
   async create(
     dto: CreateProductDto,
     createdById: string,

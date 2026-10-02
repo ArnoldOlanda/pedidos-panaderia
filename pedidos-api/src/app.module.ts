@@ -8,6 +8,7 @@ import { Product } from './modules/products/product.entity';
 import { ProductsModule } from './modules/products/products.module';
 import { Recipe } from './modules/recipes/recipe.entity';
 import { RecipesModule } from './modules/recipes/recipes.module';
+import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { User } from './modules/users/user.entity';
 import { UsersModule } from './modules/users/users.module';
 
@@ -28,6 +29,7 @@ import { UsersModule } from './modules/users/users.module';
     RecipesModule,
     ProductsModule,
     OrdersModule,
+    SchedulerModule,
   ],
   controllers: [HealthController],
 })
