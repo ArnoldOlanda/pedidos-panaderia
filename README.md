@@ -30,3 +30,14 @@ Scaffolded in milestone 3. Until then the folder contains a placeholder.
 - Node 20+
 - npm 10+
 - Git (Conventional Commits)
+
+## Pilot users (dev only)
+
+Used by the seed script. Login with `11111111` to enter as a VENDEDOR (vendor), `22222222` to enter as a COMPRADOR (buyer).
+
+| DNI         | Name             | Role     |
+|-------------|------------------|----------|
+| 11111111    | Ana Pastelera    | VENDEDOR |
+| 22222222    | Bruno Comprador  | COMPRADOR|
+| 33333333    | Carla Vendedora  | VENDEDOR |
+| 44444444    | Diego Comprador  | COMPRADOR|
