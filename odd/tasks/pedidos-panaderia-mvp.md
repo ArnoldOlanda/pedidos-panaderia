@@ -77,4 +77,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 3.8 done — 8a2c47b — vendor publish form: recipe select, price, date+closesAt, mine/today list -->
 <!-- 2026-10-02: 3.9 done — 422a530 — vendor orders: product select + LISTO/ENTREGADO transitions -->
 <!-- 2026-10-02: 3.10 done — 04c124f3 — PWA manifest + service worker + placeholder icons -->
-<!-- 2026-10-02: 3.11 done — <commit-hash> — push subscription manager + GET /api/push/public-key -->
+<!-- 2026-10-02: 3.11 done — 70c41e3 — push subscription manager + GET /api/push/public-key -->
