@@ -67,4 +67,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 2.4 done — 7997ec9 — order entity + buyer POST /api/orders -->
 <!-- 2026-10-02: 2.5 done — eec1c84 — order listing + status state machine -->
 <!-- 2026-10-02: 2.6 done — 3a2e8eb — auto-close cron */5 * * * * -->
-<!-- 2026-10-02: 3.1 done — 5dc9f0f — web-push module: VAPID + subscribe/unsubscribe -->
+<!-- 2026-10-02: 3.1 done — a90074c — web-push module: VAPID + subscribe/unsubscribe -->
