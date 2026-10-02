@@ -5,8 +5,8 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 ## Status
 
 - Started: 2026-10-02
-- Current task: 1.3
-- Branch: feat/odd-1-2-typeorm-user-entity
+- Current task: 1.4
+- Branch: feat/odd-1-3-auth-module
 
 ## Tasks
 
@@ -14,7 +14,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 
 - [x] **1.1** — Bootstrap repo + NestJS scaffold + health endpoint
 - [x] **1.2** — TypeORM + User entity + first migration
-- [ ] **1.3** — Auth module (DNI login + JWT cookie + me + role guards)
+- [x] **1.3** — Auth module (DNI login + JWT cookie + me + role guards)
 - [ ] **1.4** — Seed script with vendor + buyer whitelist
 
 ### Milestone 2 — Recipes + products + orders (Week 2)
@@ -59,3 +59,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- entries appended here after each task lands -->
 <!-- 2026-10-02: 1.1 done — 7bd197e — bootstrap NestJS + health endpoint -->
 <!-- 2026-10-02: 1.2 done — deaca5f — TypeORM + User entity + first migration -->
+<!-- 2026-10-02: 1.3 done — e9a920e — auth module: DNI login + JWT cookie + role guards -->
