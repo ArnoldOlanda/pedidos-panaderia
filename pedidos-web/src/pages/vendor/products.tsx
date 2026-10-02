@@ -276,6 +276,12 @@ export function VendorProductsPage() {
                 </option>
               ))}
             </select>
+            <Link
+              to="/vendor/recipes"
+              className="mt-1 inline-block text-xs font-medium text-amber-600 hover:text-amber-700"
+            >
+              Gestionar recetas →
+            </Link>
           </label>
 
           <label className="block text-sm">

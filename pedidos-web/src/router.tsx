@@ -8,6 +8,7 @@ import { OrdersPage } from './pages/orders';
 import { OrderNewPage } from './pages/order-new';
 import { VendorProductsPage } from './pages/vendor/products';
 import { VendorOrdersPage } from './pages/vendor/orders';
+import { VendorRecipesPage } from './pages/vendor/recipes';
 import { NotFoundPage } from './pages/not-found';
 
 export const router = createBrowserRouter([
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
       { path: 'catalog/:id', element: <ProductDetailPage /> },
       { path: 'orders', element: <ProtectedRoute><OrdersPage /></ProtectedRoute> },
       { path: 'orders/new', element: <ProtectedRoute><OrderNewPage /></ProtectedRoute> },
+      { path: 'vendor/recipes', element: <ProtectedRoute><VendorRecipesPage /></ProtectedRoute> },
       { path: 'vendor/products', element: <ProtectedRoute><VendorProductsPage /></ProtectedRoute> },
       { path: 'vendor/orders', element: <ProtectedRoute><VendorOrdersPage /></ProtectedRoute> },
       { path: '*', element: <NotFoundPage /> },

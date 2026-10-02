@@ -25,6 +25,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 - [x] **2.4** — Order entity + buyer places order + window validation
 - [x] **2.5** — Order listing + status state machine (vendor)
 - [x] **2.6** — Auto-close scheduler (`*/5 * * * *`)
+- [ ] **2.7** — Recipe update + delete endpoints + vendor recipes management UI
 
 ### Milestone 3 — Push + PWA + deploy (Week 3)
 
@@ -80,3 +81,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 3.11 done — 70c41e3 — push subscription manager + GET /api/push/public-key -->
 <!-- 2026-10-02: chore config-module done — 811b0a4 — @nestjs/config + class-validator env schema across backend (main, app, auth, push, typeorm CLI, seed) -->
 <!-- 2026-10-02: chore db-env-laravel done — 13b3aa0 — DB_HOST/PORT/DATABASE/USERNAME/PASSWORD env convention -->
+<!-- 2026-10-02: 2.7 done — 51df05f — recipe PATCH/DELETE + vendor recipes management UI -->

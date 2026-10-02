@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Recipe, RecipeIngredient } from './recipe.entity';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
+import { UpdateRecipeDto } from './dto/update-recipe.dto';
 
 interface CostBreakdown {
   costoInsumos: number;
@@ -48,6 +49,47 @@ export class RecipesService {
       createdById,
     });
     return this.repo.save(recipe);
+  }
+
+  async update(
+    id: string,
+    vendorId: string,
+    dto: UpdateRecipeDto,
+  ): Promise<Recipe> {
+    const recipe = await this.findOne(id);
+    if (recipe.createdById !== vendorId) {
+      throw new ForbiddenException('only the creator can edit this recipe');
+    }
+    // Short-circuit recalc when neither ingredients nor utilidad change:
+    // a pure name update must preserve the persisted cost + suggested price
+    // (avoids float drift from re-running calculate on identical inputs).
+    if (dto.ingredients === undefined && dto.utilidad === undefined) {
+      if (dto.name !== undefined) {
+        recipe.name = dto.name;
+      }
+      return this.repo.save(recipe);
+    }
+    const mergedIngredients = (dto.ingredients ??
+      recipe.ingredients) as RecipeIngredient[];
+    const mergedUtilidad = dto.utilidad ?? recipe.utilidad;
+    const { costoProd, precioVenta } = this.calculate(
+      mergedIngredients,
+      mergedUtilidad,
+    );
+    recipe.name = dto.name ?? recipe.name;
+    recipe.ingredients = mergedIngredients;
+    recipe.utilidad = mergedUtilidad;
+    recipe.totalCost = costoProd;
+    recipe.suggestedPrice = precioVenta;
+    return this.repo.save(recipe);
+  }
+
+  async remove(id: string, vendorId: string): Promise<void> {
+    const recipe = await this.findOne(id);
+    if (recipe.createdById !== vendorId) {
+      throw new ForbiddenException('only the creator can delete this recipe');
+    }
+    await this.repo.delete(id);
   }
 
   async list(): Promise<Recipe[]> {
