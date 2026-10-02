@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './app.controller';
 import { AuthModule } from './modules/auth/auth.module';
+import { Order } from './modules/orders/order.entity';
+import { OrdersModule } from './modules/orders/orders.module';
 import { Product } from './modules/products/product.entity';
 import { ProductsModule } from './modules/products/products.module';
 import { Recipe } from './modules/recipes/recipe.entity';
@@ -15,7 +17,7 @@ import { UsersModule } from './modules/users/users.module';
       useFactory: () => ({
         type: 'postgres',
         url: process.env.DATABASE_URL,
-        entities: [User, Recipe, Product],
+        entities: [User, Recipe, Product, Order],
         synchronize: false,
         migrations: ['dist/database/migrations/*.js'],
         migrationsRun: false,
@@ -25,6 +27,7 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
     RecipesModule,
     ProductsModule,
+    OrdersModule,
   ],
   controllers: [HealthController],
 })
