@@ -36,3 +36,16 @@ export async function placeOrder(productId: string, quantity: number): Promise<O
   const { data } = await api.post<Order>('/orders', { productId, quantity });
   return data;
 }
+
+export async function listOrdersByProduct(productId: string): Promise<Order[]> {
+  const { data } = await api.get<Order[]>(`/orders/by-product/${productId}`);
+  return data;
+}
+
+export async function updateOrderStatus(
+  orderId: string,
+  status: 'LISTO' | 'ENTREGADO',
+): Promise<Order> {
+  const { data } = await api.patch<Order>(`/orders/${orderId}/status`, { status });
+  return data;
+}
