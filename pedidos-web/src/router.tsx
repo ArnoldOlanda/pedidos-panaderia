@@ -1,0 +1,25 @@
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { Layout } from './components/layout';
+import { ProtectedRoute } from './components/protected-route';
+import { LoginPage } from './pages/login';
+import { CatalogPage } from './pages/catalog';
+import { OrdersPage } from './pages/orders';
+import { VendorProductsPage } from './pages/vendor/products';
+import { VendorOrdersPage } from './pages/vendor/orders';
+import { NotFoundPage } from './pages/not-found';
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      { index: true, element: <Navigate to="/catalog" replace /> },
+      { path: 'login', element: <LoginPage /> },
+      { path: 'catalog', element: <CatalogPage /> },
+      { path: 'orders', element: <ProtectedRoute><OrdersPage /></ProtectedRoute> },
+      { path: 'vendor/products', element: <ProtectedRoute><VendorProductsPage /></ProtectedRoute> },
+      { path: 'vendor/orders', element: <ProtectedRoute><VendorOrdersPage /></ProtectedRoute> },
+      { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+]);
