@@ -15,7 +15,11 @@ describe('WebpushService', () => {
   const send = webpush.sendNotification as jest.Mock;
   beforeEach(async () => {
     send.mockReset();
-    process.env.DATABASE_URL = 'postgres://test:test@localhost:5432/test';
+    process.env.DB_HOST = 'localhost';
+    process.env.DB_PORT = '5432';
+    process.env.DB_DATABASE = 'test';
+    process.env.DB_USERNAME = 'test';
+    process.env.DB_PASSWORD = 'test';
     process.env.JWT_SECRET = 'abcdefghijklmnop';
     process.env.VAPID_SUBJECT = 'mailto:test@example.com';
     process.env.VAPID_PUBLIC_KEY = 'BPubxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';

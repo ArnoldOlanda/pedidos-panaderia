@@ -1,6 +1,7 @@
 import {
   IsNotEmpty,
   IsOptional,
+  IsPort,
   IsString,
   IsUrl,
   MinLength,
@@ -13,11 +14,29 @@ import {
  * the instance shape predictable for the transformer.
  */
 export class EnvSchema {
-  // class-validator's IsUrl accepts only http(s)/ftp by default, so we add
-  // the postgres family explicitly. require_tld: false lets localhost URLs
-  // through without a dot in the host.
-  @IsUrl({ require_tld: false, protocols: ['postgres', 'postgresql'] })
-  DATABASE_URL!: string;
+  // Laravel-style DB connection fields. The driver is fixed to PostgreSQL
+  // in app.module.ts / data-source.ts / seed.ts — there is no
+  // DB_CONNECTION switch. DB_PORT is kept as a string because Nest's
+  // ConfigService returns env values as strings; @IsPort still validates
+  // the range 1..65535. DB_PASSWORD is required but allowed to be empty
+  // (trust-auth setups).
+  @IsString()
+  @IsNotEmpty()
+  DB_HOST!: string;
+
+  @IsPort()
+  DB_PORT!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_DATABASE!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_USERNAME!: string;
+
+  @IsString()
+  DB_PASSWORD!: string;
 
   @IsString()
   @MinLength(16)

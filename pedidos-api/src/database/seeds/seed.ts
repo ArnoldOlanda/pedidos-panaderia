@@ -21,7 +21,11 @@ const env = loadAndValidateEnvSync();
 
 const ds = new DataSource({
   type: 'postgres',
-  url: env.DATABASE_URL,
+  host: env.DB_HOST,
+  port: parseInt(env.DB_PORT, 10),
+  database: env.DB_DATABASE,
+  username: env.DB_USERNAME,
+  password: env.DB_PASSWORD,
   entities: [User],
   synchronize: false,
   logging: false,

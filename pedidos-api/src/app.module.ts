@@ -27,7 +27,11 @@ import { UsersModule } from './modules/users/users.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        url: config.getOrThrow<string>('DATABASE_URL'),
+        host: config.getOrThrow<string>('DB_HOST'),
+        port: parseInt(config.getOrThrow<string>('DB_PORT'), 10),
+        database: config.getOrThrow<string>('DB_DATABASE'),
+        username: config.getOrThrow<string>('DB_USERNAME'),
+        password: config.getOrThrow<string>('DB_PASSWORD'),
         entities: [User, Recipe, Product, Order, PushSubscription],
         synchronize: false,
         migrations: ['dist/database/migrations/*.js'],

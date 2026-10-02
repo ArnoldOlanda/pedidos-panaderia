@@ -12,7 +12,11 @@ import {
 import { EnvSchema } from './env.schema';
 
 export interface EnvValidated {
-  DATABASE_URL: string;
+  DB_HOST: string;
+  DB_PORT: string;
+  DB_DATABASE: string;
+  DB_USERNAME: string;
+  DB_PASSWORD: string;
   JWT_SECRET: string;
   VAPID_SUBJECT: string;
   VAPID_PUBLIC_KEY: string;
