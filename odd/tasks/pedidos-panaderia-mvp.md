@@ -5,8 +5,8 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 ## Status
 
 - Started: 2026-10-02
-- Current task: 3.5
-- Branch: feat/odd-3-4-router-query-zustand
+- Current task: 3.6
+- Branch: feat/odd-3-5-login-page
 
 ## Tasks
 
@@ -32,7 +32,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 - [ ] **3.2** — Push hooks (vendor at close + buyer on LISTO)
 - [x] **3.3** — Frontend scaffold (Vite + React + TS + Tailwind)
 - [x] **3.4** — Router + Query + Zustand + Axios client
-- [ ] **3.5** — Login page (DNI + name) + protected routes
+- [x] **3.5** — Login page (DNI + name) + protected routes
 - [ ] **3.6** — Public catalog + product detail
 - [ ] **3.7** — Buyer places order + my orders list
 - [ ] **3.8** — Vendor publishes product page
@@ -71,3 +71,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 3.2 done — ae587e6 — push hooks: vendor auto-close + buyer LISTO -->
 <!-- 2026-10-02: 3.3 done — 9ae8705 — frontend scaffold: Vite + React + TS + Tailwind -->
 <!-- 2026-10-02: 3.4 done — 716613f — client infra: router + react-query + zustand + axios -->
+<!-- 2026-10-02: 3.5 done — a7664de — login page: DNI + name form + auth bootstrap on app boot -->
