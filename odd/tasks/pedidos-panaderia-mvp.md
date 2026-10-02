@@ -5,8 +5,8 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 ## Status
 
 - Started: 2026-10-02
-- Current task: 3.3
-- Branch: feat/odd-3-2-push-hooks
+- Current task: 3.4
+- Branch: feat/odd-3-3-frontend-scaffold
 
 ## Tasks
 
@@ -30,7 +30,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 
 - [x] **3.1** — Web-push module (VAPID + subscribe/unsubscribe)
 - [ ] **3.2** — Push hooks (vendor at close + buyer on LISTO)
-- [ ] **3.3** — Frontend scaffold (Vite + React + TS + Tailwind)
+- [x] **3.3** — Frontend scaffold (Vite + React + TS + Tailwind)
 - [ ] **3.4** — Router + Query + Zustand + Axios client
 - [ ] **3.5** — Login page (DNI + name) + protected routes
 - [ ] **3.6** — Public catalog + product detail
@@ -69,3 +69,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 2.6 done — 3a2e8eb — auto-close cron */5 * * * * -->
 <!-- 2026-10-02: 3.1 done — a90074c — web-push module: VAPID + subscribe/unsubscribe -->
 <!-- 2026-10-02: 3.2 done — ae587e6 — push hooks: vendor auto-close + buyer LISTO -->
+<!-- 2026-10-02: 3.3 done — 9ae8705 — frontend scaffold: Vite + React + TS + Tailwind -->
