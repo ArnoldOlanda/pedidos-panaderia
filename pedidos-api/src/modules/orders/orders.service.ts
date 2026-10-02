@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,12 +10,15 @@ import { Repository } from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from '../products/product.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { WebpushService } from '../push/webpush.service';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
   constructor(
     @InjectRepository(Order) private readonly orders: Repository<Order>,
     @InjectRepository(Product) private readonly products: Repository<Product>,
+    private readonly webpush: WebpushService,
   ) {}
 
   async create(dto: CreateOrderDto, userId: string): Promise<Order> {
@@ -94,6 +98,22 @@ export class OrdersService {
     }
 
     order.status = requested;
-    return this.orders.save(order);
+    const saved = await this.orders.save(order);
+
+    if (saved.status === 'LISTO') {
+      try {
+        await this.webpush.sendToUser(saved.userId, {
+          title: 'Tu pedido está listo',
+          body: `Pasá a recoger tu pedido de ${saved.product.name}`,
+          tag: `order-${saved.id}`,
+        });
+      } catch (err) {
+        this.logger.error(
+          `push notify failed for order ${saved.id}: ${(err as Error).message}`,
+        );
+      }
+    }
+
+    return saved;
   }
 }
