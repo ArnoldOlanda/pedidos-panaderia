@@ -67,12 +67,22 @@ export function ProductDetailPage() {
           <p className="text-sm text-slate-500">
             Disponible: {data.availableDate.slice(0, 10)}
           </p>
-          <Link
-            to={`/orders/new?productId=${data.id}`}
-            className="inline-block bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600"
-          >
-            Pedir
-          </Link>
+          {data.closed || new Date(data.closesAt).getTime() <= Date.now() ? (
+            <button
+              type="button"
+              disabled
+              className="inline-block bg-slate-300 text-slate-600 px-4 py-2 rounded cursor-not-allowed"
+            >
+              Pedido cerrado
+            </button>
+          ) : (
+            <Link
+              to={`/orders/new?productId=${data.id}`}
+              className="inline-block bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600"
+            >
+              Pedir
+            </Link>
+          )}
         </article>
       )}
     </section>

@@ -5,8 +5,8 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 ## Status
 
 - Started: 2026-10-02
-- Current task: 3.7
-- Branch: feat/odd-3-7-buyer-orders
+- Current task: 3.8
+- Branch: feat/odd-3-8-vendor-products
 
 ## Tasks
 
@@ -34,7 +34,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 - [x] **3.4** — Router + Query + Zustand + Axios client
 - [x] **3.5** — Login page (DNI + name) + auth bootstrap (native review caught 5 critical findings, escalation resolved with second fix + clone-local RDD off; 401 vs infrastructure error split + Reintentar reachable)
 - [x] **3.6** — Public catalog + product detail
-- [ ] **3.7** — Buyer places order + my orders list
+- [x] **3.7** — Buyer places order + my orders list
 - [ ] **3.8** — Vendor publishes product page
 - [ ] **3.9** — Vendor order list + status update UI
 - [ ] **3.10** — PWA manifest + service worker
@@ -73,3 +73,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 3.4 done — 716613f — client infra: router + react-query + zustand + axios -->
 <!-- 2026-10-02: 3.5 done — 681260f — login page: DNI + name form, auth bootstrap, 401-vs-infrastructure error split, Reintentar reachable; native review caught 5 critical issues, escalation resolved via second fix; RDD disabled on this clone -->
 <!-- 2026-10-02: 3.6 done — d040381 — public catalog grid + product detail page (work-unit recorded 4efb3a2 pre-amend; HEAD is d040381) -->
+<!-- 2026-10-02: 3.7 done — 7d8bcc6 — buyer order flow: place order + my orders list -->
