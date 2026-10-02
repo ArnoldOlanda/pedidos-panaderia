@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -36,15 +37,17 @@ export class PushController {
     return { id: sub.id, endpoint: sub.endpoint };
   }
 
+  // DELETE bodies are unreliable across reverse proxies, CDNs and many HTTP
+  // client libraries, so the endpoint is read from a query parameter.
   @Delete('unsubscribe')
   @HttpCode(200)
   async unsubscribe(
-    @Body() dto: UnsubscribeDto,
+    @Query() query: UnsubscribeDto,
     @Req() req: AuthedRequest,
   ): Promise<{ removed: boolean }> {
     const removed = await this.subscriptions.unsubscribe(
       req.user.id,
-      dto.endpoint,
+      query.endpoint,
     );
     return { removed };
   }
