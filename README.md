@@ -23,7 +23,7 @@ npm run start:dev          # http://localhost:3000  (health: /api/health)
 
 ### Frontend (`pedidos-web`)
 
-Scaffolded in milestone 3. Until then the folder contains a placeholder.
+Vite + React + TypeScript + Tailwind scaffold. See [`pedidos-web/README.md`](./pedidos-web/README.md) for install / dev / build / proxy instructions (`VITE_API_PROXY_TARGET`).
 
 ## Tooling
 
