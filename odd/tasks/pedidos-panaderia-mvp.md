@@ -70,4 +70,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 3.1 done — a90074c — web-push module: VAPID + subscribe/unsubscribe -->
 <!-- 2026-10-02: 3.2 done — ae587e6 — push hooks: vendor auto-close + buyer LISTO -->
 <!-- 2026-10-02: 3.3 done — 9ae8705 — frontend scaffold: Vite + React + TS + Tailwind -->
-<!-- 2026-10-02: 3.4 done — TBD — client infra: router + react-query + zustand + axios -->
+<!-- 2026-10-02: 3.4 done — 716613f — client infra: router + react-query + zustand + axios -->
