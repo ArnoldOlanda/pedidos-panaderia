@@ -5,8 +5,8 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 ## Status
 
 - Started: 2026-10-02
-- Current task: 3.11
-- Branch: feat/odd-3-10-pwa-manifest
+- Current task: 3.12
+- Branch: feat/odd-3-11-push-subscription-manager
 
 ## Tasks
 
@@ -38,7 +38,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 - [x] **3.8** — Vendor publishes product page
 - [x] **3.9** — Vendor order list + status update UI
 - [x] **3.10** — PWA manifest + service worker
-- [ ] **3.11** — Push subscription manager (frontend)
+- [x] **3.11** — Push subscription manager (frontend)
 - [ ] **3.12** — Deploy backend to Railway
 - [ ] **3.13** — Deploy frontend to Netlify
 
@@ -77,3 +77,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 3.8 done — 8a2c47b — vendor publish form: recipe select, price, date+closesAt, mine/today list -->
 <!-- 2026-10-02: 3.9 done — 422a530 — vendor orders: product select + LISTO/ENTREGADO transitions -->
 <!-- 2026-10-02: 3.10 done — 04c124f3 — PWA manifest + service worker + placeholder icons -->
+<!-- 2026-10-02: 3.11 done — <commit-hash> — push subscription manager + GET /api/push/public-key -->

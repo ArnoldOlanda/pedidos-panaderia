@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   Post,
   Query,
   Req,
@@ -15,19 +16,32 @@ import type { JwtUser } from '../auth/strategies/jwt.strategy';
 import { PushSubscriptionsService } from './push-subscriptions.service';
 import { SubscribeDto } from './dto/subscribe.dto';
 import { UnsubscribeDto } from './dto/unsubscribe.dto';
+import { PublicKeyDto } from './dto/public-key.dto';
 
 interface AuthedRequest extends Request {
   user: JwtUser;
 }
 
 @Controller('push')
-@UseGuards(JwtAuthGuard)
 export class PushController {
   constructor(
     private readonly subscriptions: PushSubscriptionsService,
   ) {}
 
+  // Public endpoint: lets the browser fetch the VAPID public key before the
+  // user is authenticated. The key is non-secret by design.
+  @Get('public-key')
+  @HttpCode(200)
+  async publicKey(): Promise<PublicKeyDto> {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      throw new NotFoundException('VAPID public key not configured');
+    }
+    return { publicKey };
+  }
+
   @Post('subscribe')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(201)
   async subscribe(
     @Body() dto: SubscribeDto,
@@ -40,6 +54,7 @@ export class PushController {
   // DELETE bodies are unreliable across reverse proxies, CDNs and many HTTP
   // client libraries, so the endpoint is read from a query parameter.
   @Delete('unsubscribe')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(200)
   async unsubscribe(
     @Query() query: UnsubscribeDto,
@@ -53,6 +68,7 @@ export class PushController {
   }
 
   @Get('mine')
+  @UseGuards(JwtAuthGuard)
   async mine(@Req() req: AuthedRequest) {
     return this.subscriptions.listForUser(req.user.id);
   }
