@@ -17,13 +17,10 @@ import type { JwtUser } from '../auth/strategies/jwt.strategy';
 import { PushSubscriptionsService } from './push-subscriptions.service';
 import { SubscribeDto } from './dto/subscribe.dto';
 import { UnsubscribeDto } from './dto/unsubscribe.dto';
+import { PublicKeyDto } from './dto/public-key.dto';
 
 interface AuthedRequest extends Request {
   user: JwtUser;
-}
-
-interface PublicKeyDto {
-  publicKey: string;
 }
 
 @Controller('push')
