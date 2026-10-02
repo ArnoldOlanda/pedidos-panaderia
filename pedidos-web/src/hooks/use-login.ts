@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/auth';
-import { loginRequest, toApiError } from '../lib/auth';
+import { loginRequest } from '../lib/auth';
 
 export function useLogin() {
   const setUser = useAuth((s) => s.setUser);
@@ -14,9 +14,8 @@ export function useLogin() {
       setUser(user);
       navigate(user.role === 'VENDEDOR' ? '/vendor/products' : '/catalog', { replace: true });
     },
-    onError: (err) => {
+    onError: () => {
       setStatus('unauthenticated');
-      throw toApiError(err);
     },
   });
 }

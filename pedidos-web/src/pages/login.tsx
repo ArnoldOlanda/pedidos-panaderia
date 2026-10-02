@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useLogin } from '../hooks/use-login';
+import { toApiError } from '../lib/auth';
 
 export function LoginPage() {
   const [dni, setDni] = useState('');
@@ -18,13 +19,11 @@ export function LoginPage() {
       { dni, name },
       {
         onError: (err) => {
-          const apiErr = err as { status?: number; message?: string };
-          const status = apiErr.status ?? 0;
-          const message = apiErr.message ?? 'No pudimos iniciar sesión';
-          setServerMessage(message);
-          if (status === 400) {
+          const apiErr = toApiError(err);
+          setServerMessage(apiErr.message || 'No pudimos iniciar sesión');
+          if (apiErr.status === 400) {
             setHint('DNI o nombre inválido');
-          } else if (status === 500) {
+          } else if (apiErr.status === 500) {
             setHint('Error del servidor');
           }
         },
