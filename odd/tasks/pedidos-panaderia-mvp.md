@@ -5,9 +5,8 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 ## Status
 
 - Started: 2026-10-02
-- Current task: 2.6
-- Branch: feat/odd-2-6-auto-close-scheduler
-- Current task: 3.1
+- Current task: 3.2
+- Branch: feat/odd-3-1-web-push-module
 
 ## Tasks
 
@@ -29,7 +28,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 
 ### Milestone 3 — Push + PWA + deploy (Week 3)
 
-- [ ] **3.1** — Web-push module (VAPID + subscribe/unsubscribe)
+- [x] **3.1** — Web-push module (VAPID + subscribe/unsubscribe)
 - [ ] **3.2** — Push hooks (vendor at close + buyer on LISTO)
 - [ ] **3.3** — Frontend scaffold (Vite + React + TS + Tailwind)
 - [ ] **3.4** — Router + Query + Zustand + Axios client
@@ -68,3 +67,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: 2.4 done — 7997ec9 — order entity + buyer POST /api/orders -->
 <!-- 2026-10-02: 2.5 done — eec1c84 — order listing + status state machine -->
 <!-- 2026-10-02: 2.6 done — 3a2e8eb — auto-close cron */5 * * * * -->
+<!-- 2026-10-02: 3.1 done — a90074c — web-push module: VAPID + subscribe/unsubscribe -->

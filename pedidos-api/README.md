@@ -97,3 +97,21 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Web Push setup
+
+Push notifications use VAPID. Generate a keypair once per environment:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Copy the printed `publicKey` and `privateKey` into your `.env`:
+
+```
+VAPID_PUBLIC_KEY=<publicKey>
+VAPID_PRIVATE_KEY=<privateKey>
+VAPID_SUBJECT=mailto:admin@example.com
+```
+
+Clients subscribe via `POST /api/push/subscribe`; the browser will request this public key. Never commit the private key.
