@@ -26,7 +26,7 @@ export class UpdateIngredientDto {
 
   @IsNumber()
   @IsOptional()
-  @Min(0)
+  @Min(1, { message: 'el factor de conversión debe ser mayor o igual que 1' })
   conversionFactor?: number;
 
   @IsNumber()

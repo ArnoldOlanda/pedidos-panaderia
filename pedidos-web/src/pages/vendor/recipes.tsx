@@ -59,6 +59,7 @@ function IngredientRow({
   line,
   ingredient,
   catalog,
+  otherSelectedIds,
   missingIngredientName,
   onChange,
   onRemove,
@@ -67,6 +68,7 @@ function IngredientRow({
   line: RecipeIngredientInput;
   ingredient: Ingredient | undefined;
   catalog: Ingredient[];
+  otherSelectedIds: Set<string>;
   missingIngredientName?: string;
   onChange: (next: RecipeIngredientInput) => void;
   onRemove: () => void;
@@ -80,6 +82,16 @@ function IngredientRow({
   const partialCost = ingredient
     ? quantity * (ingredient.purchasePrice / ingredient.conversionFactor)
     : 0;
+  // Hide insumos already chosen by the OTHER rows, but never hide this row's
+  // own selection, so a duplicate keeps its value visible instead of blanking.
+  const options = catalog.filter(
+    (candidate) =>
+      !otherSelectedIds.has(candidate.id) || candidate.id === line.ingredientId,
+  );
+  const hasAlternatives = options.some(
+    (candidate) => candidate.id !== line.ingredientId,
+  );
+  const hasNoOptions = options.length === 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_120px_auto] gap-2 items-end">
@@ -91,7 +103,11 @@ function IngredientRow({
           required
           className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
         >
-          <option value="">Selecciona un insumo</option>
+          <option value="">
+            {hasNoOptions
+              ? 'No quedan insumos disponibles'
+              : 'Selecciona un insumo'}
+          </option>
           {isMissing && (
             <option value={line.ingredientId}>
               {missingIngredientName
@@ -99,12 +115,23 @@ function IngredientRow({
                 : 'Insumo no disponible'}
             </option>
           )}
-          {catalog.map((candidate) => (
+          {options.map((candidate) => (
             <option key={candidate.id} value={candidate.id}>
               {candidate.name}
             </option>
           ))}
         </select>
+        {hasNoOptions && (
+          <p className="mt-1 text-xs text-amber-700" role="status">
+            Todos los insumos ya están en otras filas. Quita una fila o cambia
+            otro insumo para liberar uno.
+          </p>
+        )}
+        {!hasNoOptions && !hasAlternatives && line.ingredientId.length > 0 && (
+          <p className="mt-1 text-xs text-slate-500">
+            No hay otros insumos libres para esta fila.
+          </p>
+        )}
       </label>
       <label className="text-sm">
         <span className="text-slate-700">{quantityLabel}</span>
@@ -150,8 +177,13 @@ function validateRecipe(
   if (lines.length < 1) {
     return 'Agrega al menos un insumo';
   }
+  const usedIngredientIds = new Set<string>();
   for (const line of lines) {
     if (!line.ingredientId) return 'Cada insumo necesita una selección';
+    if (usedIngredientIds.has(line.ingredientId)) {
+      return 'Un insumo no puede repetirse en la receta';
+    }
+    usedIngredientIds.add(line.ingredientId);
     if (!ingredientsById.has(line.ingredientId)) {
       return 'Uno de los insumos ya no está disponible; selecciona otro';
     }
@@ -192,7 +224,7 @@ function RecipeForm({
 }) {
   // The recipe references the shared insumo catalog, so the form cannot offer a
   // usable row (nor a valid submission) until the catalog is loaded.
-  const ingredientsQuery = useIngredients();
+  const ingredientsQuery = useIngredients({ refetchOnMount: 'always' });
   const catalog = ingredientsQuery.data ?? [];
   const ingredientsById = useMemo(
     () => new Map(catalog.map((ingredient) => [ingredient.id, ingredient])),
@@ -324,18 +356,27 @@ function RecipeForm({
           </button>
         </div>
         <div className="space-y-3">
-          {ingredients.map((row, index) => (
-            <IngredientRow
-              key={index}
-              line={row}
-              ingredient={ingredientsById.get(row.ingredientId)}
-              catalog={catalog}
-              missingIngredientName={initialIngredientNames?.[row.ingredientId]}
-              onChange={(next) => updateIngredient(index, next)}
-              onRemove={() => removeIngredient(index)}
-              canRemove={ingredients.length > 1}
-            />
-          ))}
+          {ingredients.map((row, index) => {
+            const otherSelectedIds = new Set(
+              ingredients
+                .filter((_, otherIndex) => otherIndex !== index)
+                .map((other) => other.ingredientId)
+                .filter((id) => id.length > 0),
+            );
+            return (
+              <IngredientRow
+                key={index}
+                line={row}
+                ingredient={ingredientsById.get(row.ingredientId)}
+                catalog={catalog}
+                otherSelectedIds={otherSelectedIds}
+                missingIngredientName={initialIngredientNames?.[row.ingredientId]}
+                onChange={(next) => updateIngredient(index, next)}
+                onRemove={() => removeIngredient(index)}
+                canRemove={ingredients.length > 1}
+              />
+            );
+          })}
         </div>
       </div>
 
