@@ -10,7 +10,7 @@ y con la unidad de gramos implícita en el nombre del campo.
 ## Status
 
 - Started: 2026-10-03
-- Current task: 7
+- Current task: — (tareas 1-7 hechas; T8 diferida a un PR aparte)
 - Chain strategy: Feature Branch Chain con tracker
 - Tracker branch: feat/ingredient-catalog
 - RDD: off en este clon
@@ -86,8 +86,8 @@ números (`totalCost 6.9`, `suggestedPrice 9.315`), así el reviewer ve un cambi
 
 - [x] **5** — `lib/ingredients.ts` + ingredient hooks + unit-pairs hook + nav/route
 - [x] **6** — `/vendor/ingredients` CRUD page
-- [ ] **7** — recipe form wired to the insumo select + live preview + empty state
-- [ ] **8** — seed starter ingredients (optional)
+- [x] **7** — recipe form wired to the insumo select + live preview + empty state
+- [ ] **8** — seed starter ingredients (diferida: es un archivo de backend y esta rama es de frontend; va como PR propio desde main)
 
 ## Local DB reset (user-run, destructive)
 
@@ -123,6 +123,13 @@ npm run db:seed
 - `calculate()` keeps an unreachable per-line fallback for a missing ingredient,
   because `resolveIngredients()` already guarantees presence.
 - Money stays `float` (inherited from `recipes`/`products`); no cent rounding.
+- The recipe form has no client-side duplicate-insumo guard: selecting the
+  same insumo twice is rejected by the backend 400
+  (`insumo repetido en la receta`) and that message is surfaced, but the UI
+  could prevent it earlier.
+- The expired-session `401` is not distinguished on any page (a pre-existing
+  pattern shared with the recipes page); reads and writes fall to a generic
+  error with no re-authentication path.
 
 ## Progress Log
 
@@ -131,3 +138,5 @@ npm run db:seed
 <!-- 2026-10-03: 2 done — 9150044 — ingredients CRUD module: JWT reads, VENDEDOR writes, 23505/23503 -> 409, merged-pair validation on PATCH; 21 service tests, suite 56 green -->
 <!-- 2026-10-03: 3+4 done — 510a900 — recipe_ingredients table + normalized line entity; recipes.ingredients jsonb dropped from InitRecipes in place; cost now sum(quantityUsed * purchasePrice / conversionFactor) in one transaction; 6.9/9.315 and 13.8/20.7 preserved; suite 68 green -->
 <!-- 2026-10-03: 5+6 done — f68c81d — client de insumos (lib + 6 hooks + unit-pairs) y página /vendor/ingredients con factor de conversión derivado del backend; sin tabla duplicada en el frontend; typecheck + build verdes -->
+<!-- 2026-10-03: 7 done — df30977 — formulario de receta reconstruido sobre el catálogo (select de insumo + cantidad en su unidad + costo por línea de solo lectura); preview operand-identical al backend; estados vacío/cargando/error del catálogo bloquean el submit; ModalShell extraído a components/ y compartido por las dos páginas -->
+<!-- 2026-10-03: cadena completa (1-7). Nada pusheado y ningún PR abierto: no hay gh CLI en el host. Los cuerpos de PR pendientes de redactar. -->
