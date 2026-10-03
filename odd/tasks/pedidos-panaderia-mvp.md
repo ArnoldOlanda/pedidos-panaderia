@@ -6,7 +6,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 
 - Started: 2026-10-02
 - Current task: 3.12
-- Branch: feat/odd-3-11-push-subscription-manager
+- Branch: main
 
 ## Tasks
 
@@ -25,7 +25,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 - [x] **2.4** — Order entity + buyer places order + window validation
 - [x] **2.5** — Order listing + status state machine (vendor)
 - [x] **2.6** — Auto-close scheduler (`*/5 * * * *`)
-- [ ] **2.7** — Recipe update + delete endpoints + vendor recipes management UI
+- [x] **2.7** — Recipe update + delete endpoints + vendor recipes management UI
 
 ### Milestone 3 — Push + PWA + deploy (Week 3)
 
@@ -83,3 +83,5 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: chore db-env-laravel done — 13b3aa0 — DB_HOST/PORT/DATABASE/USERNAME/PASSWORD env convention -->
 <!-- 2026-10-02: 2.7 done — 51df05f — recipe PATCH/DELETE + vendor recipes management UI -->
 <!-- 2026-10-02: chore buyer-snapshot-no-auth done — f985313 — buyers anonymous with order snapshot + device UUID for push; vendor-only auth + logout -->
+<!-- 2026-10-03: fix api stale-session + Lima day — 9817042 — GET /auth/me clears stale cookie (401 not 404); todayString() uses America/Lima; /auth/logout passthrough fix -->
+<!-- 2026-10-03: tracker reconciled — 2.7 checkbox marked done (51df05f already landed); Branch header back to main -->
