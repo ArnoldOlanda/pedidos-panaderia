@@ -7,6 +7,7 @@ import { RecipesService } from './recipes.service';
 import { RecipeIngredient } from './recipe-ingredient.entity';
 import { Ingredient, IngredientUnit } from '../ingredients/ingredient.entity';
 import type { Recipe } from './recipe.entity';
+import type { CreateRecipeDto } from './dto/create-recipe.dto';
 import type { UpdateRecipeDto } from './dto/update-recipe.dto';
 
 jest.mock('@nestjs/typeorm', () => ({
@@ -227,6 +228,56 @@ describe('RecipesService', () => {
       );
       expect(result.totalCost).toBeCloseTo(5.9, 5);
       expect(result.suggestedPrice).toBeCloseTo(11.8, 5);
+    });
+
+    it('treats create manoObra null as not provided and applies the 20% default', async () => {
+      ingredientsRepo.find.mockResolvedValue([ingredient()]);
+      repo.create.mockImplementation((input) => input);
+      manager.save.mockImplementation(async (r) => r);
+
+      const dto = {
+        name: 'Pan de yema',
+        ingredients: [{ ingredientId: HARINA_ID, quantityUsed: 1000 }],
+        manoObra: null,
+      };
+
+      const result = await svc.create(
+        dto as unknown as CreateRecipeDto,
+        VENDOR_A,
+      );
+
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ manoObra: 20 }),
+      );
+      // costoInsumos=5, igv=0.9, manoObra=5*0.2=1 → costoProd=6.9
+      // default utilidad=100 → 6.9 * 2 = 13.8
+      expect(result.totalCost).toBeCloseTo(6.9, 5);
+      expect(result.suggestedPrice).toBeCloseTo(13.8, 5);
+    });
+
+    it('treats create utilidad null as not provided and applies the 100% default', async () => {
+      ingredientsRepo.find.mockResolvedValue([ingredient()]);
+      repo.create.mockImplementation((input) => input);
+      manager.save.mockImplementation(async (r) => r);
+
+      const dto = {
+        name: 'Pan de yema',
+        ingredients: [{ ingredientId: HARINA_ID, quantityUsed: 1000 }],
+        utilidad: null,
+      };
+
+      const result = await svc.create(
+        dto as unknown as CreateRecipeDto,
+        VENDOR_A,
+      );
+
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ utilidad: 100 }),
+      );
+      // costoInsumos=5, igv=0.9, manoObra=5*0.2=1 → costoProd=6.9
+      // default utilidad=100 → 6.9 * 2 = 13.8
+      expect(result.totalCost).toBeCloseTo(6.9, 5);
+      expect(result.suggestedPrice).toBeCloseTo(13.8, 5);
     });
 
     it('rejects a repeated ingredientId on create with BadRequestException', async () => {
@@ -472,6 +523,32 @@ describe('RecipesService', () => {
       expect(result.suggestedPrice).toBe(11.34);
       expect(ingredientsRepo.find).not.toHaveBeenCalled();
       expect(repo.manager.transaction).not.toHaveBeenCalled();
+    });
+
+    it('stores manoObra 0 on update instead of keeping the previous value', async () => {
+      repo.findOne.mockResolvedValue(baseRecipe());
+      ingredientsRepo.find.mockResolvedValue([ingredient()]);
+      repo.save.mockImplementation(async (r) => r);
+
+      const result = await svc.update(RECIPE_ID, VENDOR_A, { manoObra: 0 });
+
+      // costoInsumos=5, igv=0.9, manoObra=5*0=0 → costoProd=5*1.18=5.9
+      expect(result.manoObra).toBe(0);
+      expect(result.totalCost).toBeCloseTo(5.9, 5);
+    });
+
+    it('stores utilidad 0 on update so the suggested price equals costoProd', async () => {
+      repo.findOne.mockResolvedValue(baseRecipe());
+      ingredientsRepo.find.mockResolvedValue([ingredient()]);
+      repo.save.mockImplementation(async (r) => r);
+
+      const result = await svc.update(RECIPE_ID, VENDOR_A, { utilidad: 0 });
+
+      // costoInsumos=5, igv=0.9, manoObra=5*0.2=1 → costoProd=6.9
+      // utilidad=0 → 6.9 * 1 = 6.9, a 0% markup
+      expect(result.utilidad).toBe(0);
+      expect(result.suggestedPrice).toBeCloseTo(6.9, 5);
+      expect(result.suggestedPrice).toBeCloseTo(result.totalCost, 5);
     });
 
     it('rejects a repeated ingredientId on update with BadRequestException', async () => {

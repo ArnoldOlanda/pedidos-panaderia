@@ -13,7 +13,7 @@ Continúa la feature `ingredient-catalog` (cerrada y mergeada en `f2b7276`), que
 ## Status
 
 - Started: 2026-10-03
-- Current task: 4
+- Current task: 5
 - Branch: feat/recipe-cost-params (base `main` @ `296c263`)
 - Chain strategy: rama única con 3 work units
 - RDD: off en este clon (review local)
@@ -48,7 +48,7 @@ de estar hardcodeado en el servicio y en el preview del frontend.
       migración `AddRecipeManoObra` (+ `utilidad` default 100) y spec actualizado
 - [x] **2** — Frontend: precio de compra + equivalente por unidad de uso en cada fila del formulario
 - [x] **3** — Frontend: campo `Mano de obra (%)` editable, `utilidad` por defecto 100 %, preview y tipos
-- [ ] **4** — Verificación independiente del diff integrado (2 pasadas read-only con focos distintos)
+- [x] **4** — Verificación independiente del diff integrado (2 pasadas read-only con focos distintos)
 - [ ] **5** — Cierre: tracker + Engram + reporte al usuario
 
 ## Edge cases que la verificación debe confirmar
@@ -68,9 +68,38 @@ de estar hardcodeado en el servicio y en el preview del frontend.
 - Mano de obra por horas-hombre reales: sigue siendo un porcentaje del costo de insumos.
 - `IDX_recipe_ingredients_recipe` redundante y el resto de advisories abiertos de `ingredient-catalog`.
 
+## Open advisories
+
+Cerrados en el commit de corrección posterior a la review (ver Progress Log):
+
+- ~~El camino de `create` con `manoObra: null` / `utilidad: null` no tenía test: quitar el `??` habría persistido
+  `null` contra una columna `NOT NULL` sin que falle nada~~: dos casos nuevos en el spec del servicio.
+- ~~`PATCH {manoObra: 0}` / `{utilidad: 0}` sin test: cambiar `??` por `||` habría convertido el 0 en "conservar
+  el valor anterior" en silencio~~: dos casos nuevos.
+- ~~`UpdateRecipeDto` sin spec de validación~~: `update-recipe.dto.spec.ts` nuevo (patch vacío, `null` que
+  atraviesa el pipe, negativos rechazados, ceros preservados).
+- ~~`RecipeCard` llamaba `formatPercent(recipe.manoObra)` sin guarda: una respuesta sin la columna desmontaba la
+  ruta entera, porque la app no tiene error boundary~~: `formatPercent` devuelve `—` si el valor no es finito.
+- ~~El subtotal de cada fila usaba `formatPrice` (2 decimales): una línea de `1 g × S/ 0.004` mostraba
+  `S/ 0.00` y la aritmética que la feature quiere explicar seguía sin cerrar~~: `formatPrecisePrice` en el
+  subtotal y en el precio por unidad de uso.
+
+Abiertos (no bloquean, quedan anotados):
+
+1. **La migración se aplica a mano** (`migrationsRun: false` en `app.module.ts`). Sin
+   `npm run migration:run`, `GET /recipes` falla porque TypeORM selecciona la columna nueva. Estado actual: la
+   base local del usuario **todavía no tiene** `recipes.manoObra`.
+2. **`pedidos-web` no tiene runner de tests** (`npm test` es un `echo`): todo el comportamiento de la UI de esta
+   feature queda verificado solo por `typecheck` y `build`, más dos pasadas de review read-only.
+3. Los defaults declarados en la entidad y en la migración no tienen test (haría falta base de datos real).
+4. Sin tests de controlador ni e2e en el repo; la validación se prueba a nivel de `ValidationPipe`.
+5. Preexistentes de `ingredient-catalog` que siguen abiertos: `IDX_recipe_ingredients_recipe` redundante,
+   `toApiError` casteando `message` a `string`, `401` de sesión expirada sin re-login, dinero en `float`.
+
 ## Progress Log
 
 <!-- entries appended here after each task lands -->
+<!-- 2026-10-03: 4 done — verificación independiente del diff integrado en dos pasadas `gentle-ai-verify` con focos distintos (backend/fórmula/migración/calibración de tests; frontend/paridad de operandos/contrato). Sin blockers. Paridad de operandos confirmada expresión por expresión contra `calculate()`; las dos pasadas coinciden en que los cuatro defaults (entidad, migración, servicio, DTOs) están alineados. Advisories cerrados en un commit de corrección; los abiertos quedan en la sección Open advisories. Gate: 89/89 tests backend, tsc limpio, web typecheck limpio -->
 <!-- 2026-10-03: 3 done — `Recipe.manoObra` en los tipos, campo "Mano de obra (%)" junto a "Utilidad (%)", defaults 100/20 en el formulario, `validateRecipe` valida el porcentaje nuevo, el desglose ya no hardcodea el 20 % y la tarjeta muestra utilidad y mano de obra; los dos payloads (crear/editar) mandan el campo. Nota: la lista de recetas ya requiere la migración aplicada, porque TypeORM selecciona la columna nueva. typecheck y build verdes -->
 <!-- 2026-10-03: 2 done — cada fila muestra el precio de compra (`S/ 4.00 por kg`) y su equivalente por unidad de uso (`S/ 0.004 por g`), con `formatUnitPrice` nuevo en `lib/format.ts` porque `formatPrice` topa en 2 decimales y mostraría `S/ 0.00`; cuando compra y uso comparten unidad (factor 1) se muestra una sola línea; el costo por fila deriva del mismo operando `unitCost` que usa el backend. typecheck y build verdes -->
 <!-- 2026-10-03: 1 done — backend: `recipes.manoObra` float DEFAULT 20 + `utilidad` DEFAULT 100 (entidad, migración y servicio alineados); `calculate()` recibe el porcentaje; `update()` normaliza `dto.manoObra ?? undefined` y entra en el short-circuit de nombre-solo; `@IsOptional()` en `CreateRecipeDto.utilidad/manoObra` para que los defaults sean alcanzables por HTTP (antes un campo omitido daba 400, advisory abierto de ingredient-catalog); nueva spec de borde con el ValidationPipe real (7 casos). Suite 80/80, tsc limpio -->

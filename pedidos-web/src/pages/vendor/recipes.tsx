@@ -8,7 +8,7 @@ import { useCreateRecipe } from '../../hooks/use-create-recipe';
 import { useUpdateRecipe } from '../../hooks/use-update-recipe';
 import { useDeleteRecipe } from '../../hooks/use-delete-recipe';
 import { toApiError } from '../../lib/api';
-import { formatPrice, formatUnitPrice } from '../../lib/format';
+import { formatPrice, formatPrecisePrice } from '../../lib/format';
 import { INGREDIENT_UNIT_LABELS } from '../../lib/ingredients';
 import type { Ingredient } from '../../lib/ingredients';
 import type { Recipe, RecipeIngredientInput } from '../../lib/recipes';
@@ -49,7 +49,12 @@ function calculateCost(
   return { costoInsumos, igv, manoObra: costoManoObra, costoProd, precioVenta };
 }
 
+// A recipe response may omit the labor column an older backend does not return.
+// Rendering must survive that (there is no error boundary around this route), so
+// a non-finite value shows the neutral placeholder instead of throwing on
+// value.toFixed(2). Never fabricate a default percentage here.
 function formatPercent(value: number): string {
+  if (!Number.isFinite(value)) return '—';
   return `${value.toFixed(2)}%`;
 }
 
@@ -179,7 +184,7 @@ function IngredientRow({
             </p>
             {showsConversion && (
               <p className="text-xs text-slate-500">
-                {formatUnitPrice(unitCost)} por {usageUnitLabel}
+                {formatPrecisePrice(unitCost)} por {usageUnitLabel}
               </p>
             )}
           </>
@@ -190,7 +195,7 @@ function IngredientRow({
       <div className="text-sm">
         <span className="text-slate-700">Costo</span>
         <p className="mt-2 font-medium text-slate-900">
-          {formatPrice(partialCost)}
+          {formatPrecisePrice(partialCost)}
         </p>
       </div>
       <button

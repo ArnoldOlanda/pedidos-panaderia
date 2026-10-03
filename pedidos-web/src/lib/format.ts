@@ -17,9 +17,12 @@ export function formatPrice(price: number): string {
 
 // Cost per usage unit is often far below one sol (S/ 0.004 per gram on a 4.00/kg
 // insumo), and formatPrice caps at 2 decimals, so it would render as S/ 0.00 and
-// hide the arithmetic the recipe form is trying to show. Allow up to 4 decimals
-// while keeping the currency style and the trailing cents of normal prices.
-export function formatUnitPrice(price: number): string {
+// hide the arithmetic the recipe form is trying to show. A line subtotal
+// (cantidad × precio) can fall below one cent the same way, so both the
+// per-usage-unit price and the row subtotal use this formatter. Allow up to 4
+// decimals while keeping the currency style and the trailing cents of normal
+// prices.
+export function formatPrecisePrice(price: number): string {
   return new Intl.NumberFormat('es-PE', {
     style: 'currency',
     currency: 'PEN',
