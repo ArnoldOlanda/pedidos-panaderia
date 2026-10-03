@@ -230,6 +230,29 @@ describe('RecipesService', () => {
       expect(result.suggestedPrice).toBeCloseTo(11.8, 5);
     });
 
+    it('treats utilidad 0 as a real 0% and never falls back to the default', async () => {
+      ingredientsRepo.find.mockResolvedValue([ingredient()]);
+      repo.create.mockImplementation((input) => input);
+      manager.save.mockImplementation(async (r) => r);
+
+      const result = await svc.create(
+        {
+          name: 'Pan sin utilidad',
+          ingredients: [{ ingredientId: HARINA_ID, quantityUsed: 1000 }],
+          utilidad: 0,
+        },
+        VENDOR_A,
+      );
+
+      // costoInsumos=5, igv=0.9, manoObra=5*0.2=1 → costoProd=6.9
+      // utilidad=0 → 6.9 * 1 = 6.9, a 0% markup
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ utilidad: 0 }),
+      );
+      expect(result.totalCost).toBeCloseTo(6.9, 5);
+      expect(result.suggestedPrice).toBeCloseTo(6.9, 5);
+    });
+
     it('treats create manoObra null as not provided and applies the 20% default', async () => {
       ingredientsRepo.find.mockResolvedValue([ingredient()]);
       repo.create.mockImplementation((input) => input);

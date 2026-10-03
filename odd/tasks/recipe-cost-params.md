@@ -13,10 +13,11 @@ Continúa la feature `ingredient-catalog` (cerrada y mergeada en `f2b7276`), que
 ## Status
 
 - Started: 2026-10-03
-- Current task: 5
-- Branch: feat/recipe-cost-params (base `main` @ `296c263`)
-- Chain strategy: rama única con 3 work units
-- RDD: off en este clon (review local)
+- Current task: — (tareas 1-5 hechas)
+- Branch: feat/recipe-cost-params (base `main` @ `296c263`), 5 commits, sin mergear
+- Chain strategy: rama única con 3 work units + 2 commits de corrección/prueba
+- RDD: off en este clon (review local: 2 pasadas sobre el diff integrado + 1 sobre el delta)
+- Gate final: backend **90/90 tests**, `tsc --noEmit` limpio; web `typecheck` y `build` limpios
 
 ## Decisions (aprobadas por el usuario 2026-10-03)
 
@@ -95,10 +96,14 @@ Abiertos (no bloquean, quedan anotados):
 4. Sin tests de controlador ni e2e en el repo; la validación se prueba a nivel de `ValidationPipe`.
 5. Preexistentes de `ingredient-catalog` que siguen abiertos: `IDX_recipe_ingredients_recipe` redundante,
    `toApiError` casteando `message` a `string`, `401` de sesión expirada sin re-login, dinero en `float`.
+6. El índice local `.codegraph/codegraph.db` conserva referencias al nombre viejo `formatUnitPrice` (índice
+   generado, no código): regenerarlo si se usa CodeGraph.
 
 ## Progress Log
 
 <!-- entries appended here after each task lands -->
+<!-- 2026-10-03: review del delta (commit de corrección) — tercera pasada read-only: los 5 advisories cerrados de verdad (matriz mutación-test recalculada: quitar el `??`, cambiarlo por `||`, quitar `@Min(0)` o quitar el guard de `formatPercent` rompen algún test), sin cambios de comportamiento no relacionados. Quedó 1 advisory residual: el camino de `create` no tenía caso con `utilidad: 0`, así que un `||` en esa línea habría pasado desapercibido -->
+<!-- 2026-10-03: cierre del residual — test `treats utilidad 0 as a real 0% and never falls back to the default` en el spec del servicio. Gate: 90/90 tests backend, tsc limpio -->
 <!-- 2026-10-03: 4 done — verificación independiente del diff integrado en dos pasadas `gentle-ai-verify` con focos distintos (backend/fórmula/migración/calibración de tests; frontend/paridad de operandos/contrato). Sin blockers. Paridad de operandos confirmada expresión por expresión contra `calculate()`; las dos pasadas coinciden en que los cuatro defaults (entidad, migración, servicio, DTOs) están alineados. Advisories cerrados en un commit de corrección; los abiertos quedan en la sección Open advisories. Gate: 89/89 tests backend, tsc limpio, web typecheck limpio -->
 <!-- 2026-10-03: 3 done — `Recipe.manoObra` en los tipos, campo "Mano de obra (%)" junto a "Utilidad (%)", defaults 100/20 en el formulario, `validateRecipe` valida el porcentaje nuevo, el desglose ya no hardcodea el 20 % y la tarjeta muestra utilidad y mano de obra; los dos payloads (crear/editar) mandan el campo. Nota: la lista de recetas ya requiere la migración aplicada, porque TypeORM selecciona la columna nueva. typecheck y build verdes -->
 <!-- 2026-10-03: 2 done — cada fila muestra el precio de compra (`S/ 4.00 por kg`) y su equivalente por unidad de uso (`S/ 0.004 por g`), con `formatUnitPrice` nuevo en `lib/format.ts` porque `formatPrice` topa en 2 decimales y mostraría `S/ 0.00`; cuando compra y uso comparten unidad (factor 1) se muestra una sola línea; el costo por fila deriva del mismo operando `unitCost` que usa el backend. typecheck y build verdes -->
