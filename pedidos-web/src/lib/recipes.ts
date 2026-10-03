@@ -25,6 +25,7 @@ export interface Recipe {
   name: string;
   ingredients: RecipeIngredient[];
   utilidad: number;
+  manoObra: number;
   totalCost: number;
   suggestedPrice: number;
   createdById: string;
@@ -35,6 +36,7 @@ export interface CreateRecipeInput {
   name: string;
   ingredients: RecipeIngredientInput[];
   utilidad?: number;
+  manoObra?: number;
 }
 
 export type UpdateRecipeInput = Partial<CreateRecipeInput>;

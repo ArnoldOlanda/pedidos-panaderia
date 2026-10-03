@@ -13,7 +13,7 @@ Continúa la feature `ingredient-catalog` (cerrada y mergeada en `f2b7276`), que
 ## Status
 
 - Started: 2026-10-03
-- Current task: 3
+- Current task: 4
 - Branch: feat/recipe-cost-params (base `main` @ `296c263`)
 - Chain strategy: rama única con 3 work units
 - RDD: off en este clon (review local)
@@ -47,7 +47,7 @@ de estar hardcodeado en el servicio y en el preview del frontend.
 - [x] **1** — Backend: columna `manoObra` (default 20), DTOs de create/update, servicio (create/update/calculate),
       migración `AddRecipeManoObra` (+ `utilidad` default 100) y spec actualizado
 - [x] **2** — Frontend: precio de compra + equivalente por unidad de uso en cada fila del formulario
-- [ ] **3** — Frontend: campo `Mano de obra (%)` editable, `utilidad` por defecto 100 %, preview y tipos
+- [x] **3** — Frontend: campo `Mano de obra (%)` editable, `utilidad` por defecto 100 %, preview y tipos
 - [ ] **4** — Verificación independiente del diff integrado (2 pasadas read-only con focos distintos)
 - [ ] **5** — Cierre: tracker + Engram + reporte al usuario
 
@@ -71,5 +71,6 @@ de estar hardcodeado en el servicio y en el preview del frontend.
 ## Progress Log
 
 <!-- entries appended here after each task lands -->
+<!-- 2026-10-03: 3 done — `Recipe.manoObra` en los tipos, campo "Mano de obra (%)" junto a "Utilidad (%)", defaults 100/20 en el formulario, `validateRecipe` valida el porcentaje nuevo, el desglose ya no hardcodea el 20 % y la tarjeta muestra utilidad y mano de obra; los dos payloads (crear/editar) mandan el campo. Nota: la lista de recetas ya requiere la migración aplicada, porque TypeORM selecciona la columna nueva. typecheck y build verdes -->
 <!-- 2026-10-03: 2 done — cada fila muestra el precio de compra (`S/ 4.00 por kg`) y su equivalente por unidad de uso (`S/ 0.004 por g`), con `formatUnitPrice` nuevo en `lib/format.ts` porque `formatPrice` topa en 2 decimales y mostraría `S/ 0.00`; cuando compra y uso comparten unidad (factor 1) se muestra una sola línea; el costo por fila deriva del mismo operando `unitCost` que usa el backend. typecheck y build verdes -->
 <!-- 2026-10-03: 1 done — backend: `recipes.manoObra` float DEFAULT 20 + `utilidad` DEFAULT 100 (entidad, migración y servicio alineados); `calculate()` recibe el porcentaje; `update()` normaliza `dto.manoObra ?? undefined` y entra en el short-circuit de nombre-solo; `@IsOptional()` en `CreateRecipeDto.utilidad/manoObra` para que los defaults sean alcanzables por HTTP (antes un campo omitido daba 400, advisory abierto de ingredient-catalog); nueva spec de borde con el ValidationPipe real (7 casos). Suite 80/80, tsc limpio -->
