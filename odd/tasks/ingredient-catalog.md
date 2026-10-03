@@ -124,13 +124,28 @@ npm run db:seed
 - `calculate()` keeps an unreachable per-line fallback for a missing ingredient,
   because `resolveIngredients()` already guarantees presence.
 - Money stays `float` (inherited from `recipes`/`products`); no cent rounding.
-- The recipe form has no client-side duplicate-insumo guard: selecting the
-  same insumo twice is rejected by the backend 400
-  (`insumo repetido en la receta`) and that message is surfaced, but the UI
-  could prevent it earlier.
+- `toApiError` casts the API `message` to `string`, but Nest returns it as a
+  `string[]` when several fields fail validation at once, so multiple messages
+  would render concatenated without a separator (`lib/api.ts`). Pre-existing.
 - The expired-session `401` is not distinguished on any page (a pre-existing
   pattern shared with the recipes page); reads and writes fall to a generic
   error with no re-authentication path.
+- `InitUsers` uses `uuid_generate_v4()` before `InitRecipes` creates the
+  extension (pre-existing; it works because the TypeORM driver creates the
+  extension on connect).
+- `IDX_recipe_ingredients_recipe` is redundant with the leading column of
+  `UQ_recipe_ingredients_recipe_ingredient`. Correcting it needs a new
+  migration or another reset: the applied migration must not be edited in place.
+
+### Closed by d0ce9d1
+
+- ~~`conversionFactor` validated as `@Min(0)` while the service requires the
+  exact pair value~~: now `@Min(1)` with a Spanish message.
+- ~~The recipe form let the same insumo be picked in two rows and only found out
+  on submit~~: options now exclude what other rows already use and the form
+  validates duplicates.
+- ~~The preview could disagree with the persisted cost when the 60 s catalog
+  cache was stale~~: the recipe form refetches the catalog on mount.
 
 ## Progress Log
 
@@ -142,3 +157,4 @@ npm run db:seed
 <!-- 2026-10-03: 7 done — df30977 — formulario de receta reconstruido sobre el catálogo (select de insumo + cantidad en su unidad + costo por línea de solo lectura); preview operand-identical al backend; estados vacío/cargando/error del catálogo bloquean el submit; ModalShell extraído a components/ y compartido por las dos páginas -->
 <!-- 2026-10-03: review local del diff integrado (2 pasadas read-only independientes): sin blockers, 8 advisories. Detalle en la sección Open advisories. -->
 <!-- 2026-10-03: MERGEADO a main — f2b7276 — merge --no-ff de feat/ingredient-catalog-recipes-ui (ramas lineales, tracker ancestro); gate post-merge: 68 tests backend + typecheck/build web verdes -->
+<!-- 2026-10-03: advisories 1-3 cerrados — d0ce9d1 — @Min(1) en conversionFactor; el formulario de receta excluye insumos ya usados por otras filas + valida repetidos; el catálogo del formulario se revalida al montar para que el preview no discrepe del costo persistido -->
