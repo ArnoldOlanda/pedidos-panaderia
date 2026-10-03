@@ -4,6 +4,7 @@ import {
   IsArray,
   IsNumber,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
   MinLength,
@@ -11,17 +12,12 @@ import {
 } from 'class-validator';
 
 export class RecipeIngredientDto {
-  @IsString()
-  @MinLength(1)
-  nombre!: string;
+  @IsUUID()
+  ingredientId!: string;
 
   @IsNumber()
-  @Min(0)
-  cantidadGr!: number;
-
-  @IsNumber()
-  @Min(0)
-  precioKg!: number;
+  @Min(0.001)
+  quantityUsed!: number;
 }
 
 export class CreateRecipeDto {

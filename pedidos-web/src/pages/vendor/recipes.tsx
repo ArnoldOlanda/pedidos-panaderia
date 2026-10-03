@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
+import { useIngredients } from '../../hooks/use-ingredients';
 import { useRecipes } from '../../hooks/use-recipes';
 import { useRecipe } from '../../hooks/use-recipe';
 import { useCreateRecipe } from '../../hooks/use-create-recipe';
@@ -8,10 +9,10 @@ import { useUpdateRecipe } from '../../hooks/use-update-recipe';
 import { useDeleteRecipe } from '../../hooks/use-delete-recipe';
 import { toApiError } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
-import type {
-  Recipe,
-  RecipeIngredient,
-} from '../../lib/recipes';
+import { INGREDIENT_UNIT_LABELS } from '../../lib/ingredients';
+import type { Ingredient } from '../../lib/ingredients';
+import type { Recipe, RecipeIngredientInput } from '../../lib/recipes';
+import { ModalShell } from '../../components/modal-shell';
 
 interface CostBreakdown {
   costoInsumos: number;
@@ -21,14 +22,20 @@ interface CostBreakdown {
   precioVenta: number;
 }
 
+// Mirrors calculate() in pedidos-api/src/modules/recipes/recipes.service.ts.
+// The duplication is deliberate: the client only shows a live preview, while the
+// backend remains the single source of truth for the persisted cost.
 function calculateCost(
-  ingredients: RecipeIngredient[],
+  lines: RecipeIngredientInput[],
+  ingredientsById: Map<string, Ingredient>,
   utilidad: number,
 ): CostBreakdown {
-  const costoInsumos = ingredients.reduce(
-    (sum, i) => sum + (i.cantidadGr / 1000) * i.precioKg,
-    0,
-  );
+  const costoInsumos = lines.reduce((sum, line) => {
+    const ingredient = ingredientsById.get(line.ingredientId);
+    if (!ingredient) return sum;
+    const unitCost = ingredient.purchasePrice / ingredient.conversionFactor;
+    return sum + line.quantityUsed * unitCost;
+  }, 0);
   const igv = costoInsumos * 0.18;
   const manoObra = costoInsumos * 0.2;
   const costoProd = costoInsumos + igv + manoObra;
@@ -40,57 +47,85 @@ function formatPercent(value: number): string {
   return `${value.toFixed(2)}%`;
 }
 
+// 400 invalid payload: the backend already names the offending insumos
+// ("ingredientes no encontrados: ...") or the duplicate line ("insumo repetido
+// en la receta"), so its Spanish message is shown verbatim.
+function badRequestMessage(err: unknown): string {
+  const apiErr = toApiError(err);
+  return apiErr.message || 'Los datos de la receta no son válidos';
+}
+
 function IngredientRow({
+  line,
   ingredient,
+  catalog,
+  missingIngredientName,
   onChange,
   onRemove,
   canRemove,
 }: {
-  ingredient: RecipeIngredient;
-  onChange: (next: RecipeIngredient) => void;
+  line: RecipeIngredientInput;
+  ingredient: Ingredient | undefined;
+  catalog: Ingredient[];
+  missingIngredientName?: string;
+  onChange: (next: RecipeIngredientInput) => void;
   onRemove: () => void;
   canRemove: boolean;
 }) {
+  const isMissing = line.ingredientId.length > 0 && ingredient === undefined;
+  const quantityLabel = ingredient
+    ? `Cantidad (${INGREDIENT_UNIT_LABELS[ingredient.usageUnit]})`
+    : 'Cantidad';
+  const quantity = Number.isFinite(line.quantityUsed) ? line.quantityUsed : 0;
+  const partialCost = ingredient
+    ? quantity * (ingredient.purchasePrice / ingredient.conversionFactor)
+    : 0;
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-[1fr_100px_100px_auto] gap-2 items-end">
+    <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_120px_auto] gap-2 items-end">
       <label className="text-sm">
-        <span className="text-slate-700">Nombre</span>
-        <input
-          type="text"
-          value={ingredient.nombre}
-          onChange={(e) => onChange({ ...ingredient, nombre: e.target.value })}
+        <span className="text-slate-700">Insumo</span>
+        <select
+          value={line.ingredientId}
+          onChange={(e) => onChange({ ...line, ingredientId: e.target.value })}
           required
           className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
-        />
+        >
+          <option value="">Selecciona un insumo</option>
+          {isMissing && (
+            <option value={line.ingredientId}>
+              {missingIngredientName
+                ? `${missingIngredientName} (no disponible)`
+                : 'Insumo no disponible'}
+            </option>
+          )}
+          {catalog.map((candidate) => (
+            <option key={candidate.id} value={candidate.id}>
+              {candidate.name}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="text-sm">
-        <span className="text-slate-700">Cantidad (g)</span>
+        <span className="text-slate-700">{quantityLabel}</span>
         <input
           type="number"
           step="0.01"
           min="0"
-          value={Number.isFinite(ingredient.cantidadGr) ? ingredient.cantidadGr : 0}
+          value={quantity}
           onChange={(e) =>
-            onChange({ ...ingredient, cantidadGr: Number(e.target.value) })
+            onChange({ ...line, quantityUsed: Number(e.target.value) })
           }
           required
           className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
         />
       </label>
-      <label className="text-sm">
-        <span className="text-slate-700">Precio/kg</span>
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          value={Number.isFinite(ingredient.precioKg) ? ingredient.precioKg : 0}
-          onChange={(e) =>
-            onChange({ ...ingredient, precioKg: Number(e.target.value) })
-          }
-          required
-          className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
-        />
-      </label>
+      <div className="text-sm">
+        <span className="text-slate-700">Costo</span>
+        <p className="mt-2 font-medium text-slate-900">
+          {formatPrice(partialCost)}
+        </p>
+      </div>
       <button
         type="button"
         onClick={onRemove}
@@ -103,52 +138,89 @@ function IngredientRow({
   );
 }
 
+function validateRecipe(
+  name: string,
+  lines: RecipeIngredientInput[],
+  ingredientsById: Map<string, Ingredient>,
+  utilidad: number,
+): string | null {
+  if (name.length < 1 || name.length > 200) {
+    return 'El nombre debe tener entre 1 y 200 caracteres';
+  }
+  if (lines.length < 1) {
+    return 'Agrega al menos un insumo';
+  }
+  for (const line of lines) {
+    if (!line.ingredientId) return 'Cada insumo necesita una selección';
+    if (!ingredientsById.has(line.ingredientId)) {
+      return 'Uno de los insumos ya no está disponible; selecciona otro';
+    }
+    if (!Number.isFinite(line.quantityUsed) || line.quantityUsed < 0.001) {
+      return 'La cantidad debe ser al menos 0.001';
+    }
+  }
+  if (!Number.isFinite(utilidad) || utilidad < 0) {
+    return 'La utilidad debe ser un número válido';
+  }
+  return null;
+}
+
 function RecipeForm({
   initialName,
   initialIngredients,
+  initialIngredientNames,
   initialUtilidad,
   submitLabel,
   busy,
   serverError,
-  validationError,
   onSubmit,
   onCancel,
 }: {
   initialName?: string;
-  initialIngredients?: RecipeIngredient[];
+  initialIngredients?: RecipeIngredientInput[];
+  initialIngredientNames?: Record<string, string | undefined>;
   initialUtilidad?: number;
   submitLabel: string;
   busy: boolean;
   serverError: string | null;
-  validationError: string | null;
   onSubmit: (input: {
     name: string;
-    ingredients: RecipeIngredient[];
+    ingredients: RecipeIngredientInput[];
     utilidad: number;
   }) => void;
   onCancel?: () => void;
 }) {
+  // The recipe references the shared insumo catalog, so the form cannot offer a
+  // usable row (nor a valid submission) until the catalog is loaded.
+  const ingredientsQuery = useIngredients();
+  const catalog = ingredientsQuery.data ?? [];
+  const ingredientsById = useMemo(
+    () => new Map(catalog.map((ingredient) => [ingredient.id, ingredient])),
+    [catalog],
+  );
+
   const [name, setName] = useState(initialName ?? '');
   const [utilidad, setUtilidad] = useState(initialUtilidad ?? 35);
-  const [ingredients, setIngredients] = useState<RecipeIngredient[]>(
+  const [ingredients, setIngredients] = useState<RecipeIngredientInput[]>(
     initialIngredients && initialIngredients.length > 0
       ? initialIngredients
-      : [{ nombre: '', cantidadGr: 0, precioKg: 0 }],
+      : [{ ingredientId: '', quantityUsed: 0 }],
   );
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const breakdown = useMemo(
-    () => calculateCost(ingredients, utilidad),
-    [ingredients, utilidad],
+    () => calculateCost(ingredients, ingredientsById, utilidad),
+    [ingredients, ingredientsById, utilidad],
   );
 
-  const updateIngredient = (index: number, next: RecipeIngredient) => {
+  const updateIngredient = (index: number, next: RecipeIngredientInput) => {
     setIngredients((prev) => prev.map((row, i) => (i === index ? next : row)));
   };
 
   const addIngredient = () => {
     setIngredients((prev) => [
       ...prev,
-      { nombre: '', cantidadGr: 0, precioKg: 0 },
+      { ingredientId: '', quantityUsed: 0 },
     ]);
   };
 
@@ -158,8 +230,59 @@ function RecipeForm({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSubmit({ name: name.trim(), ingredients, utilidad });
+    setValidationError(null);
+    const trimmedName = name.trim();
+    const v = validateRecipe(trimmedName, ingredients, ingredientsById, utilidad);
+    if (v) {
+      setValidationError(v);
+      return;
+    }
+    onSubmit({ name: trimmedName, ingredients, utilidad });
   };
+
+  if (ingredientsQuery.isLoading) {
+    return (
+      <div className="space-y-2" aria-busy="true">
+        <div className="h-4 w-2/3 rounded bg-slate-200 animate-pulse" />
+        <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
+        <p className="text-sm text-slate-600">Cargando insumos…</p>
+      </div>
+    );
+  }
+
+  if (ingredientsQuery.isError) {
+    return (
+      <div className="space-y-3 text-slate-700">
+        <p>
+          No pudimos cargar los insumos. Sin el catálogo no es posible armar la
+          receta.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            void ingredientsQuery.refetch();
+          }}
+          className="rounded bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  if (catalog.length === 0) {
+    return (
+      <div className="space-y-2 text-slate-600">
+        <p>Para crear una receta primero necesitas insumos en el catálogo.</p>
+        <Link
+          to="/vendor/ingredients"
+          className="inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
+        >
+          Crear insumos →
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -191,20 +314,23 @@ function RecipeForm({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-700">Ingredientes</span>
+          <span className="text-sm font-medium text-slate-700">Insumos</span>
           <button
             type="button"
             onClick={addIngredient}
             className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
           >
-            Agregar ingrediente
+            Agregar insumo
           </button>
         </div>
         <div className="space-y-3">
           {ingredients.map((row, index) => (
             <IngredientRow
               key={index}
-              ingredient={row}
+              line={row}
+              ingredient={ingredientsById.get(row.ingredientId)}
+              catalog={catalog}
+              missingIngredientName={initialIngredientNames?.[row.ingredientId]}
               onChange={(next) => updateIngredient(index, next)}
               onRemove={() => removeIngredient(index)}
               canRemove={ingredients.length > 1}
@@ -268,32 +394,6 @@ function RecipeForm({
   );
 }
 
-function validateRecipe(
-  name: string,
-  ingredients: RecipeIngredient[],
-  utilidad: number,
-): string | null {
-  if (name.length < 1 || name.length > 200) {
-    return 'El nombre debe tener entre 1 y 200 caracteres';
-  }
-  if (ingredients.length < 1) {
-    return 'Agrega al menos un ingrediente';
-  }
-  for (const ing of ingredients) {
-    if (!ing.nombre.trim()) return 'Cada ingrediente necesita un nombre';
-    if (!Number.isFinite(ing.cantidadGr) || ing.cantidadGr < 0) {
-      return 'La cantidad debe ser un número válido';
-    }
-    if (!Number.isFinite(ing.precioKg) || ing.precioKg < 0) {
-      return 'El precio debe ser un número válido';
-    }
-  }
-  if (!Number.isFinite(utilidad) || utilidad < 0) {
-    return 'La utilidad debe ser un número válido';
-  }
-  return null;
-}
-
 function RecipeCard({
   recipe,
   canManage,
@@ -313,7 +413,7 @@ function RecipeCard({
         <div className="space-y-1">
           <h3 className="text-lg font-semibold text-slate-900">{recipe.name}</h3>
           <p className="text-sm text-slate-600">
-            {recipe.ingredients.length} ingrediente
+            {recipe.ingredients.length} insumo
             {recipe.ingredients.length === 1 ? '' : 's'} · Utilidad{' '}
             {formatPercent(recipe.utilidad)}
           </p>
@@ -360,11 +460,9 @@ function EditModal({
 }) {
   const recipeQuery = useRecipe(recipeId);
   const update = useUpdateRecipe();
-  const [validationError, setValidationError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
   useEffect(() => {
-    setValidationError(null);
     setServerError(null);
   }, [recipeId]);
 
@@ -398,18 +496,26 @@ function EditModal({
 
   const recipe = recipeQuery.data;
 
+  // Convert the read lines (with nested insumo) back to the write shape the
+  // form edits. The nested name only labels a line whose insumo disappeared
+  // from the catalog, so the select can show it instead of a blank value.
+  const initialIngredients: RecipeIngredientInput[] = recipe.ingredients.map(
+    (line) => ({
+      ingredientId: line.ingredientId,
+      quantityUsed: line.quantityUsed,
+    }),
+  );
+  const initialIngredientNames: Record<string, string | undefined> = {};
+  for (const line of recipe.ingredients) {
+    initialIngredientNames[line.ingredientId] = line.ingredient?.name;
+  }
+
   const submit = (input: {
     name: string;
-    ingredients: RecipeIngredient[];
+    ingredients: RecipeIngredientInput[];
     utilidad: number;
   }) => {
-    setValidationError(null);
     setServerError(null);
-    const v = validateRecipe(input.name, input.ingredients, input.utilidad);
-    if (v) {
-      setValidationError(v);
-      return;
-    }
     update.mutate(
       {
         id: recipe.id,
@@ -425,7 +531,9 @@ function EditModal({
         },
         onError: (err) => {
           const apiErr = toApiError(err);
-          if (apiErr.status === 403) {
+          if (apiErr.status === 400) {
+            setServerError(badRequestMessage(err));
+          } else if (apiErr.status === 403) {
             setServerError('Solo el creador puede editar esta receta');
           } else if (apiErr.status === 404) {
             setServerError('La receta ya no existe');
@@ -441,53 +549,16 @@ function EditModal({
     <ModalShell title="Editar receta" onClose={onClose}>
       <RecipeForm
         initialName={recipe.name}
-        initialIngredients={recipe.ingredients}
+        initialIngredients={initialIngredients}
+        initialIngredientNames={initialIngredientNames}
         initialUtilidad={recipe.utilidad}
         submitLabel="Guardar cambios"
         busy={update.isPending}
-        validationError={validationError}
         serverError={serverError}
         onSubmit={submit}
         onCancel={onClose}
       />
     </ModalShell>
-  );
-}
-
-function ModalShell({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-lg space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded p-1 text-slate-500 hover:bg-slate-100"
-            aria-label="Cerrar"
-          >
-            ×
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
   );
 }
 
@@ -497,9 +568,6 @@ export function VendorRecipesPage() {
   const create = useCreateRecipe();
   const remove = useDeleteRecipe();
 
-  const [createValidationError, setCreateValidationError] = useState<
-    string | null
-  >(null);
   const [createServerError, setCreateServerError] = useState<string | null>(
     null,
   );
@@ -532,16 +600,10 @@ export function VendorRecipesPage() {
 
   const handleCreate = (input: {
     name: string;
-    ingredients: RecipeIngredient[];
+    ingredients: RecipeIngredientInput[];
     utilidad: number;
   }) => {
-    setCreateValidationError(null);
     setCreateServerError(null);
-    const v = validateRecipe(input.name, input.ingredients, input.utilidad);
-    if (v) {
-      setCreateValidationError(v);
-      return;
-    }
     create.mutate(
       {
         name: input.name,
@@ -554,7 +616,9 @@ export function VendorRecipesPage() {
         },
         onError: (err) => {
           const apiErr = toApiError(err);
-          if (apiErr.status === 403) {
+          if (apiErr.status === 400) {
+            setCreateServerError(badRequestMessage(err));
+          } else if (apiErr.status === 403) {
             setCreateServerError('Solo los vendedores pueden crear recetas');
           } else if (apiErr.status === 409) {
             setCreateServerError(apiErr.message || 'Conflicto al crear la receta');
@@ -678,13 +742,13 @@ export function VendorRecipesPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Crear nueva receta</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Define nombre, ingredientes y utilidad. Calculamos el costo y el precio sugerido al guardar.
+          Elige insumos del catálogo y su cantidad. Calculamos el costo y el precio
+          sugerido al guardar.
         </p>
         <div className="mt-4">
           <RecipeForm
             submitLabel="Crear receta"
             busy={create.isPending}
-            validationError={createValidationError}
             serverError={createServerError}
             onSubmit={handleCreate}
           />
