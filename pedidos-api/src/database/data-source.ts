@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import { loadAndValidateEnvSync } from '../config/validate-env';
+import { Ingredient } from '../modules/ingredients/ingredient.entity';
 import { Order } from '../modules/orders/order.entity';
 import { Product } from '../modules/products/product.entity';
 import { PushSubscription } from '../modules/push/push-subscription.entity';
@@ -21,7 +22,7 @@ export default new DataSource({
   database: env.DB_DATABASE,
   username: env.DB_USERNAME,
   password: env.DB_PASSWORD,
-  entities: [User, Recipe, Product, Order, PushSubscription],
+  entities: [User, Recipe, Ingredient, Product, Order, PushSubscription],
   migrations: ['src/database/migrations/*.ts'],
   synchronize: false,
 });
