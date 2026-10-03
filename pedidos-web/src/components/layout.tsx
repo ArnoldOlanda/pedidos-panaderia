@@ -28,6 +28,7 @@ export function Layout() {
           {user?.role === 'VENDEDOR' && (
             <>
               <Link to="/vendor/recipes" className="hover:underline">Mis recetas</Link>
+              <Link to="/vendor/ingredients" className="hover:underline">Insumos</Link>
               <Link to="/vendor/products" className="hover:underline">Mis productos</Link>
               <Link to="/vendor/orders" className="hover:underline">Pedidos</Link>
             </>
