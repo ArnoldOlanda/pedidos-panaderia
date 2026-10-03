@@ -1,9 +1,23 @@
 import { api } from './api';
+import type { Ingredient } from './ingredients';
 
+// Read shape of a persisted recipe line: the backend joins the shared insumo so
+// the UI can show its name and derive the unit label/cost from the catalog.
 export interface RecipeIngredient {
-  nombre: string;
-  cantidadGr: number;
-  precioKg: number;
+  id: string;
+  recipeId: string;
+  ingredientId: string;
+  quantityUsed: number;
+  position: number;
+  ingredient: Ingredient;
+}
+
+// Write shape: the recipe stores only the insumo reference and the quantity.
+// Unit pairs and price belong to the insumo catalog, so the recipe never sends
+// a unit or a price.
+export interface RecipeIngredientInput {
+  ingredientId: string;
+  quantityUsed: number;
 }
 
 export interface Recipe {
@@ -19,7 +33,7 @@ export interface Recipe {
 
 export interface CreateRecipeInput {
   name: string;
-  ingredients: RecipeIngredient[];
+  ingredients: RecipeIngredientInput[];
   utilidad?: number;
 }
 
