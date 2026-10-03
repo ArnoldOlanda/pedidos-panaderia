@@ -11,6 +11,7 @@ y con la unidad de gramos implícita en el nombre del campo.
 
 - Started: 2026-10-03
 - Current task: — (tareas 1-7 hechas; T8 diferida a un PR aparte)
+- Merged: f2b7276 en `main` (review local sin blockers; sin PRs remotos)
 - Chain strategy: Feature Branch Chain con tracker
 - Tracker branch: feat/ingredient-catalog
 - RDD: off en este clon
@@ -139,4 +140,5 @@ npm run db:seed
 <!-- 2026-10-03: 3+4 done — 510a900 — recipe_ingredients table + normalized line entity; recipes.ingredients jsonb dropped from InitRecipes in place; cost now sum(quantityUsed * purchasePrice / conversionFactor) in one transaction; 6.9/9.315 and 13.8/20.7 preserved; suite 68 green -->
 <!-- 2026-10-03: 5+6 done — f68c81d — client de insumos (lib + 6 hooks + unit-pairs) y página /vendor/ingredients con factor de conversión derivado del backend; sin tabla duplicada en el frontend; typecheck + build verdes -->
 <!-- 2026-10-03: 7 done — df30977 — formulario de receta reconstruido sobre el catálogo (select de insumo + cantidad en su unidad + costo por línea de solo lectura); preview operand-identical al backend; estados vacío/cargando/error del catálogo bloquean el submit; ModalShell extraído a components/ y compartido por las dos páginas -->
-<!-- 2026-10-03: cadena completa (1-7). Nada pusheado y ningún PR abierto: no hay gh CLI en el host. Los cuerpos de PR pendientes de redactar. -->
+<!-- 2026-10-03: review local del diff integrado (2 pasadas read-only independientes): sin blockers, 8 advisories. Detalle en la sección Open advisories. -->
+<!-- 2026-10-03: MERGEADO a main — f2b7276 — merge --no-ff de feat/ingredient-catalog-recipes-ui (ramas lineales, tracker ancestro); gate post-merge: 68 tests backend + typecheck/build web verdes -->
