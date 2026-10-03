@@ -10,7 +10,7 @@ y con la unidad de gramos implícita en el nombre del campo.
 ## Status
 
 - Started: 2026-10-03
-- Current task: 3
+- Current task: 5
 - Chain strategy: Feature Branch Chain con tracker
 - Tracker branch: feat/ingredient-catalog
 - RDD: off en este clon
@@ -19,11 +19,13 @@ y con la unidad de gramos implícita en el nombre del campo.
 
 ```
 main
- └── feat/ingredient-catalog              ← tracker (PR draft, no-merge)
+ └── feat/ingredient-catalog               ← tracker (PR draft, no-merge)
       ↑ PR #1  base: feat/ingredient-catalog
-      └── feat/ingredient-catalog-api      (tareas 1-4, backend)
+      └── feat/ingredient-catalog-api       (tareas 1-2, catálogo aditivo)
            ↑ PR #2  base: feat/ingredient-catalog-api
-           └── feat/ingredient-catalog-web (tareas 5-8, frontend)
+           └── feat/ingredient-catalog-recipes (tareas 3-4, contrato de receta)
+                ↑ PR #3  base: feat/ingredient-catalog-recipes
+                └── feat/ingredient-catalog-web (tareas 5-8, frontend)
 ```
 
 ## Decisions (aprobadas 2026-10-03)
@@ -71,14 +73,16 @@ números (`totalCost 6.9`, `suggestedPrice 9.315`), así el reviewer ve un cambi
 
 ## Tasks
 
-### PR 1 — backend (feat/ingredient-catalog-api)
+### PR 1 — ingredients catalog (feat/ingredient-catalog-api)
 
 - [x] **1** — migration `ingredients` + entity + unit enum + registration
 - [x] **2** — ingredients CRUD module + `GET /ingredients/units` + 409 on duplicate name
-- [ ] **3** — `recipe_ingredients` table + entity + `InitRecipes` edited in place
-- [ ] **4** — recipes cost from the ingredient catalog (transaction) + spec updates
+- [x] **3** — `recipe_ingredients` table + entity + `InitRecipes` edited in place
+- [x] **4** — recipes cost from the ingredient catalog (transaction) + spec updates
 
-### PR 2 — frontend (feat/ingredient-catalog-web)
+### PR 2 — recipe normalization (feat/ingredient-catalog-recipes)
+
+### PR 3 — frontend (feat/ingredient-catalog-web)
 
 - [ ] **5** — `lib/ingredients.ts` + ingredient hooks + unit-pairs hook + nav/route
 - [ ] **6** — `/vendor/ingredients` CRUD page
@@ -107,7 +111,17 @@ npm run db:seed
 - No controller/e2e coverage: the `GET /ingredients/units` route order and the
   read/write guard placement are verified by inspection only.
 - A name made only of zero-width characters still passes validation.
-- The `23503` -> 409 mapping cannot be exercised until task 3 adds the FK.
+- The in-use conflict (`23503` -> 409 on `DELETE /ingredients/:id`) is reachable
+  now that task 3 added the FK, but no integration test exercises it.
+- The delete-then-insert ordering of the recipe line replacement is proven only
+  by mocked call order; no Postgres integration test confirms it.
+- `CreateRecipeDto.utilidad` has no `@IsOptional()`, so omitting `utilidad` on
+  `POST /recipes` is rejected with 400 instead of defaulting to 35 (pre-existing,
+  unrelated to this feature).
+- FK/PK constraint names exist only in the migrations (repo-wide pattern), so a
+  future `migration:generate` may emit spurious renames.
+- `calculate()` keeps an unreachable per-line fallback for a missing ingredient,
+  because `resolveIngredients()` already guarantees presence.
 - Money stays `float` (inherited from `recipes`/`products`); no cent rounding.
 
 ## Progress Log
@@ -115,3 +129,4 @@ npm run db:seed
 <!-- entries appended here after each task lands -->
 <!-- 2026-10-03: 1 done — 4f9fbb6 — ingredients table + entity + ALLOWED_UNIT_PAIRS + CLI data source registration -->
 <!-- 2026-10-03: 2 done — 9150044 — ingredients CRUD module: JWT reads, VENDEDOR writes, 23505/23503 -> 409, merged-pair validation on PATCH; 21 service tests, suite 56 green -->
+<!-- 2026-10-03: 3+4 done — 510a900 — recipe_ingredients table + normalized line entity; recipes.ingredients jsonb dropped from InitRecipes in place; cost now sum(quantityUsed * purchasePrice / conversionFactor) in one transaction; 6.9/9.315 and 13.8/20.7 preserved; suite 68 green -->
