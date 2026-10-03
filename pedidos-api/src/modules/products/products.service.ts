@@ -18,7 +18,18 @@ export class ProductsService {
   ) {}
 
   private todayString(): string {
-    return ymd(new Date());
+    // The product is consumed in Lima; the catalog day boundary must match
+    // America/Lima, not the server's UTC clock. Otherwise a vendor who opens
+    // the form right around midnight UTC can submit a date the backend
+    // rejects with "availableDate must be today or later" because the
+    // server already rolled to the next Lima day.
+    const f = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    return f.format(new Date());
   }
 
   async listTodayPublic(): Promise<Product[]> {

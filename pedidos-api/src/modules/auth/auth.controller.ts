@@ -3,9 +3,11 @@ import {
   Controller,
   Get,
   HttpCode,
+  NotFoundException,
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -50,14 +52,29 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(204)
-  logout(@Res({ passthrough: false }) res: Response): void {
+  logout(@Res({ passthrough: true }) res: Response): void {
     this.auth.logout(res);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async me(@Req() req: AuthedRequest): Promise<unknown> {
-    return this.auth.getMe(req.user.id);
+  async me(
+    @Req() req: AuthedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<unknown> {
+    try {
+      return await this.auth.getMe(req.user.id);
+    } catch (err) {
+      // Stale cookie: the JWT references a user that no longer exists
+      // (e.g. db reset, seed regenerated, or the seed dropped buyers).
+      // Clear the cookie so the bootstrap treats the next request as
+      // anonymous instead of failing with 404.
+      if (err instanceof NotFoundException) {
+        this.auth.logout(res);
+        throw new UnauthorizedException('vendor session no longer valid');
+      }
+      throw err;
+    }
   }
 
   /**
