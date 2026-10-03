@@ -8,10 +8,7 @@ const VENDORS: Array<Pick<User, 'dni' | 'name'> & { role: UserRole }> = [
   { dni: '33333333', name: 'Carla Vendedora', role: 'VENDEDOR' },
 ];
 
-const BUYERS: Array<Pick<User, 'dni' | 'name'> & { role: UserRole }> = [
-  { dni: '22222222', name: 'Bruno Comprador', role: 'COMPRADOR' },
-  { dni: '44444444', name: 'Diego Comprador', role: 'COMPRADOR' },
-];
+const BUYERS: Array<Pick<User, 'dni' | 'name'> & { role: UserRole }> = [];
 
 const ALL = [...VENDORS, ...BUYERS];
 

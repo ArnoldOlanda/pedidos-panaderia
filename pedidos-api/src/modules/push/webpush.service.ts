@@ -37,14 +37,14 @@ export class WebpushService implements OnModuleInit {
     this.logger.log(`VAPID configured for ${subject}`);
   }
 
-  async sendToUser(
-    userId: string,
+  async sendToDevice(
+    deviceId: string,
     payload: PushPayload,
   ): Promise<PushDeliveryResult> {
     if (!this.initialized) {
       throw new Error('WebpushService not initialized');
     }
-    const subs = await this.subscriptions.listForUser(userId);
+    const subs = await this.subscriptions.listForDevice(deviceId);
     if (subs.length === 0) {
       return { delivered: 0, removed: 0 };
     }
@@ -67,14 +67,14 @@ export class WebpushService implements OnModuleInit {
       } catch (err) {
         const code = (err as { statusCode?: number }).statusCode ?? 0;
         if (code === 404 || code === 410) {
-          await this.subscriptions.unsubscribe(sub.userId, sub.endpoint);
+          await this.subscriptions.unsubscribe(sub.deviceId, sub.endpoint);
           removed += 1;
           this.logger.warn(
-            `removed stale push (status ${code}) for user ${userId}`,
+            `removed stale push (status ${code}) for device ${deviceId}`,
           );
         } else {
           this.logger.error(
-            `push failed for user ${userId} endpoint ${sub.endpoint}: ${(err as Error).message}`,
+            `push failed for device ${deviceId} endpoint ${sub.endpoint}: ${(err as Error).message}`,
           );
         }
       }
