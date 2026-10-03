@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import type { JwtUser } from '../auth/strategies/jwt.strategy';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { ByDniQueryDto } from './dto/by-dni.query.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { Order } from './order.entity';
 
@@ -25,24 +27,18 @@ interface AuthedRequest extends Request {
 }
 
 @Controller('orders')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class OrdersController {
   constructor(private readonly orders: OrdersService) {}
 
   @Post()
-  @Roles('COMPRADOR')
   @HttpCode(201)
-  async create(
-    @Body() dto: CreateOrderDto,
-    @Req() req: AuthedRequest,
-  ): Promise<Order> {
-    return this.orders.create(dto, req.user.id);
+  async create(@Body() dto: CreateOrderDto): Promise<Order> {
+    return this.orders.create(dto);
   }
 
-  @Get('mine')
-  @UseGuards(JwtAuthGuard)
-  async mine(@Req() req: AuthedRequest): Promise<Order[]> {
-    return this.orders.listMine(req.user.id);
+  @Get()
+  async byDni(@Query() query: ByDniQueryDto): Promise<Order[]> {
+    return this.orders.listByDni(query.dni);
   }
 
   @Get('by-product/:productId')

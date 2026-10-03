@@ -24,4 +24,8 @@ export async function meRequest(): Promise<AuthUser> {
   return { id: data.id, name: data.name, role: data.role };
 }
 
+export async function logoutRequest(): Promise<void> {
+  await api.post('/auth/logout');
+}
+
 export { toApiError };

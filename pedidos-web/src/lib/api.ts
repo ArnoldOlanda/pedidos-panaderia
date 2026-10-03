@@ -1,9 +1,16 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { getOrCreateDeviceId } from './device';
 
 export const api = axios.create({
   baseURL: '/api',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
+});
+
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  config.headers = config.headers ?? {};
+  config.headers['X-Device-Id'] = getOrCreateDeviceId();
+  return config;
 });
 
 export interface ApiError {

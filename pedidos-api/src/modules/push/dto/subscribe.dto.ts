@@ -4,6 +4,7 @@ import {
   IsString,
   IsUrl,
   MaxLength,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -24,4 +25,9 @@ export class SubscribeDto {
   @ValidateNested()
   @Type(() => PushKeysDto)
   keys!: PushKeysDto;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(64)
+  deviceId!: string;
 }

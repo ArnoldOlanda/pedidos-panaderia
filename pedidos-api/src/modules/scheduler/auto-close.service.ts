@@ -1,15 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ProductsService } from '../products/products.service';
-import { WebpushService } from '../push/webpush.service';
 
 @Injectable()
 export class AutoCloseService {
   private readonly logger = new Logger(AutoCloseService.name);
-  constructor(
-    private readonly products: ProductsService,
-    private readonly webpush: WebpushService,
-  ) {}
+  constructor(private readonly products: ProductsService) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleCron(): Promise<void> {
@@ -25,20 +21,18 @@ export class AutoCloseService {
       return;
     }
 
-    if (closed.length === 0) return;
-
-    try {
+    // Vendor-side push notifications on auto-close used to fire via
+    // webpush.sendToUser(createdById, …). The push module is now strictly
+    // device-scoped (X-Device-Id), and we no longer keep a user → deviceId
+    // registry. Vendors still see the auto-close in the web UI when they
+    // refresh their products list; a future "vendor default device" feature
+    // can re-enable this loop without changing the public push contract.
+    if (closed.length > 0) {
       for (const p of closed) {
-        await this.webpush.sendToUser(p.createdById, {
-          title: 'Tu producto se cerró',
-          body: `${p.name} cerró su ventana de pedidos`,
-          tag: `product-${p.id}`,
-        });
+        this.logger.log(
+          `Auto-closed product ${p.id} (${p.name}) — vendor ${p.createdById} notified via UI`,
+        );
       }
-    } catch (err) {
-      this.logger.error(
-        `vendor push loop failed: ${(err as Error).message}`,
-      );
     }
   }
 }

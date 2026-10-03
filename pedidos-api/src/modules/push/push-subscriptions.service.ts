@@ -27,14 +27,14 @@ export class PushSubscriptionsService {
     return driverCode === PushSubscriptionsService.PG_UNIQUE_VIOLATION;
   }
 
-  async subscribe(userId: string, dto: SubscribeDto): Promise<PushSubscription> {
+  async subscribe(deviceId: string, dto: SubscribeDto): Promise<PushSubscription> {
     const existing = await this.subs.findOne({
       where: { endpoint: dto.endpoint },
     });
     if (existing) {
-      if (existing.userId !== userId) {
+      if (existing.deviceId !== deviceId) {
         throw new ConflictException(
-          'endpoint already registered to another user',
+          'endpoint already registered to another device',
         );
       }
       existing.p256dh = dto.keys.p256dh;
@@ -46,14 +46,14 @@ export class PushSubscriptionsService {
         // a domain conflict rather than a 500.
         if (this.isUniqueEndpointViolation(err)) {
           throw new ConflictException(
-            'endpoint already registered to another user',
+            'endpoint already registered to another device',
           );
         }
         throw err;
       }
     }
     const created = this.subs.create({
-      userId,
+      deviceId,
       endpoint: dto.endpoint,
       p256dh: dto.keys.p256dh,
       auth: dto.keys.auth,
@@ -66,21 +66,21 @@ export class PushSubscriptionsService {
       // conflict from this caller's perspective.
       if (this.isUniqueEndpointViolation(err)) {
         throw new ConflictException(
-          'endpoint already registered to another user',
+          'endpoint already registered to another device',
         );
       }
       throw err;
     }
   }
 
-  async unsubscribe(userId: string, endpoint: string): Promise<boolean> {
-    const result = await this.subs.delete({ userId, endpoint });
+  async unsubscribe(deviceId: string, endpoint: string): Promise<boolean> {
+    const result = await this.subs.delete({ deviceId, endpoint });
     return (result.affected ?? 0) > 0;
   }
 
-  async listForUser(userId: string): Promise<PushSubscription[]> {
+  async listForDevice(deviceId: string): Promise<PushSubscription[]> {
     return this.subs.find({
-      where: { userId },
+      where: { deviceId },
       order: { updatedAt: 'DESC' },
     });
   }
@@ -92,14 +92,14 @@ export class PushSubscriptionsService {
     return errorStatusCode === 404 || errorStatusCode === 410;
   }
 
-  async requireOwned(
+  async requireOwnedByDevice(
     sub: PushSubscription,
-    userId: string,
+    deviceId: string,
   ): Promise<PushSubscription> {
     if (!sub) {
       throw new NotFoundException('push subscription not found');
     }
-    if (sub.userId !== userId) {
+    if (sub.deviceId !== deviceId) {
       throw new NotFoundException('push subscription not found');
     }
     return sub;

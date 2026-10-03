@@ -7,7 +7,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Product } from '../products/product.entity';
-import { User } from '../users/user.entity';
 
 @Entity('orders')
 export class Order {
@@ -21,12 +20,20 @@ export class Order {
   @JoinColumn({ name: 'productId' })
   product!: Product;
 
-  @Column({ type: 'uuid' })
-  userId!: string;
+  @Column({ type: 'varchar', length: 8 })
+  buyerDni!: string;
 
-  @ManyToOne(() => User, { eager: false })
-  @JoinColumn({ name: 'userId' })
-  user!: User;
+  @Column({ type: 'varchar', length: 120 })
+  buyerName!: string;
+
+  @Column({ type: 'varchar', length: 120 })
+  buyerApellidos!: string;
+
+  @Column({ type: 'varchar', length: 120 })
+  buyerCarrera!: string;
+
+  @Column({ type: 'uuid' })
+  buyerDeviceId!: string;
 
   @Column({ type: 'int' })
   quantity!: number;

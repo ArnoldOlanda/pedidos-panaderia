@@ -21,7 +21,7 @@ export class OrdersService {
     private readonly webpush: WebpushService,
   ) {}
 
-  async create(dto: CreateOrderDto, userId: string): Promise<Order> {
+  async create(dto: CreateOrderDto): Promise<Order> {
     const product = await this.products.findOne({ where: { id: dto.productId } });
     if (!product) {
       throw new NotFoundException(`product ${dto.productId} not found`);
@@ -34,18 +34,22 @@ export class OrdersService {
     }
     const order = this.orders.create({
       productId: dto.productId,
-      userId,
+      buyerDni: dto.buyerDni,
+      buyerName: dto.buyerName,
+      buyerApellidos: dto.buyerApellidos,
+      buyerCarrera: dto.buyerCarrera,
+      buyerDeviceId: dto.buyerDeviceId,
       quantity: dto.quantity,
       status: 'PENDIENTE',
     });
     return this.orders.save(order);
   }
 
-  async listMine(userId: string): Promise<Order[]> {
+  async listByDni(dni: string): Promise<Order[]> {
     return this.orders.find({
-      where: { userId },
+      where: { buyerDni: dni },
       order: { createdAt: 'DESC' },
-      relations: { product: true, user: true },
+      relations: { product: true },
     });
   }
 
@@ -63,7 +67,7 @@ export class OrdersService {
     return this.orders.find({
       where: { productId },
       order: { createdAt: 'DESC' },
-      relations: { user: true, product: true },
+      relations: { product: true },
     });
   }
 
@@ -102,7 +106,7 @@ export class OrdersService {
 
     if (saved.status === 'LISTO') {
       try {
-        await this.webpush.sendToUser(saved.userId, {
+        await this.webpush.sendToDevice(saved.buyerDeviceId, {
           title: 'Tu pedido está listo',
           body: `Pasá a recoger tu pedido de ${saved.product.name}`,
           tag: `order-${saved.id}`,

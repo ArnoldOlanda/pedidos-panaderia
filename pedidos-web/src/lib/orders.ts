@@ -9,31 +9,37 @@ export interface OrderProductSummary {
   closed: boolean;
 }
 
-export interface OrderUserSummary {
-  id: string;
-  dni: string;
-  name: string;
-  role: 'COMPRADOR' | 'VENDEDOR';
-}
-
 export interface Order {
   id: string;
   productId: string;
-  userId: string;
+  buyerDni: string;
+  buyerName: string;
+  buyerApellidos: string;
+  buyerCarrera: string;
+  buyerDeviceId: string;
   quantity: number;
   status: 'PENDIENTE' | 'LISTO' | 'ENTREGADO';
   createdAt: string;
   product: OrderProductSummary;
-  user: OrderUserSummary;
 }
 
-export async function listMyOrders(): Promise<Order[]> {
-  const { data } = await api.get<Order[]>('/orders/mine');
+export interface PlaceOrderInput {
+  productId: string;
+  quantity: number;
+  buyerDni: string;
+  buyerName: string;
+  buyerApellidos: string;
+  buyerCarrera: string;
+  buyerDeviceId: string;
+}
+
+export async function listOrdersByDni(dni: string): Promise<Order[]> {
+  const { data } = await api.get<Order[]>('/orders', { params: { dni } });
   return data;
 }
 
-export async function placeOrder(productId: string, quantity: number): Promise<Order> {
-  const { data } = await api.post<Order>('/orders', { productId, quantity });
+export async function placeOrder(input: PlaceOrderInput): Promise<Order> {
+  const { data } = await api.post<Order>('/orders', input);
   return data;
 }
 

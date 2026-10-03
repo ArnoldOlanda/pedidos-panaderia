@@ -82,3 +82,4 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 <!-- 2026-10-02: chore config-module done — 811b0a4 — @nestjs/config + class-validator env schema across backend (main, app, auth, push, typeorm CLI, seed) -->
 <!-- 2026-10-02: chore db-env-laravel done — 13b3aa0 — DB_HOST/PORT/DATABASE/USERNAME/PASSWORD env convention -->
 <!-- 2026-10-02: 2.7 done — 51df05f — recipe PATCH/DELETE + vendor recipes management UI -->
+<!-- 2026-10-02: chore buyer-snapshot-no-auth done — <commit-hash> — buyers anonymous with order snapshot + device UUID for push; vendor-only auth + logout -->

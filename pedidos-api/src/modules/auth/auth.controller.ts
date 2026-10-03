@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
-import { AuthService, JwtPayload } from './auth.service';
+import { AuthService, AUTH_COOKIE_NAME, JwtPayload } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -21,7 +21,6 @@ interface AuthedRequest extends Request {
   user: JwtUser;
 }
 
-const COOKIE_NAME = 'auth_token';
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Controller('auth')
@@ -39,7 +38,7 @@ export class AuthController {
   ): Promise<{ user: unknown }> {
     const { user, token } = await this.auth.login(dto);
     const isProd = this.config.get<string>('NODE_ENV') === 'production';
-    res.cookie(COOKIE_NAME, token, {
+    res.cookie(AUTH_COOKIE_NAME, token, {
       httpOnly: true,
       sameSite: isProd ? 'none' : 'lax',
       secure: isProd,
@@ -47,6 +46,12 @@ export class AuthController {
       maxAge: SEVEN_DAYS_MS,
     });
     return { user };
+  }
+
+  @Post('logout')
+  @HttpCode(204)
+  logout(@Res({ passthrough: false }) res: Response): void {
+    this.auth.logout(res);
   }
 
   @Get('me')

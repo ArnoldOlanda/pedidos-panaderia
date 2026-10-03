@@ -9,10 +9,13 @@ export interface MySubscription {
 }
 
 // Shape the browser's PushSubscription serializes to (a subset of what
-// service-worker subscribe() returns).
+// service-worker subscribe() returns). The backend persists deviceId alongside
+// the endpoint so the LISTO push can target the right browser even when there
+// is no logged-in user.
 export interface SerializedPushSubscription {
   endpoint: string;
   keys: { p256dh: string; auth: string };
+  deviceId: string;
 }
 
 export async function getPublicKey(): Promise<string> {
