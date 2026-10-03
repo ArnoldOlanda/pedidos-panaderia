@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './app.controller';
 import { validateEnv } from './config/validate-env';
 import { AuthModule } from './modules/auth/auth.module';
+import { Ingredient } from './modules/ingredients/ingredient.entity';
+import { IngredientsModule } from './modules/ingredients/ingredients.module';
 import { Order } from './modules/orders/order.entity';
 import { OrdersModule } from './modules/orders/orders.module';
 import { Product } from './modules/products/product.entity';
@@ -32,7 +34,7 @@ import { UsersModule } from './modules/users/users.module';
         database: config.getOrThrow<string>('DB_DATABASE'),
         username: config.getOrThrow<string>('DB_USERNAME'),
         password: config.getOrThrow<string>('DB_PASSWORD'),
-        entities: [User, Recipe, Product, Order, PushSubscription],
+        entities: [User, Recipe, Ingredient, Product, Order, PushSubscription],
         synchronize: false,
         migrations: ['dist/database/migrations/*.js'],
         migrationsRun: false,
@@ -41,6 +43,7 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     AuthModule,
     RecipesModule,
+    IngredientsModule,
     ProductsModule,
     OrdersModule,
     SchedulerModule,
