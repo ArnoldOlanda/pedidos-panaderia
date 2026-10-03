@@ -8,7 +8,7 @@ import { useCreateRecipe } from '../../hooks/use-create-recipe';
 import { useUpdateRecipe } from '../../hooks/use-update-recipe';
 import { useDeleteRecipe } from '../../hooks/use-delete-recipe';
 import { toApiError } from '../../lib/api';
-import { formatPrice } from '../../lib/format';
+import { formatPrice, formatUnitPrice } from '../../lib/format';
 import { INGREDIENT_UNIT_LABELS } from '../../lib/ingredients';
 import type { Ingredient } from '../../lib/ingredients';
 import type { Recipe, RecipeIngredientInput } from '../../lib/recipes';
@@ -79,9 +79,23 @@ function IngredientRow({
     ? `Cantidad (${INGREDIENT_UNIT_LABELS[ingredient.usageUnit]})`
     : 'Cantidad';
   const quantity = Number.isFinite(line.quantityUsed) ? line.quantityUsed : 0;
-  const partialCost = ingredient
-    ? quantity * (ingredient.purchasePrice / ingredient.conversionFactor)
+  // Same operand the backend multiplies: cost per usage unit. Showing it next
+  // to the quantity makes the line read as cantidad × precio = costo instead of
+  // asking the vendor to trust a number that comes out of nowhere.
+  const unitCost = ingredient
+    ? ingredient.purchasePrice / ingredient.conversionFactor
     : 0;
+  const partialCost = ingredient ? quantity * unitCost : 0;
+  const usageUnitLabel = ingredient
+    ? INGREDIENT_UNIT_LABELS[ingredient.usageUnit]
+    : '';
+  const purchaseUnitLabel = ingredient
+    ? INGREDIENT_UNIT_LABELS[ingredient.purchaseUnit]
+    : '';
+  // When the insumo is bought and used in the same unit the conversion factor is
+  // 1 and both prices are the same number; one line is enough in that case.
+  const showsConversion =
+    ingredient !== undefined && unitCost !== ingredient.purchasePrice;
   // Hide insumos already chosen by the OTHER rows, but never hide this row's
   // own selection, so a duplicate keeps its value visible instead of blanking.
   const options = catalog.filter(
@@ -94,7 +108,7 @@ function IngredientRow({
   const hasNoOptions = options.length === 0;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_120px_auto] gap-2 items-end">
+    <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_190px_120px_auto] gap-2 items-end">
       <label className="text-sm">
         <span className="text-slate-700">Insumo</span>
         <select
@@ -147,6 +161,26 @@ function IngredientRow({
           className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
         />
       </label>
+      <div className="text-sm">
+        <span className="text-slate-700">Precio</span>
+        {ingredient ? (
+          <>
+            <p className="mt-2 font-medium text-slate-900">
+              {formatPrice(ingredient.purchasePrice)}{' '}
+              <span className="text-xs font-normal text-slate-500">
+                por {purchaseUnitLabel}
+              </span>
+            </p>
+            {showsConversion && (
+              <p className="text-xs text-slate-500">
+                {formatUnitPrice(unitCost)} por {usageUnitLabel}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="mt-2 text-slate-400">—</p>
+        )}
+      </div>
       <div className="text-sm">
         <span className="text-slate-700">Costo</span>
         <p className="mt-2 font-medium text-slate-900">
