@@ -10,7 +10,7 @@ y con la unidad de gramos implícita en el nombre del campo.
 ## Status
 
 - Started: 2026-10-03
-- Current task: 5
+- Current task: 7
 - Chain strategy: Feature Branch Chain con tracker
 - Tracker branch: feat/ingredient-catalog
 - RDD: off en este clon
@@ -84,8 +84,8 @@ números (`totalCost 6.9`, `suggestedPrice 9.315`), así el reviewer ve un cambi
 
 ### PR 3 — frontend (feat/ingredient-catalog-web)
 
-- [ ] **5** — `lib/ingredients.ts` + ingredient hooks + unit-pairs hook + nav/route
-- [ ] **6** — `/vendor/ingredients` CRUD page
+- [x] **5** — `lib/ingredients.ts` + ingredient hooks + unit-pairs hook + nav/route
+- [x] **6** — `/vendor/ingredients` CRUD page
 - [ ] **7** — recipe form wired to the insumo select + live preview + empty state
 - [ ] **8** — seed starter ingredients (optional)
 
@@ -130,3 +130,4 @@ npm run db:seed
 <!-- 2026-10-03: 1 done — 4f9fbb6 — ingredients table + entity + ALLOWED_UNIT_PAIRS + CLI data source registration -->
 <!-- 2026-10-03: 2 done — 9150044 — ingredients CRUD module: JWT reads, VENDEDOR writes, 23505/23503 -> 409, merged-pair validation on PATCH; 21 service tests, suite 56 green -->
 <!-- 2026-10-03: 3+4 done — 510a900 — recipe_ingredients table + normalized line entity; recipes.ingredients jsonb dropped from InitRecipes in place; cost now sum(quantityUsed * purchasePrice / conversionFactor) in one transaction; 6.9/9.315 and 13.8/20.7 preserved; suite 68 green -->
+<!-- 2026-10-03: 5+6 done — f68c81d — client de insumos (lib + 6 hooks + unit-pairs) y página /vendor/ingredients con factor de conversión derivado del backend; sin tabla duplicada en el frontend; typecheck + build verdes -->
