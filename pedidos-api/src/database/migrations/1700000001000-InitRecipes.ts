@@ -9,7 +9,6 @@ export class InitRecipes1700000001000 implements MigrationInterface {
       CREATE TABLE "recipes" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "name" varchar(200) NOT NULL,
-        "ingredients" jsonb NOT NULL,
         "utilidad" float NOT NULL DEFAULT 35,
         "totalCost" float NOT NULL,
         "suggestedPrice" float NOT NULL,

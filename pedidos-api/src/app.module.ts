@@ -12,6 +12,7 @@ import { Product } from './modules/products/product.entity';
 import { ProductsModule } from './modules/products/products.module';
 import { PushSubscription } from './modules/push/push-subscription.entity';
 import { PushModule } from './modules/push/push.module';
+import { RecipeIngredient } from './modules/recipes/recipe-ingredient.entity';
 import { Recipe } from './modules/recipes/recipe.entity';
 import { RecipesModule } from './modules/recipes/recipes.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
@@ -34,7 +35,15 @@ import { UsersModule } from './modules/users/users.module';
         database: config.getOrThrow<string>('DB_DATABASE'),
         username: config.getOrThrow<string>('DB_USERNAME'),
         password: config.getOrThrow<string>('DB_PASSWORD'),
-        entities: [User, Recipe, Ingredient, Product, Order, PushSubscription],
+        entities: [
+          User,
+          Recipe,
+          RecipeIngredient,
+          Ingredient,
+          Product,
+          Order,
+          PushSubscription,
+        ],
         synchronize: false,
         migrations: ['dist/database/migrations/*.js'],
         migrationsRun: false,

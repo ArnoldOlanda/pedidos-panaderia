@@ -5,6 +5,7 @@ import { Ingredient } from '../modules/ingredients/ingredient.entity';
 import { Order } from '../modules/orders/order.entity';
 import { Product } from '../modules/products/product.entity';
 import { PushSubscription } from '../modules/push/push-subscription.entity';
+import { RecipeIngredient } from '../modules/recipes/recipe-ingredient.entity';
 import { Recipe } from '../modules/recipes/recipe.entity';
 import { User } from '../modules/users/user.entity';
 
@@ -22,7 +23,15 @@ export default new DataSource({
   database: env.DB_DATABASE,
   username: env.DB_USERNAME,
   password: env.DB_PASSWORD,
-  entities: [User, Recipe, Ingredient, Product, Order, PushSubscription],
+  entities: [
+    User,
+    Recipe,
+    RecipeIngredient,
+    Ingredient,
+    Product,
+    Order,
+    PushSubscription,
+  ],
   migrations: ['src/database/migrations/*.ts'],
   synchronize: false,
 });

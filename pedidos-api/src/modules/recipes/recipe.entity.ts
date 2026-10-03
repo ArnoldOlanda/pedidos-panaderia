@@ -5,15 +5,11 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
-
-export interface RecipeIngredient {
-  nombre: string;
-  cantidadGr: number;
-  precioKg: number;
-}
+import { RecipeIngredient } from './recipe-ingredient.entity';
 
 @Entity('recipes')
 @Index('IDX_recipes_name', ['name'])
@@ -25,7 +21,9 @@ export class Recipe {
   @Column({ type: 'varchar', length: 200 })
   name!: string;
 
-  @Column({ type: 'jsonb' })
+  @OneToMany(() => RecipeIngredient, (line) => line.recipe, {
+    cascade: ['insert'],
+  })
   ingredients!: RecipeIngredient[];
 
   @Column({ type: 'float', default: 35 })
