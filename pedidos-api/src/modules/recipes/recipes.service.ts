@@ -32,6 +32,7 @@ export class RecipesService {
     lines: RecipeIngredientDto[],
     ingredientsById: Map<string, Ingredient>,
     utilidad: number,
+    manoObra: number,
   ): CostBreakdown {
     const costoInsumos = lines.reduce((sum, line) => {
       const ingredient = ingredientsById.get(line.ingredientId);
@@ -44,10 +45,10 @@ export class RecipesService {
       return sum + line.quantityUsed * unitCost;
     }, 0);
     const igv = costoInsumos * 0.18;
-    const manoObra = costoInsumos * 0.2;
-    const costoProd = costoInsumos + igv + manoObra;
+    const costoManoObra = costoInsumos * (manoObra / 100);
+    const costoProd = costoInsumos + igv + costoManoObra;
     const precioVenta = costoProd * (1 + utilidad / 100);
-    return { costoInsumos, igv, manoObra, costoProd, precioVenta };
+    return { costoInsumos, igv, manoObra: costoManoObra, costoProd, precioVenta };
   }
 
   // Resolves every referenced ingredient in one query and fails with a single
@@ -109,16 +110,19 @@ export class RecipesService {
 
   async create(dto: CreateRecipeDto, createdById: string): Promise<Recipe> {
     this.assertNoDuplicateIngredients(dto.ingredients);
-    const utilidad = dto.utilidad ?? 35;
+    const utilidad = dto.utilidad ?? 100;
+    const manoObra = dto.manoObra ?? 20;
     const ingredientsById = await this.resolveIngredients(dto.ingredients);
     const { costoProd, precioVenta } = this.calculate(
       dto.ingredients,
       ingredientsById,
       utilidad,
+      manoObra,
     );
     const recipe = this.repo.create({
       name: dto.name,
       utilidad,
+      manoObra,
       totalCost: costoProd,
       suggestedPrice: precioVenta,
       createdById,
@@ -146,10 +150,15 @@ export class RecipesService {
     const name = dto.name ?? undefined;
     const newLines = dto.ingredients ?? undefined;
     const utilidad = dto.utilidad ?? undefined;
-    // Short-circuit recalc when neither ingredients nor utilidad change:
-    // a pure name update must preserve the persisted cost + suggested price
-    // (avoids float drift from re-running calculate on identical inputs).
-    if (newLines === undefined && utilidad === undefined) {
+    const manoObra = dto.manoObra ?? undefined;
+    // Short-circuit recalc when neither ingredients, utilidad nor manoObra
+    // change: a pure name update must preserve the persisted cost + suggested
+    // price (avoids float drift from re-running calculate on identical inputs).
+    if (
+      newLines === undefined &&
+      utilidad === undefined &&
+      manoObra === undefined
+    ) {
       if (name !== undefined) {
         recipe.name = name;
       }
@@ -166,13 +175,16 @@ export class RecipesService {
         }));
     const ingredientsById = await this.resolveIngredients(effectiveLines);
     const mergedUtilidad = utilidad ?? recipe.utilidad;
+    const mergedManoObra = manoObra ?? recipe.manoObra;
     const { costoProd, precioVenta } = this.calculate(
       effectiveLines,
       ingredientsById,
       mergedUtilidad,
+      mergedManoObra,
     );
     recipe.name = name ?? recipe.name;
     recipe.utilidad = mergedUtilidad;
+    recipe.manoObra = mergedManoObra;
     recipe.totalCost = costoProd;
     recipe.suggestedPrice = precioVenta;
     if (newLines === undefined) {

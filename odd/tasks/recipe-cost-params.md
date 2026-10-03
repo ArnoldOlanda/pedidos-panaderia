@@ -13,7 +13,7 @@ Continúa la feature `ingredient-catalog` (cerrada y mergeada en `f2b7276`), que
 ## Status
 
 - Started: 2026-10-03
-- Current task: 1
+- Current task: 2
 - Branch: feat/recipe-cost-params (base `main` @ `296c263`)
 - Chain strategy: rama única con 3 work units
 - RDD: off en este clon (review local)
@@ -27,6 +27,7 @@ Continúa la feature `ingredient-catalog` (cerrada y mergeada en `f2b7276`), que
 | D3 | Precio en fila | Se muestran los dos: precio de compra (`S/ 4.00 por kg`) y su equivalente por unidad de uso (`S/ 0.004 por g`) |
 | D4 | Recetas existentes | No se recalculan. La columna nueva entra con `DEFAULT 20`, que es lo que ya usaba la fórmula vieja, así que `totalCost`/`suggestedPrice` persistidos siguen siendo coherentes |
 | D5 | Fórmula | Igual que antes, con el porcentaje de mano de obra como variable |
+| D6 | Persistencia | Por receta (columna `recipes.manoObra`), **no** una tabla de configuración. Se evaluó `vendor_settings`/`app_settings`; se descarta porque `totalCost`/`suggestedPrice` son un snapshot por receta y una config global los dejaría inexplicables desde la fila. El IGV sigue fijo en 18 % en este cambio |
 
 ## Cost formula
 
@@ -43,7 +44,7 @@ de estar hardcodeado en el servicio y en el preview del frontend.
 
 ## Tasks
 
-- [ ] **1** — Backend: columna `manoObra` (default 20), DTOs de create/update, servicio (create/update/calculate),
+- [x] **1** — Backend: columna `manoObra` (default 20), DTOs de create/update, servicio (create/update/calculate),
       migración `AddRecipeManoObra` (+ `utilidad` default 100) y spec actualizado
 - [ ] **2** — Frontend: precio de compra + equivalente por unidad de uso en cada fila del formulario
 - [ ] **3** — Frontend: campo `Mano de obra (%)` editable, `utilidad` por defecto 100 %, preview y tipos
@@ -70,3 +71,4 @@ de estar hardcodeado en el servicio y en el preview del frontend.
 ## Progress Log
 
 <!-- entries appended here after each task lands -->
+<!-- 2026-10-03: 1 done — backend: `recipes.manoObra` float DEFAULT 20 + `utilidad` DEFAULT 100 (entidad, migración y servicio alineados); `calculate()` recibe el porcentaje; `update()` normaliza `dto.manoObra ?? undefined` y entra en el short-circuit de nombre-solo; `@IsOptional()` en `CreateRecipeDto.utilidad/manoObra` para que los defaults sean alcanzables por HTTP (antes un campo omitido daba 400, advisory abierto de ingredient-catalog); nueva spec de borde con el ValidationPipe real (7 casos). Suite 80/80, tsc limpio -->

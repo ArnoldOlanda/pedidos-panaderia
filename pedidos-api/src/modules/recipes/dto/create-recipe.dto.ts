@@ -3,6 +3,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsNumber,
+  IsOptional,
   IsString,
   IsUUID,
   MaxLength,
@@ -33,6 +34,12 @@ export class CreateRecipeDto {
   ingredients!: RecipeIngredientDto[];
 
   @IsNumber()
+  @IsOptional()
   @Min(0)
   utilidad?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  manoObra?: number;
 }

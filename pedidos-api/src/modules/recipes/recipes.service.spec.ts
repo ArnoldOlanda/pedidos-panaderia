@@ -55,6 +55,7 @@ const baseRecipe = (overrides: Partial<Recipe> = {}): Recipe =>
     name: 'Pan de yema',
     ingredients: [recipeLine()],
     utilidad: 35,
+    manoObra: 20,
     totalCost: 6.9,
     suggestedPrice: 9.315,
     createdById: VENDOR_A,
@@ -115,7 +116,8 @@ describe('RecipesService', () => {
       expect(repo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Pan de yema',
-          utilidad: 35,
+          utilidad: 100,
+          manoObra: 20,
           createdById: VENDOR_A,
           ingredients: [
             expect.objectContaining({
@@ -127,9 +129,10 @@ describe('RecipesService', () => {
         }),
       );
       expect(manager.save).toHaveBeenCalledTimes(1);
-      // costoInsumos=5, igv=0.9, manoObra=1 → costoProd=6.9 → 6.9 * 1.35 = 9.315
+      // costoInsumos=5, igv=0.9, manoObra=5*0.2=1 → costoProd=6.9
+      // default utilidad=100 → 6.9 * 2 = 13.8
       expect(result.totalCost).toBeCloseTo(6.9, 5);
-      expect(result.suggestedPrice).toBeCloseTo(9.315, 5);
+      expect(result.suggestedPrice).toBeCloseTo(13.8, 5);
     });
 
     it('rejects an unknown ingredientId with BadRequestException', async () => {
@@ -175,9 +178,55 @@ describe('RecipesService', () => {
 
       // unitCost = 0.5 / 1 = 0.5
       // costoInsumos = 6 * 0.5 = 3, igv = 3 * 0.18 = 0.54, manoObra = 3 * 0.2 = 0.6
-      // costoProd = 3 + 0.54 + 0.6 = 4.14, suggestedPrice = 4.14 * 1.35 = 5.589
+      // costoProd = 3 + 0.54 + 0.6 = 4.14, default utilidad=100 → 4.14 * 2 = 8.28
       expect(result.totalCost).toBeCloseTo(4.14, 5);
-      expect(result.suggestedPrice).toBeCloseTo(5.589, 5);
+      expect(result.suggestedPrice).toBeCloseTo(8.28, 5);
+    });
+
+    it('uses an explicit manoObra percentage and the utilidad default', async () => {
+      ingredientsRepo.find.mockResolvedValue([ingredient()]);
+      repo.create.mockImplementation((input) => input);
+      manager.save.mockImplementation(async (r) => r);
+
+      const result = await svc.create(
+        {
+          name: 'Pan con mano de obra alta',
+          ingredients: [{ ingredientId: HARINA_ID, quantityUsed: 1000 }],
+          manoObra: 50,
+        },
+        VENDOR_A,
+      );
+
+      // costoInsumos=5, igv=0.9, manoObra=5*0.5=2.5 → costoProd=8.4
+      // default utilidad=100 → 8.4 * 2 = 16.8
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ manoObra: 50 }),
+      );
+      expect(result.totalCost).toBeCloseTo(8.4, 5);
+      expect(result.suggestedPrice).toBeCloseTo(16.8, 5);
+    });
+
+    it('treats manoObra 0 as a real 0% and never falls back to the default', async () => {
+      ingredientsRepo.find.mockResolvedValue([ingredient()]);
+      repo.create.mockImplementation((input) => input);
+      manager.save.mockImplementation(async (r) => r);
+
+      const result = await svc.create(
+        {
+          name: 'Pan sin mano de obra',
+          ingredients: [{ ingredientId: HARINA_ID, quantityUsed: 1000 }],
+          manoObra: 0,
+        },
+        VENDOR_A,
+      );
+
+      // costoInsumos=5, igv=0.9, manoObra=5*0=0 → costoProd=5*1.18=5.9
+      // default utilidad=100 → 5.9 * 2 = 11.8
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ manoObra: 0 }),
+      );
+      expect(result.totalCost).toBeCloseTo(5.9, 5);
+      expect(result.suggestedPrice).toBeCloseTo(11.8, 5);
     });
 
     it('rejects a repeated ingredientId on create with BadRequestException', async () => {
@@ -359,6 +408,68 @@ describe('RecipesService', () => {
       expect(result.totalCost).toBe(6.9);
       expect(result.suggestedPrice).toBe(9.315);
       expect(result.utilidad).toBe(35);
+      expect(ingredientsRepo.find).not.toHaveBeenCalled();
+      expect(repo.manager.transaction).not.toHaveBeenCalled();
+    });
+
+    it('preserves the persisted cost snapshot when manoObra is null and catalog prices changed', async () => {
+      const existing = baseRecipe({
+        totalCost: 6.9,
+        suggestedPrice: 9.315,
+        manoObra: 20,
+      });
+      repo.findOne.mockResolvedValue(existing);
+      // A null manoObra patch must not silently re-price the existing recipe.
+      ingredientsRepo.find.mockResolvedValue([
+        ingredient({ purchasePrice: 99 }),
+      ]);
+      repo.save.mockImplementation(async (r) => r);
+
+      const result = await svc.update(RECIPE_ID, VENDOR_A, {
+        manoObra: null,
+      } as unknown as UpdateRecipeDto);
+
+      expect(result.totalCost).toBe(6.9);
+      expect(result.suggestedPrice).toBe(9.315);
+      expect(result.manoObra).toBe(20);
+      expect(ingredientsRepo.find).not.toHaveBeenCalled();
+      expect(repo.manager.transaction).not.toHaveBeenCalled();
+    });
+
+    it('recalculates the persisted cost when manoObra changes', async () => {
+      repo.findOne.mockResolvedValue(baseRecipe());
+      ingredientsRepo.find.mockResolvedValue([ingredient()]);
+      repo.save.mockImplementation(async (r) => r);
+
+      const result = await svc.update(RECIPE_ID, VENDOR_A, {
+        manoObra: 50,
+      });
+
+      // costoInsumos=5, igv=0.9, manoObra=5*0.5=2.5 → costoProd=8.4
+      // merged utilidad=35 → 8.4 * 1.35 = 11.34
+      expect(result.manoObra).toBe(50);
+      expect(result.totalCost).toBeCloseTo(8.4, 5);
+      expect(result.suggestedPrice).toBeCloseTo(11.34, 5);
+    });
+
+    it('preserves the snapshot on a name-only update for a manoObra 50 recipe', async () => {
+      const existing = baseRecipe({
+        name: 'Pan de yema',
+        manoObra: 50,
+        totalCost: 8.4,
+        suggestedPrice: 11.34,
+      });
+      repo.findOne.mockResolvedValue(existing);
+      repo.save.mockImplementation(async (r) => r);
+
+      const result = await svc.update(RECIPE_ID, VENDOR_A, {
+        name: 'Pan renombrado',
+      });
+
+      expect(result.name).toBe('Pan renombrado');
+      expect(result.manoObra).toBe(50);
+      expect(result.totalCost).toBe(8.4);
+      expect(result.suggestedPrice).toBe(11.34);
       expect(ingredientsRepo.find).not.toHaveBeenCalled();
       expect(repo.manager.transaction).not.toHaveBeenCalled();
     });

@@ -32,4 +32,9 @@ export class UpdateRecipeDto {
   @IsOptional()
   @Min(0)
   utilidad?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  manoObra?: number;
 }
