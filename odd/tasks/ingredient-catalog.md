@@ -10,7 +10,7 @@ y con la unidad de gramos implícita en el nombre del campo.
 ## Status
 
 - Started: 2026-10-03
-- Current task: — (tareas 1-7 hechas; T8 diferida a un PR aparte)
+- Current task: — (tareas 1-7 hechas; T8 descartada por decisión del usuario)
 - Merged: f2b7276 en `main` (review local sin blockers; sin PRs remotos)
 - Chain strategy: Feature Branch Chain con tracker
 - Tracker branch: feat/ingredient-catalog
@@ -88,7 +88,7 @@ números (`totalCost 6.9`, `suggestedPrice 9.315`), así el reviewer ve un cambi
 - [x] **5** — `lib/ingredients.ts` + ingredient hooks + unit-pairs hook + nav/route
 - [x] **6** — `/vendor/ingredients` CRUD page
 - [x] **7** — recipe form wired to the insumo select + live preview + empty state
-- [ ] **8** — seed starter ingredients (diferida: es un archivo de backend y esta rama es de frontend; va como PR propio desde main)
+- **8** — seed starter ingredients — **DESCARTADA** (2026-10-03, decisión del usuario): no hay set de insumos base; el catálogo se llena a mano desde `/vendor/ingredients` y ese camino ya está cubierto por el estado vacío del formulario de receta.
 
 ## Local DB reset (user-run, destructive)
 
@@ -158,3 +158,4 @@ npm run db:seed
 <!-- 2026-10-03: review local del diff integrado (2 pasadas read-only independientes): sin blockers, 8 advisories. Detalle en la sección Open advisories. -->
 <!-- 2026-10-03: MERGEADO a main — f2b7276 — merge --no-ff de feat/ingredient-catalog-recipes-ui (ramas lineales, tracker ancestro); gate post-merge: 68 tests backend + typecheck/build web verdes -->
 <!-- 2026-10-03: advisories 1-3 cerrados — d0ce9d1 — @Min(1) en conversionFactor; el formulario de receta excluye insumos ya usados por otras filas + valida repetidos; el catálogo del formulario se revalida al montar para que el preview no discrepe del costo persistido -->
+<!-- 2026-10-03: T8 (seed de insumos base) DESCARTADA por decisión del usuario. La feature queda cerrada con 7 tareas; el usuario hace el test manual sobre main. -->
