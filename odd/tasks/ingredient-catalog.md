@@ -10,7 +10,7 @@ y con la unidad de gramos implícita en el nombre del campo.
 ## Status
 
 - Started: 2026-10-03
-- Current task: 1
+- Current task: 3
 - Chain strategy: Feature Branch Chain con tracker
 - Tracker branch: feat/ingredient-catalog
 - RDD: off en este clon
@@ -73,8 +73,8 @@ números (`totalCost 6.9`, `suggestedPrice 9.315`), así el reviewer ve un cambi
 
 ### PR 1 — backend (feat/ingredient-catalog-api)
 
-- [ ] **1** — migration `ingredients` + entity + unit enum + registration
-- [ ] **2** — ingredients CRUD module + `GET /ingredients/units` + 409 on duplicate name
+- [x] **1** — migration `ingredients` + entity + unit enum + registration
+- [x] **2** — ingredients CRUD module + `GET /ingredients/units` + 409 on duplicate name
 - [ ] **3** — `recipe_ingredients` table + entity + `InitRecipes` edited in place
 - [ ] **4** — recipes cost from the ingredient catalog (transaction) + spec updates
 
@@ -102,6 +102,16 @@ npm run db:seed
 - Índice GIN sobre `recipe_ingredients` (volumen irrelevante a esta escala)
 - Backfill de recetas existentes (D2: reset en su lugar)
 
+## Open advisories
+
+- No controller/e2e coverage: the `GET /ingredients/units` route order and the
+  read/write guard placement are verified by inspection only.
+- A name made only of zero-width characters still passes validation.
+- The `23503` -> 409 mapping cannot be exercised until task 3 adds the FK.
+- Money stays `float` (inherited from `recipes`/`products`); no cent rounding.
+
 ## Progress Log
 
 <!-- entries appended here after each task lands -->
+<!-- 2026-10-03: 1 done — 4f9fbb6 — ingredients table + entity + ALLOWED_UNIT_PAIRS + CLI data source registration -->
+<!-- 2026-10-03: 2 done — 9150044 — ingredients CRUD module: JWT reads, VENDEDOR writes, 23505/23503 -> 409, merged-pair validation on PATCH; 21 service tests, suite 56 green -->
