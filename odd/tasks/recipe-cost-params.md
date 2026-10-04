@@ -14,7 +14,8 @@ Continúa la feature `ingredient-catalog` (cerrada y mergeada en `f2b7276`), que
 
 - Started: 2026-10-03
 - Current task: — (tareas 1-5 hechas)
-- Branch: feat/recipe-cost-params (base `main` @ `296c263`), 5 commits, sin mergear
+- Merged: **`8bc02dd` en `main`** (merge `--no-ff`; post-merge gate: 90/90 tests backend + tsc, web typecheck + build limpios)
+- Branch: feat/recipe-cost-params (base `main` @ `296c263`), 6 commits
 - Chain strategy: rama única con 3 work units + 2 commits de corrección/prueba
 - RDD: off en este clon (review local: 2 pasadas sobre el diff integrado + 1 sobre el delta)
 - Gate final: backend **90/90 tests**, `tsc --noEmit` limpio; web `typecheck` y `build` limpios
@@ -88,8 +89,8 @@ Cerrados en el commit de corrección posterior a la review (ver Progress Log):
 Abiertos (no bloquean, quedan anotados):
 
 1. **La migración se aplica a mano** (`migrationsRun: false` en `app.module.ts`). Sin
-   `npm run migration:run`, `GET /recipes` falla porque TypeORM selecciona la columna nueva. Estado actual: la
-   base local del usuario **todavía no tiene** `recipes.manoObra`.
+   `npm run migration:run`, `GET /recipes` falla porque TypeORM selecciona la columna nueva. **Aplicada el
+   2026-10-03**: la base local ya tiene `manoObra` (`default 20`) y `utilidad` (`default 100`).
 2. **`pedidos-web` no tiene runner de tests** (`npm test` es un `echo`): todo el comportamiento de la UI de esta
    feature queda verificado solo por `typecheck` y `build`, más dos pasadas de review read-only.
 3. Los defaults declarados en la entidad y en la migración no tienen test (haría falta base de datos real).
@@ -102,6 +103,7 @@ Abiertos (no bloquean, quedan anotados):
 ## Progress Log
 
 <!-- entries appended here after each task lands -->
+<!-- 2026-10-03: MERGEADO a main — 8bc02dd — merge --no-ff de feat/recipe-cost-params (rama lineal; main no había avanzado). Post-merge gate verde: 90/90 tests backend + tsc, web typecheck + build. La migración 1700000007000-AddRecipeManoObra ya estaba aplicada por el usuario; verificado contra su Postgres: recipes.manoObra default 20, recipes.utilidad default 100, 2 recetas existentes con manoObra 20 y 25 (D4 respetado: la migración no recalculó nada) -->
 <!-- 2026-10-03: review del delta (commit de corrección) — tercera pasada read-only: los 5 advisories cerrados de verdad (matriz mutación-test recalculada: quitar el `??`, cambiarlo por `||`, quitar `@Min(0)` o quitar el guard de `formatPercent` rompen algún test), sin cambios de comportamiento no relacionados. Quedó 1 advisory residual: el camino de `create` no tenía caso con `utilidad: 0`, así que un `||` en esa línea habría pasado desapercibido -->
 <!-- 2026-10-03: cierre del residual — test `treats utilidad 0 as a real 0% and never falls back to the default` en el spec del servicio. Gate: 90/90 tests backend, tsc limpio -->
 <!-- 2026-10-03: 4 done — verificación independiente del diff integrado en dos pasadas `gentle-ai-verify` con focos distintos (backend/fórmula/migración/calibración de tests; frontend/paridad de operandos/contrato). Sin blockers. Paridad de operandos confirmada expresión por expresión contra `calculate()`; las dos pasadas coinciden en que los cuatro defaults (entidad, migración, servicio, DTOs) están alineados. Advisories cerrados en un commit de corrección; los abiertos quedan en la sección Open advisories. Gate: 89/89 tests backend, tsc limpio, web typecheck limpio -->
