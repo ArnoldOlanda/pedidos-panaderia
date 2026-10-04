@@ -594,3 +594,42 @@ rebanada seguida por encima. Causa: es el reemplazo más grande de la fase — s
 `window.confirm`, entran nueve imports de primitivas, el árbol de `Dialog` y el de `AlertDialog`, `id`/`htmlFor`,
 `scope="col"` y la región de estado. Sigue siendo **una** pantalla y una unidad coherente; partirla obligaría a
 commitear media pantalla migrada. Siguiente: `vendor/recipes.tsx`, en dos work units. -->
+
+<!-- 2026-10-04: **Fase 3 slice 4a** — `IngredientRow` de `vendor/recipes.tsx` migrado en `9784419`, **126 líneas
+cambiadas** (79+/47−), muy por debajo del umbral. `recipes.tsx` (883 líneas) se terminó partiendo en **tres**
+work units y no dos: el plan decía dos, pero tres deja cada diff cómodamente bajo 400. Esta rebanada toca
+**solo** el componente (HEAD 69-211) más dos hunks de import que solo agregan (`useId` y las primitivas); el
+verificador lo probó reconstruyendo el archivo sin el cuerpo del componente y diffeando el resto: las únicas
+diferencias son esos dos imports. `calculateCost`, `formatPercent`, `badRequestMessage` y `validateRecipe`
+byte-idénticos, y `ModalShell` sigue importado para `EditModal`.
+
+**Primera vez que el repo usa `useId`**, y la medición importa: en React 19.3.0 el id sale como `_r_0_`
+(`mountId()` en `react-dom-client`), **no** con guillemets; solo contiene `_`, alfanuméricos y `-`, así que es
+válido en `id`/`for` y como identificador CSS. Los ids de fila son `_r_N_-ingredient` y `_r_N_-quantity`, sin
+colisión posible con los `radix-*` internos ni con el resto del archivo (que no tiene ni un `id` literal más).
+
+**La lección del slice 1 se aplicó sola**: para la región `role="status"` el writer eligió un `mt-1` en el
+trigger en vez de un `space-y-1` en la celda, **con el razonamiento correcto escrito en el código** (en Tailwind v4
+`space-y-*` compila a `margin-block-end` en todo hijo que no sea el último, así que habría dejado 0.25rem
+permanentes bajo el select mientras la región está ociosa). El verificador confirmó contra el CSS compilado que
+en reposo no aporta altura.
+
+**Hallazgo de a11y que la migración arregla sin buscarlo**: en HEAD el `<label>` implícito envolvía al `<select>`
+**y a los párrafos de aviso hermanos**, así que el nombre accesible del select absorbía texto de aviso ajeno. Con
+`htmlFor`/`id` explícitos eso desaparece. Es una mejora real, no una regresión.
+
+**Desviaciones declaradas, todas sin cambio de copia**: el aviso ámbar (`text-amber-700`) pasó a
+`text-muted-foreground` porque el sistema tiene `--destructive` y `--success` pero **ningún token de advertencia**
+(misma decisión que el 403 de `products.tsx`); el `Label` agrega `font-medium` a «Insumo»/«Cantidad»; los
+controles adoptan `h-8` del primitivo; y la opción vacía `Selecciona un insumo` ya no es reseleccionable (mismo
+juicio ya aceptado en las otras dos pantallas). Nada de esto cambia una cadena.
+
+**Error propio menor, registrado**: el brief afirmaba que el botón «Quitar» de HEAD usaba `disabled:opacity-60`;
+en realidad era `disabled:opacity-50` (el `opacity-60` es de otras dos partes del archivo, fuera del componente).
+El verificador lo corrigió. Lección: al describir el código de partida en una instrucción hay que citarlo desde
+el árbol, no de memoria — es la segunda vez en la feature que una afirmación mía sobre el markup original resulta
+errada.
+
+**Nota de entorno**: el verificador reportó que `.codegraph/` cambió de mtime y que hay procesos
+`codegraph serve --mcp` corriendo. Es estado de herramienta untracked (y ya está en «Pendientes ajenos» por el
+`.gitignore`); no afectá al contenido del repo. Siguiente: `RecipeForm` (slice 4b). -->
