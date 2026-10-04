@@ -307,9 +307,13 @@ export function VendorProductsPage() {
                 </span>
               )}
             </span>
+            {/* step must be one centavo. With step="0.10" and min="0.01" the
+                browser only accepts min + n*0.10 (0.01, 0.11, ... 9.21, 9.31),
+                so a round price and most suggested prices were rejected by
+                native constraint validation before validate() ever ran. */}
             <input
               type="number"
-              step="0.10"
+              step="0.01"
               min="0.01"
               required
               value={price}
