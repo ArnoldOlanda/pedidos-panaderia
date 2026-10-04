@@ -5,6 +5,13 @@ import { usePlaceOrder } from '../hooks/use-place-order';
 import { toApiError } from '../lib/api';
 import { getOrCreateDeviceId } from '../lib/device';
 import { closesInLabel, formatCloseTimeLima, formatPrice } from '../lib/format';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MAX_QUANTITY = 10;
 const MAX_NAME_LENGTH = 120;
@@ -20,12 +27,14 @@ interface BuyerInfo {
 
 function NewOrderSkeleton() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs space-y-3">
-      <div className="h-7 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
-      <div className="h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
-      <div className="h-10 w-full rounded-sm bg-slate-200 animate-pulse" />
-      <div className="h-10 w-32 rounded-sm bg-slate-200 animate-pulse" />
-    </div>
+    <Card aria-hidden="true">
+      <CardContent className="space-y-3">
+        <Skeleton className="h-7 w-2/3" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-32" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -102,14 +111,14 @@ export function OrderNewPage() {
 
   return (
     <section className="space-y-4">
-      <Link to="/catalog" className="text-sm text-amber-600 hover:text-amber-700">
+      <Link to="/catalog" className="text-sm text-primary hover:underline">
         ← Catálogo
       </Link>
 
       {flashMessage && (
         <div
-          className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
           role="status"
+          className="rounded-lg bg-success px-4 py-3 text-sm text-success-foreground"
         >
           {flashMessage}
         </div>
@@ -118,157 +127,164 @@ export function OrderNewPage() {
       {isLoading && <NewOrderSkeleton />}
 
       {!isLoading && isNotFound && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
-          <p>No encontramos este producto</p>
-          <Link
-            to="/catalog"
-            className="mt-3 inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-          >
-            Volver al catálogo
-          </Link>
-        </div>
+        <Card className="text-muted-foreground">
+          <CardContent>
+            <p>No encontramos este producto</p>
+            <Link
+              to="/catalog"
+              className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+            >
+              Volver al catálogo
+            </Link>
+          </CardContent>
+        </Card>
       )}
 
       {!isLoading && isError && !isNotFound && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
+        <Alert variant="destructive">
           <p>No pudimos cargar este producto</p>
-          <button
+          <Button
             type="button"
+            className="mt-3"
             onClick={() => {
               void refetch();
             }}
-            className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
           >
             Reintentar
-          </button>
-        </div>
+          </Button>
+        </Alert>
       )}
 
       {!isLoading && !isError && data && productIsClosed && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs space-y-3 text-slate-700">
-          <h1 className="text-2xl font-semibold text-slate-900">{data.name}</h1>
-          <p className="text-sm">Este producto ya no acepta pedidos.</p>
-          <Link
-            to="/catalog"
-            className="inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-          >
-            Volver al catálogo
-          </Link>
-        </div>
+        <Card className="text-muted-foreground">
+          <CardHeader>
+            {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+            <h1 className="font-heading text-2xl font-semibold tracking-tight">{data.name}</h1>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm">Este producto ya no acepta pedidos.</p>
+            <Link
+              to="/catalog"
+              className="inline-block text-sm font-medium text-primary hover:underline"
+            >
+              Volver al catálogo
+            </Link>
+          </CardContent>
+        </Card>
       )}
 
       {!isLoading && !isError && data && !productIsClosed && (
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs space-y-4"
-        >
-          <header className="space-y-1">
-            <h1 className="text-2xl font-semibold text-slate-900">{data.name}</h1>
-            <p className="text-sm text-slate-600">
-              {formatPrice(data.price)} · Cierra a las {formatCloseTimeLima(data.closesAt)} ·{' '}
-              {closesInLabel(data.closesAt, data.closed)}
-            </p>
-          </header>
+        <form onSubmit={handleSubmit}>
+          <Card>
+            <CardHeader>
+              {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+              <h1 className="font-heading text-2xl font-semibold tracking-tight">{data.name}</h1>
+              <p className="text-sm text-muted-foreground">
+                {formatPrice(data.price)} · Cierra a las {formatCloseTimeLima(data.closesAt)} ·{' '}
+                {closesInLabel(data.closesAt, data.closed)}
+              </p>
+            </CardHeader>
 
-          <fieldset className="space-y-3 border-t border-slate-100 pt-4">
-            <legend className="text-sm font-medium text-slate-700">Datos del comprador</legend>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm">
-                <span className="text-slate-700">DNI</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d{8}"
-                  maxLength={8}
+            <CardContent className="space-y-4">
+              <fieldset className="space-y-3 border-t border-border pt-4">
+                <legend className="text-sm font-medium">Datos del comprador</legend>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="buyer-dni">DNI</Label>
+                    <Input
+                      id="buyer-dni"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="\d{8}"
+                      maxLength={8}
+                      required
+                      value={buyer.buyerDni}
+                      onChange={(e) => setBuyer({ ...buyer, buyerDni: e.target.value.replace(/\D/g, '') })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="buyer-carrera">Carrera / especialidad</Label>
+                    <Input
+                      id="buyer-carrera"
+                      type="text"
+                      maxLength={MAX_NAME_LENGTH}
+                      required
+                      value={buyer.buyerCarrera}
+                      onChange={(e) => setBuyer({ ...buyer, buyerCarrera: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="buyer-name">Nombre</Label>
+                    <Input
+                      id="buyer-name"
+                      type="text"
+                      maxLength={MAX_NAME_LENGTH}
+                      required
+                      value={buyer.buyerName}
+                      onChange={(e) => setBuyer({ ...buyer, buyerName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="buyer-apellidos">Apellidos</Label>
+                    <Input
+                      id="buyer-apellidos"
+                      type="text"
+                      maxLength={MAX_NAME_LENGTH}
+                      required
+                      value={buyer.buyerApellidos}
+                      onChange={(e) => setBuyer({ ...buyer, buyerApellidos: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              <Field className="w-32">
+                <FieldLabel htmlFor="quantity">Cantidad</FieldLabel>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min={1}
+                  max={MAX_QUANTITY}
                   required
-                  value={buyer.buyerDni}
-                  onChange={(e) => setBuyer({ ...buyer, buyerDni: e.target.value.replace(/\D/g, '') })}
-                  className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
+                  value={quantity}
+                  onChange={(e) => {
+                    const raw = Number.parseInt(e.target.value, 10);
+                    if (Number.isNaN(raw)) {
+                      setQuantity(1);
+                      return;
+                    }
+                    setQuantity(Math.min(MAX_QUANTITY, Math.max(1, raw)));
+                  }}
                 />
-              </label>
-              <label className="block text-sm">
-                <span className="text-slate-700">Carrera / especialidad</span>
-                <input
-                  type="text"
-                  maxLength={MAX_NAME_LENGTH}
-                  required
-                  value={buyer.buyerCarrera}
-                  onChange={(e) => setBuyer({ ...buyer, buyerCarrera: e.target.value })}
-                  className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-                />
-              </label>
-              <label className="block text-sm">
-                <span className="text-slate-700">Nombre</span>
-                <input
-                  type="text"
-                  maxLength={MAX_NAME_LENGTH}
-                  required
-                  value={buyer.buyerName}
-                  onChange={(e) => setBuyer({ ...buyer, buyerName: e.target.value })}
-                  className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-                />
-              </label>
-              <label className="block text-sm">
-                <span className="text-slate-700">Apellidos</span>
-                <input
-                  type="text"
-                  maxLength={MAX_NAME_LENGTH}
-                  required
-                  value={buyer.buyerApellidos}
-                  onChange={(e) => setBuyer({ ...buyer, buyerApellidos: e.target.value })}
-                  className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-                />
-              </label>
-            </div>
-          </fieldset>
+                <FieldDescription>máx. {MAX_QUANTITY}</FieldDescription>
+              </Field>
 
-          <label className="block text-sm">
-            <span className="text-slate-700">Cantidad</span>
-            <input
-              type="number"
-              min={1}
-              max={MAX_QUANTITY}
-              required
-              value={quantity}
-              onChange={(e) => {
-                const raw = Number.parseInt(e.target.value, 10);
-                if (Number.isNaN(raw)) {
-                  setQuantity(1);
-                  return;
-                }
-                setQuantity(Math.min(MAX_QUANTITY, Math.max(1, raw)));
-              }}
-              className="mt-1 w-32 rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-            />
-            <span className="ml-2 text-xs text-slate-500">máx. {MAX_QUANTITY}</span>
-          </label>
+              <p className="text-sm">
+                Total: <span className="font-semibold">{formatPrice(data.price * quantity)}</span>
+              </p>
 
-          <p className="text-sm text-slate-700">
-            Total: <span className="font-semibold">{formatPrice(data.price * quantity)}</span>
-          </p>
+              {orderError && (
+                <Alert variant="destructive">
+                  <p>{orderError.message || 'No pudimos registrar el pedido'}</p>
+                  <Button type="button" className="mt-3" onClick={() => handleSubmit()}>
+                    Reintentar
+                  </Button>
+                </Alert>
+              )}
 
-          {orderError && (
-            <div className="rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-              <p>{orderError.message || 'No pudimos registrar el pedido'}</p>
-              <button
-                type="button"
-                onClick={() => handleSubmit()}
-                className="mt-2 px-3 py-1 rounded-sm bg-amber-500 text-white text-sm hover:bg-amber-600"
-              >
-                Reintentar
-              </button>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={pending || !buyerValid}
-            className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {pending ? 'Procesando…' : 'Confirmar pedido'}
-          </button>
+              <Button type="submit" disabled={pending || !buyerValid}>
+                {pending ? 'Procesando…' : 'Confirmar pedido'}
+              </Button>
+            </CardContent>
+          </Card>
         </form>
       )}
+
+      {/* role=status rather than aria-live on the skeleton: a live region has to
+          pre-exist and announce its own content change, not the decorative bars. */}
+      <span role="status" className="sr-only">
+        {isLoading ? 'Cargando producto' : ''}
+      </span>
     </section>
   );
 }
