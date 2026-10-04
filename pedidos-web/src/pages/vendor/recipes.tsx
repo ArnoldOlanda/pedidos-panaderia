@@ -13,7 +13,9 @@ import { INGREDIENT_UNIT_LABELS } from '../../lib/ingredients';
 import type { Ingredient } from '../../lib/ingredients';
 import type { Recipe, RecipeIngredientInput } from '../../lib/recipes';
 import { ModalShell } from '../../components/modal-shell';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -23,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CostBreakdown {
   costoInsumos: number;
@@ -315,6 +318,17 @@ function RecipeForm({
     [catalog],
   );
 
+  // RecipeForm mounts twice on the same page (the create section and EditModal),
+  // so the field ids come from useId instead of literals that would duplicate.
+  const formId = useId();
+  const nameInputId = `${formId}-name`;
+  const utilidadInputId = `${formId}-utilidad`;
+  const manoObraInputId = `${formId}-mano-obra`;
+
+  // Visible and announced loading text are the same string; one constant keeps
+  // them from drifting apart.
+  const loadingLabel = 'Cargando insumos…';
+
   const [name, setName] = useState(initialName ?? '');
   const [utilidad, setUtilidad] = useState(initialUtilidad ?? 100);
   const [manoObra, setManoObra] = useState(initialManoObra ?? 20);
@@ -363,102 +377,56 @@ function RecipeForm({
     onSubmit({ name: trimmedName, ingredients, utilidad, manoObra });
   };
 
-  if (ingredientsQuery.isLoading) {
-    return (
-      <div className="space-y-2" aria-busy="true">
-        <div className="h-4 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
-        <div className="h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
-        <p className="text-sm text-slate-600">Cargando insumos…</p>
-      </div>
-    );
-  }
-
-  if (ingredientsQuery.isError) {
-    return (
-      <div className="space-y-3 text-slate-700">
-        <p>
-          No pudimos cargar los insumos. Sin el catálogo no es posible armar la
-          receta.
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            void ingredientsQuery.refetch();
-          }}
-          className="rounded-sm bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
-        >
-          Reintentar
-        </button>
-      </div>
-    );
-  }
-
-  if (catalog.length === 0) {
-    return (
-      <div className="space-y-2 text-slate-600">
-        <p>Para crear una receta primero necesitas insumos en el catálogo.</p>
-        <Link
-          to="/vendor/ingredients"
-          className="inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-        >
-          Crear insumos →
-        </Link>
-      </div>
-    );
-  }
-
-  return (
+  const formBody = (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <label className="block text-sm">
-        <span className="text-slate-700">Nombre</span>
-        <input
+      <div className="space-y-1">
+        <Label htmlFor={nameInputId}>Nombre</Label>
+        <Input
+          id={nameInputId}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
           minLength={1}
           maxLength={200}
-          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
         />
-      </label>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <label className="text-sm">
-          <span className="text-slate-700">Utilidad (%)</span>
-          <input
+        <div className="space-y-1">
+          <Label htmlFor={utilidadInputId}>Utilidad (%)</Label>
+          {/* step stays 0.1 on purpose: the browser rejecting 20.25 is a tracked
+              bug of its own, and fixing it here would break this slice's parity. */}
+          <Input
+            id={utilidadInputId}
             type="number"
             step="0.1"
             min="0"
             value={utilidad}
             onChange={(e) => setUtilidad(Number(e.target.value))}
             required
-            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
           />
-        </label>
-        <label className="text-sm">
-          <span className="text-slate-700">Mano de obra (%)</span>
-          <input
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor={manoObraInputId}>Mano de obra (%)</Label>
+          <Input
+            id={manoObraInputId}
             type="number"
             step="0.1"
             min="0"
             value={manoObra}
             onChange={(e) => setManoObra(Number(e.target.value))}
             required
-            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
           />
-        </label>
+        </div>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-700">Insumos</span>
-          <button
-            type="button"
-            onClick={addIngredient}
-            className="rounded-sm border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
-          >
+          <span className="text-sm font-medium text-foreground">Insumos</span>
+          <Button type="button" variant="outline" onClick={addIngredient}>
             Agregar insumo
-          </button>
+          </Button>
         </div>
         <div className="space-y-3">
           {ingredients.map((row, index) => {
@@ -485,7 +453,7 @@ function RecipeForm({
         </div>
       </div>
 
-      <div className="rounded-sm border border-slate-200 bg-slate-50 p-3 space-y-1 text-sm text-slate-700">
+      <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1 text-sm">
         <p>
           Costo insumos: <span className="font-medium">{formatPrice(breakdown.costoInsumos)}</span>
         </p>
@@ -500,44 +468,89 @@ function RecipeForm({
         </p>
         <p>
           Precio sugerido ({formatPercent(utilidad)}):{' '}
-          <span className="font-semibold text-amber-600">
+          <span className="font-semibold text-primary">
             {formatPrice(breakdown.precioVenta)}
           </span>
         </p>
       </div>
 
       {validationError && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {validationError}
         </p>
       )}
 
       {serverError && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {serverError}
         </p>
       )}
 
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={busy}
-          className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" disabled={busy}>
           {busy ? 'Guardando…' : submitLabel}
-        </button>
+        </Button>
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-sm border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-          >
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
-          </button>
+          </Button>
         )}
       </div>
     </form>
   );
+
+  if (ingredientsQuery.isLoading) {
+    // aria-busy on the same node tells assistive tech to hold announcements,
+    // which would suppress the very region we want; the loading text is visible
+    // here, so the root itself is the region.
+    return (
+      <div role="status" className="space-y-2">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-4 w-1/2" />
+        <p className="text-sm text-muted-foreground">{loadingLabel}</p>
+      </div>
+    );
+  }
+
+  if (ingredientsQuery.isError) {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>
+          No pudimos cargar los insumos. Sin el catálogo no es posible armar
+          la receta.
+        </AlertTitle>
+        <AlertDescription>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              void ingredientsQuery.refetch();
+            }}
+          >
+            Reintentar
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (catalog.length === 0) {
+    return (
+      <Card className="text-muted-foreground">
+        <CardContent className="space-y-2">
+          <p>Para crear una receta primero necesitas insumos en el catálogo.</p>
+          <Link
+            to="/vendor/ingredients"
+            className="inline-block text-sm font-medium text-primary hover:underline"
+          >
+            Crear insumos →
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return formBody;
 }
 
 function RecipeCard({
