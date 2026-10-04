@@ -6,7 +6,7 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 ## Status
 
 - Started: 2026-10-03
-- Current task: **4 — Fase 2 (pantallas de comprador)**, tras resolver el desfase React 18 / registry React 19 (ver más abajo)
+- Current task: **4 — Fase 2 (pantallas de comprador)**; React 19.3.0 ya está (D10), así que las 14 primitivas se pueden adoptar **verbatim**
 - Branch: `feat/ui-refactor-shadcn` (base `main` @ `6018b3e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local)
 - Deploy: **pospuesto** por decisión del usuario hasta terminar el refactor (ODD-3.12/3.13 van después)
@@ -29,6 +29,7 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 | D7 | Neutro base | **`neutral`** (croma 0). La CLI 4.21 ya no ofrece `slate` ni `gray`; el usuario aceptó el gris puro sabiendo que la app deja de ser azulada (decidido 2026-10-04) |
 | D8 | Instalación | **Preset Nova sobre Radix, modelo nuevo tal cual** (acepta los deps de runtime y la fuente Geist). El padre lo enmendó en tres puntos de higiene, todos reversibles: `cn()` local en vez del paquete `cn`, `shadcn` como devDependency y el anillo de foco a alpha completo |
 | D9 | Marca en tokens | `--primary` y `--ring` = **amber-700** (`oklch(55.5% 0.163 48.998)`) con `--primary-foreground` blanco: **5.03:1**, cumple AA. Reemplaza el `bg-amber-500` + `text-white` de 2.2:1 |
+| D10 | React | **Subir a React 19.3.0 como paso aislado** (`react`, `react-dom` y sus `@types`). El registry genera código React 19 (ref como prop, sin `forwardRef`) que React 18 descarta en silencio; con 19 las 14 primitivas quedan correctas tal como vienen, sin parchear ninguna ni las futuras. Se secuencia el riesgo en vez de apilarlo (decidido 2026-10-04) |
 
 ## Por qué (evidencia medida, no impresión)
 
@@ -157,7 +158,32 @@ una precisión honesta: como ningún archivo fuera de `src/components/ui/` impor
 typechequea pero **`vite build` no las empaqueta**. Verde significa "compilan", no "renderizan". Nada las
 ejercita en runtime todavía.
 
-## El desfase React 18 vs el registry (bloquea las Fases 2-3)
+## El desfase React 18 vs el registry — **RESUELTO** con React 19.3.0 (`b5ca713`)
+
+Decisión D10, tomada por el usuario el 2026-10-04 entre las dos salidas de abajo: se subió React.
+
+Lo que se hizo: `react`, `react-dom` `^18.3.0 → ^19.3.0` y sus `@types` igual. **Solo cambiaron
+`package.json` y `package-lock.json`: cero archivos de código**, que es exactamente el resultado buscado — el
+código del registry ya era React 19 y ahora es correcto tal como viene. En el lock, el delta se limita a los
+cuatro paquetes y sus aristas directas (`loose-envify` y `@types/prop-types` se van, `scheduler` `0.23.2 →
+0.28.0`).
+
+Por qué no hizo falta tocar nada: el código de la app tiene **cero** ocurrencias de `useRef`, `defaultProps`,
+`propTypes`, `React.FC`, `ReactDOM.render`, `forwardRef`, `ref={`, `ReactElement` y del namespace global `JSX`.
+Es un frontend chico y moderno, así que el salto de major fue de dependencias, no de código.
+
+Todos los deps ya soportaban 19: `react-router-dom >=18`, `zustand >=18` (v4 resuelve el `useSyncExternalStore`
+nativo de React y solo cae al shim si no existe), `@tanstack/react-query ^18 || ^19`, `radix-ui` hasta 19,
+`sonner ^18 || ^19`. `npm ls` sale con exit 0 y sin peers sin cumplir; los `npm warn ERESOLVE` que aparecen
+durante el install describen las versiones **salientes** que se están reemplazando, no un conflicto del árbol
+final.
+
+**Lo que esto no prueba, y hay que decirlo**: `pedidos-web` no tiene runner de tests y ninguna pantalla importa
+las primitivas todavía, así que compilan, pero no renderizan. La propagación de `ref` por `asChild` de Radix
+—el motivo del upgrade— queda sin verificar en runtime hasta la primera pantalla que adopte una primitiva. Ese
+es el smoke test humano pendiente.
+
+El detalle de las dos salidas que se evaluaron:
 
 Las 14 primitivas usan el patrón de **`ref` como prop de React 19** y **ninguna** declara `forwardRef`
 (`grep -rc forwardRef src/components/ui/*.tsx` → 0 en todas). En React 18.3.1 ese `ref` se **descarta en
@@ -313,3 +339,14 @@ todavía: verde = compilan, no = renderizan. **Deuda nueva y bloqueante para las
 son código React 19 (ref como prop, sin `forwardRef`), que en React 18.3.1 se descarta en silencio y rompería la
 composición `asChild` de Radix. Decisión pendiente del usuario: subir a React 19 o quedarse en 18 y agregar
 `forwardRef`. El usuario aceptó además la escala de radios nueva del preset (sm/lg/2xl +2px). -->
+
+<!-- 2026-10-04: **React 19.3.0** (`b5ca713`, decisión D10) como paso aislado, antes de retomar las pantallas.
+El registry generaba código React 19 (ref como prop, sin un solo `forwardRef`) que React 18.3 descartaba en
+silencio: compilaba y no funcionaba. Se prefirió subir React antes que parchear 14 archivos y cada `add` futuro.
+Solo cambiaron `package.json` y `package-lock.json`: **cero archivos de código**, porque la app no tenía ningún
+patrón roto (`useRef`, `defaultProps`, `propTypes`, `React.FC`, `ReactDOM.render`, `forwardRef`, `ref={}`,
+`ReactElement` y namespace global `JSX`: todos en cero). Delta del lock: los cuatro paquetes y sus aristas
+directas. `npm ls` exit 0 y sin peers sin cumplir. Gate verde dos veces (writer y verificador independiente),
+sin blockers. Pendiente: smoke test humano del app bajo React 19 — no hay runner de tests y las primitivas
+siguen sin consumidor, así que la propagación de `ref` por `asChild` se verifica recién con la primera pantalla
+que adopte una primitiva (Fase 2). -->
