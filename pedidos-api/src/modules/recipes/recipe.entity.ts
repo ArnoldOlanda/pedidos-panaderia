@@ -26,8 +26,11 @@ export class Recipe {
   })
   ingredients!: RecipeIngredient[];
 
-  @Column({ type: 'float', default: 35 })
+  @Column({ type: 'float', default: 100 })
   utilidad!: number;
+
+  @Column({ type: 'float', default: 20 })
+  manoObra!: number;
 
   @Column({ type: 'float' })
   totalCost!: number;

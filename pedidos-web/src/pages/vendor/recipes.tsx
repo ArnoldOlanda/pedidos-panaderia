@@ -8,7 +8,7 @@ import { useCreateRecipe } from '../../hooks/use-create-recipe';
 import { useUpdateRecipe } from '../../hooks/use-update-recipe';
 import { useDeleteRecipe } from '../../hooks/use-delete-recipe';
 import { toApiError } from '../../lib/api';
-import { formatPrice } from '../../lib/format';
+import { formatPrice, formatPrecisePrice } from '../../lib/format';
 import { INGREDIENT_UNIT_LABELS } from '../../lib/ingredients';
 import type { Ingredient } from '../../lib/ingredients';
 import type { Recipe, RecipeIngredientInput } from '../../lib/recipes';
@@ -22,13 +22,19 @@ interface CostBreakdown {
   precioVenta: number;
 }
 
-// Mirrors calculate() in pedidos-api/src/modules/recipes/recipes.service.ts.
+// Mirrors calculate() in pedidos-api/src/modules/recipes/recipes.service.ts:
+//   costoInsumos = Σ quantityUsed × (purchasePrice / conversionFactor)
+//   igv          = costoInsumos * 0.18
+//   manoObra     = costoInsumos * (manoObra / 100)
+//   costoProd    = costoInsumos + igv + manoObra
+//   precioVenta  = costoProd * (1 + utilidad / 100)
 // The duplication is deliberate: the client only shows a live preview, while the
 // backend remains the single source of truth for the persisted cost.
 function calculateCost(
   lines: RecipeIngredientInput[],
   ingredientsById: Map<string, Ingredient>,
   utilidad: number,
+  manoObra: number,
 ): CostBreakdown {
   const costoInsumos = lines.reduce((sum, line) => {
     const ingredient = ingredientsById.get(line.ingredientId);
@@ -37,13 +43,18 @@ function calculateCost(
     return sum + line.quantityUsed * unitCost;
   }, 0);
   const igv = costoInsumos * 0.18;
-  const manoObra = costoInsumos * 0.2;
-  const costoProd = costoInsumos + igv + manoObra;
+  const costoManoObra = costoInsumos * (manoObra / 100);
+  const costoProd = costoInsumos + igv + costoManoObra;
   const precioVenta = costoProd * (1 + utilidad / 100);
-  return { costoInsumos, igv, manoObra, costoProd, precioVenta };
+  return { costoInsumos, igv, manoObra: costoManoObra, costoProd, precioVenta };
 }
 
+// A recipe response may omit the labor column an older backend does not return.
+// Rendering must survive that (there is no error boundary around this route), so
+// a non-finite value shows the neutral placeholder instead of throwing on
+// value.toFixed(2). Never fabricate a default percentage here.
 function formatPercent(value: number): string {
+  if (!Number.isFinite(value)) return '—';
   return `${value.toFixed(2)}%`;
 }
 
@@ -79,9 +90,23 @@ function IngredientRow({
     ? `Cantidad (${INGREDIENT_UNIT_LABELS[ingredient.usageUnit]})`
     : 'Cantidad';
   const quantity = Number.isFinite(line.quantityUsed) ? line.quantityUsed : 0;
-  const partialCost = ingredient
-    ? quantity * (ingredient.purchasePrice / ingredient.conversionFactor)
+  // Same operand the backend multiplies: cost per usage unit. Showing it next
+  // to the quantity makes the line read as cantidad × precio = costo instead of
+  // asking the vendor to trust a number that comes out of nowhere.
+  const unitCost = ingredient
+    ? ingredient.purchasePrice / ingredient.conversionFactor
     : 0;
+  const partialCost = ingredient ? quantity * unitCost : 0;
+  const usageUnitLabel = ingredient
+    ? INGREDIENT_UNIT_LABELS[ingredient.usageUnit]
+    : '';
+  const purchaseUnitLabel = ingredient
+    ? INGREDIENT_UNIT_LABELS[ingredient.purchaseUnit]
+    : '';
+  // When the insumo is bought and used in the same unit the conversion factor is
+  // 1 and both prices are the same number; one line is enough in that case.
+  const showsConversion =
+    ingredient !== undefined && unitCost !== ingredient.purchasePrice;
   // Hide insumos already chosen by the OTHER rows, but never hide this row's
   // own selection, so a duplicate keeps its value visible instead of blanking.
   const options = catalog.filter(
@@ -94,7 +119,7 @@ function IngredientRow({
   const hasNoOptions = options.length === 0;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_120px_auto] gap-2 items-end">
+    <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_190px_120px_auto] gap-2 items-end">
       <label className="text-sm">
         <span className="text-slate-700">Insumo</span>
         <select
@@ -148,9 +173,29 @@ function IngredientRow({
         />
       </label>
       <div className="text-sm">
+        <span className="text-slate-700">Precio</span>
+        {ingredient ? (
+          <>
+            <p className="mt-2 font-medium text-slate-900">
+              {formatPrice(ingredient.purchasePrice)}{' '}
+              <span className="text-xs font-normal text-slate-500">
+                por {purchaseUnitLabel}
+              </span>
+            </p>
+            {showsConversion && (
+              <p className="text-xs text-slate-500">
+                {formatPrecisePrice(unitCost)} por {usageUnitLabel}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="mt-2 text-slate-400">—</p>
+        )}
+      </div>
+      <div className="text-sm">
         <span className="text-slate-700">Costo</span>
         <p className="mt-2 font-medium text-slate-900">
-          {formatPrice(partialCost)}
+          {formatPrecisePrice(partialCost)}
         </p>
       </div>
       <button
@@ -170,6 +215,7 @@ function validateRecipe(
   lines: RecipeIngredientInput[],
   ingredientsById: Map<string, Ingredient>,
   utilidad: number,
+  manoObra: number,
 ): string | null {
   if (name.length < 1 || name.length > 200) {
     return 'El nombre debe tener entre 1 y 200 caracteres';
@@ -194,6 +240,9 @@ function validateRecipe(
   if (!Number.isFinite(utilidad) || utilidad < 0) {
     return 'La utilidad debe ser un número válido';
   }
+  if (!Number.isFinite(manoObra) || manoObra < 0) {
+    return 'La mano de obra debe ser un número válido';
+  }
   return null;
 }
 
@@ -202,6 +251,7 @@ function RecipeForm({
   initialIngredients,
   initialIngredientNames,
   initialUtilidad,
+  initialManoObra,
   submitLabel,
   busy,
   serverError,
@@ -212,6 +262,7 @@ function RecipeForm({
   initialIngredients?: RecipeIngredientInput[];
   initialIngredientNames?: Record<string, string | undefined>;
   initialUtilidad?: number;
+  initialManoObra?: number;
   submitLabel: string;
   busy: boolean;
   serverError: string | null;
@@ -219,6 +270,7 @@ function RecipeForm({
     name: string;
     ingredients: RecipeIngredientInput[];
     utilidad: number;
+    manoObra: number;
   }) => void;
   onCancel?: () => void;
 }) {
@@ -232,7 +284,8 @@ function RecipeForm({
   );
 
   const [name, setName] = useState(initialName ?? '');
-  const [utilidad, setUtilidad] = useState(initialUtilidad ?? 35);
+  const [utilidad, setUtilidad] = useState(initialUtilidad ?? 100);
+  const [manoObra, setManoObra] = useState(initialManoObra ?? 20);
   const [ingredients, setIngredients] = useState<RecipeIngredientInput[]>(
     initialIngredients && initialIngredients.length > 0
       ? initialIngredients
@@ -241,8 +294,8 @@ function RecipeForm({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const breakdown = useMemo(
-    () => calculateCost(ingredients, ingredientsById, utilidad),
-    [ingredients, ingredientsById, utilidad],
+    () => calculateCost(ingredients, ingredientsById, utilidad, manoObra),
+    [ingredients, ingredientsById, utilidad, manoObra],
   );
 
   const updateIngredient = (index: number, next: RecipeIngredientInput) => {
@@ -264,12 +317,18 @@ function RecipeForm({
     event.preventDefault();
     setValidationError(null);
     const trimmedName = name.trim();
-    const v = validateRecipe(trimmedName, ingredients, ingredientsById, utilidad);
+    const v = validateRecipe(
+      trimmedName,
+      ingredients,
+      ingredientsById,
+      utilidad,
+      manoObra,
+    );
     if (v) {
       setValidationError(v);
       return;
     }
-    onSubmit({ name: trimmedName, ingredients, utilidad });
+    onSubmit({ name: trimmedName, ingredients, utilidad, manoObra });
   };
 
   if (ingredientsQuery.isLoading) {
@@ -331,18 +390,32 @@ function RecipeForm({
         />
       </label>
 
-      <label className="block text-sm">
-        <span className="text-slate-700">Utilidad (%)</span>
-        <input
-          type="number"
-          step="0.1"
-          min="0"
-          value={utilidad}
-          onChange={(e) => setUtilidad(Number(e.target.value))}
-          required
-          className="mt-1 w-32 rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
-        />
-      </label>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="text-sm">
+          <span className="text-slate-700">Utilidad (%)</span>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            value={utilidad}
+            onChange={(e) => setUtilidad(Number(e.target.value))}
+            required
+            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-slate-700">Mano de obra (%)</span>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            value={manoObra}
+            onChange={(e) => setManoObra(Number(e.target.value))}
+            required
+            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+          />
+        </label>
+      </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -388,7 +461,7 @@ function RecipeForm({
           IGV (18%): <span className="font-medium">{formatPrice(breakdown.igv)}</span>
         </p>
         <p>
-          Mano de obra (20%): <span className="font-medium">{formatPrice(breakdown.manoObra)}</span>
+          Mano de obra ({formatPercent(manoObra)}): <span className="font-medium">{formatPrice(breakdown.manoObra)}</span>
         </p>
         <p>
           Costo producción: <span className="font-medium">{formatPrice(breakdown.costoProd)}</span>
@@ -456,7 +529,8 @@ function RecipeCard({
           <p className="text-sm text-slate-600">
             {recipe.ingredients.length} insumo
             {recipe.ingredients.length === 1 ? '' : 's'} · Utilidad{' '}
-            {formatPercent(recipe.utilidad)}
+            {formatPercent(recipe.utilidad)} · Mano de obra{' '}
+            {formatPercent(recipe.manoObra)}
           </p>
         </div>
         <div className="text-right space-y-2">
@@ -555,6 +629,7 @@ function EditModal({
     name: string;
     ingredients: RecipeIngredientInput[];
     utilidad: number;
+    manoObra: number;
   }) => {
     setServerError(null);
     update.mutate(
@@ -564,6 +639,7 @@ function EditModal({
           name: input.name,
           ingredients: input.ingredients,
           utilidad: input.utilidad,
+          manoObra: input.manoObra,
         },
       },
       {
@@ -593,6 +669,7 @@ function EditModal({
         initialIngredients={initialIngredients}
         initialIngredientNames={initialIngredientNames}
         initialUtilidad={recipe.utilidad}
+        initialManoObra={recipe.manoObra}
         submitLabel="Guardar cambios"
         busy={update.isPending}
         serverError={serverError}
@@ -643,6 +720,7 @@ export function VendorRecipesPage() {
     name: string;
     ingredients: RecipeIngredientInput[];
     utilidad: number;
+    manoObra: number;
   }) => {
     setCreateServerError(null);
     create.mutate(
@@ -650,6 +728,7 @@ export function VendorRecipesPage() {
         name: input.name,
         ingredients: input.ingredients,
         utilidad: input.utilidad,
+        manoObra: input.manoObra,
       },
       {
         onSuccess: () => {
