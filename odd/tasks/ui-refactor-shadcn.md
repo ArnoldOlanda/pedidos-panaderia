@@ -272,7 +272,7 @@ contraste: 6.45:1 en claro y 7.49:1 en oscuro. El par apagado que se probó prim
 enlace con forma de botón, y no lo era. Quedó un `Button asChild` donde en las otras pantallas es un enlace de
 texto, y lo detectó el writer del slice D por su cuenta. Revertido en `0b7f458`.
 
-**Pendiente de esta fase**: la confirmación visual del usuario. Nada ejercita las primitivas en runtime y
+**Confirmación visual**: el usuario dio el visto bueno a la fase el 2026-10-04 ("listo vamos bien"), sin confirmar punto por punto. Nada ejercita las primitivas en runtime y
 `pedidos-web` no tiene runner de tests, así que la corrección visual **no está probada**. Puntos concretos:
 la escala de radios del preset (ya aceptada por el usuario), el foco ámbar de los inputs, los tres estados de
 `Badge` en `orders` (ámbar / verde / gris), el ancho y la posición de la ayuda "máx. 10" en el campo Cantidad de
