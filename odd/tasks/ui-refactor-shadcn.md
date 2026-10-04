@@ -6,7 +6,7 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 ## Status
 
 - Started: 2026-10-03
-- Current task: **3 — Fase 1 (shadcn init + primitivas)**, detenida en decisiones de la CLI (ver "Fase 1 — hallazgos del CLI")
+- Current task: **3 — Fase 1 (shadcn init + primitivas)** — slice 1 (init + capa de tokens) cerrada en `e4f5019`; falta el slice de primitivas
 - Branch: `feat/ui-refactor-shadcn` (base `main` @ `6018b3e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local)
 - Deploy: **pospuesto** por decisión del usuario hasta terminar el refactor (ODD-3.12/3.13 van después)
@@ -26,6 +26,9 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 | D4 | Tokens | La capa semántica (`--primary`, `--surface`, `--muted`…) la define `shadcn init` en la Fase 1, mapeando `primary` al ámbar de la marca. La Fase 0 **no** inventa una capa paralela |
 | D5 | Iconos | `lucide-react` (es el default de shadcn; hoy no hay ningún icono en la app) |
 | D6 | Confirmaciones | `window.confirm` se reemplaza por un `AlertDialog` cuando se migre cada pantalla que lo usa |
+| D7 | Neutro base | **`neutral`** (croma 0). La CLI 4.21 ya no ofrece `slate` ni `gray`; el usuario aceptó el gris puro sabiendo que la app deja de ser azulada (decidido 2026-10-04) |
+| D8 | Instalación | **Preset Nova sobre Radix, modelo nuevo tal cual** (acepta los deps de runtime y la fuente Geist). El padre lo enmendó en tres puntos de higiene, todos reversibles: `cn()` local en vez del paquete `cn`, `shadcn` como devDependency y el anillo de foco a alpha completo |
+| D9 | Marca en tokens | `--primary` y `--ring` = **amber-700** (`oklch(55.5% 0.163 48.998)`) con `--primary-foreground` blanco: **5.03:1**, cumple AA. Reemplaza el `bg-amber-500` + `text-white` de 2.2:1 |
 
 ## Por qué (evidencia medida, no impresión)
 
@@ -80,6 +83,51 @@ Riesgo a re-verificar apenas se corra el init: que `@import 'tailwindcss' source
 
 Decisiones pendientes del usuario: neutro base, camino de instalación (preset vs vendorizado) y el contraste de
 `--primary-foreground` sobre el ámbar de la marca.
+
+**Resueltas el 2026-10-04** → pasaron a ser D7 (neutro `neutral`), D8 (preset Nova tal cual) y D9 (amber-700 con
+texto blanco). Ver también "Fase 1 — slice 1", más abajo.
+
+## Fase 1 — slice 1: init + capa de tokens (cerrada en `e4f5019`)
+
+Corrido con `npx shadcn@latest init -b radix -p nova -y --no-monorepo`. `-p nova` resolvió solo a `neutral`, sin
+necesidad del formulario de preset por URL. **`@import 'tailwindcss' source('./')` sobrevivió intacto** (era el
+riesgo principal: si se perdía, Tailwind escanearía `pedidos-api/` y `odd/`).
+
+Entregado: `components.json` (`style: radix-nova`, `baseColor: neutral`, `iconLibrary: lucide`), la capa
+semántica en `src/index.css` (`@import "shadcn/tailwind.css"`, `@import "tw-animate-css"`,
+`@import "@fontsource-variable/geist"`, `@theme inline`, `:root` y `.dark`), y las dependencias del preset.
+Sin componentes todavía y sin tocar un solo `.tsx`.
+
+**Tres correcciones de higiene que el padre aplicó después de la verificación** (cada una reversible, y las tres
+desvían del "tal cual" de D8):
+
+1. El preset reescribió `src/lib/utils.ts` a `export { cn } from "cn"` y agregó el paquete `cn@^0.4.0` —que **no
+   estaba en la lista de dependencias que el usuario aprobó**. Es oficial (`github.com/shadcn-ui/cn`, mantenedor
+   `shadcn`), pero se restauró el helper local canónico (`twMerge(clsx(inputs))`) para no sumar un dep y no
+   dejar `clsx` ni `tailwind-merge` sin uso.
+2. `outline-ring/50` → `outline-ring`. El default de shadcn compone el ámbar al 50% sobre blanco y no llega al
+   3:1 que exige un indicador de foco; a alpha completo mide **5.03:1**.
+3. `shadcn` pasó de `dependencies` a `devDependencies`: es un `@import` de build más una CLI, y su árbol de
+   tooling aporta **7 de los 8 avisos high** del árbol completo. Con eso, `npm audit --omit=dev` queda igual que
+   antes del slice: **2 moderate preexistentes** (`react-router`/`react-router-dom`).
+
+Gate: `typecheck` y `build` verdes; verificación independiente read-only **sin blockers**. El CSS emitido es
+byte-idéntico en tamaño (22.68 kB) con `shadcn` como devDependency, así que el `@import` se resuelve en build time.
+
+### Consecuencias a tener presentes
+
+- **La escala de radios cambió en toda la app, sin migrar ninguna pantalla.** El `@theme inline` del preset define
+  `--radius: 0.625rem` y deriva `rounded-sm = calc(var(--radius) * 0.6)` = **6px** (antes 4px), `rounded-lg =
+  var(--radius)` = **10px** (antes 8px) y `rounded-2xl = calc(var(--radius) * 1.8)` = **18px** (antes 16px).
+  Afecta **142 utilidades en 14 archivos** (las 10 pantallas + 4 componentes compartidos). Es consecuencia del
+  preset aprobado, no un defecto, pero **invalida la paridad visual que el usuario confirmó tras la Fase 0**.
+- **El foco de los inputs sigue sin cumplir 3:1.** Los inputs usan `focus:border-amber-500` (2.15:1) **y**
+  `focus:outline-hidden`, que suprime el anillo nuevo: o sea que la corrección del anillo no los alcanza. Son
+  ~22 ocurrencias en 6 pantallas. Se cierra solo cuando cada pantalla migre al `Input` de shadcn (Fases 2-3), que
+  trae su propio tratamiento de foco; queda anotado como parte del checklist de a11y.
+- El bloque `.dark` quedó **inerte** (ningún elemento lleva la clase `dark`), pero `.dark --primary` es casi
+  blanco: si algún día se activa el modo oscuro, la marca ámbar no se hereda.
+- `tsc -b` no cubre el CSS: los tokens son datos, no tipos. Su verificación es el CSS emitido y el ojo del usuario.
 
 ## Constraints
 
@@ -190,3 +238,16 @@ en ambos tsconfig + Vite; `cn()` con `clsx` + `tailwind-merge`; README actualiza
 rename-only reconstruyendo cada `.tsx` desde HEAD byte a byte y confirmó la paridad de radios/sombras en el CSS
 emitido. Único hallazgo no bloqueante: README desactualizado — corregido en el mismo work unit. Siguiente: Fase 1
 (`shadcn init` + primitivas), previa confirmación visual del usuario con `npm run dev`. -->
+
+<!-- 2026-10-04: **Fase 1 slice 1 cerrada** en `e4f5019` (work unit) sobre `feat/ui-refactor-shadcn`.
+`shadcn@4.21.1 init -b radix -p nova -y --no-monorepo`: `components.json` (radix-nova / neutral / lucide) + la
+capa semántica en `src/index.css` + los deps del preset. `source('./')` sobrevivió. `--primary` y `--ring`
+mapped a amber-700 con foreground blanco (5.03:1, AA). Tres correcciones de higiene post-verificación: se
+restauró el `cn()` local en vez del paquete `cn` (dep no aprobado), el anillo de foco pasó de `/50` a alpha
+completo (3:1), y `shadcn` pasó a `devDependencies` (7 de los 8 avisos high venían de su árbol de tooling).
+Verificación independiente read-only: **sin blockers**; corrigió el supuesto del padre de que los 8 avisos high
+eran todos del árbol de shadcn (7 sí, 1 es de Vite y preexistente). Gate: typecheck y build verdes; audit de
+producción igual que antes (2 moderate preexistentes). Sin componentes y sin un solo `.tsx` tocado. Siguiente:
+slice de primitivas (`Button`, `Input`/`Label`/`Field`, `Select`, `Textarea`, `Card`, `Badge`, `Alert`,
+`Skeleton`, `Dialog`, `Toast`, `AlertDialog`) + checklist de a11y, previa confirmación visual del usuario de que
+la escala de radios nueva (sm/lg/2xl +2px) es aceptable. -->
