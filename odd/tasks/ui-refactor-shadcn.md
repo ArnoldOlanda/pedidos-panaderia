@@ -6,7 +6,7 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 ## Status
 
 - Started: 2026-10-03
-- Current task: **5 — Fase 3 (pantallas de vendedor)** — la Fase 2 está cerrada y el shell ya está migrado, así que las pantallas de vendedor heredan el aspecto nuevo mientras su contenido siga con `slate` hasta migrarse
+- Current task: **4 — Fase 3 (pantallas de vendedor)**, en curso. Mapeo de la fase cerrado el 2026-10-04 (4 pantallas, 2 163 líneas) y desglosado en 5 rebanadas + el retiro de `modal-shell.tsx`; el plan está en la sección «Fase 3 — plan de rebanadas»
 - Branch: `feat/ui-refactor-shadcn` (base `main` @ `6018b3e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local)
 - Deploy: **pospuesto** por decisión del usuario hasta terminar el refactor (ODD-3.12/3.13 van después)
@@ -60,7 +60,7 @@ Huecos de accesibilidad que la librería cierra (o deja a la vista):
       `Card`, `Badge`, `Alert`, `Skeleton`, `Dialog` (reemplaza `ModalShell`), `Toast`, `AlertDialog` + checklist
       de accesibilidad (foco visible, `aria-current`, `aria-live`, `scope="col"`)
 - [x] **3 — Fase 2: pantallas de comprador** — ✅ **CERRADA**. `login` + `not-found` (`acfa146`), `catalog` + `product-detail` (`9125171`), `orders` (`57173c1`), `order-new` (`6cb2419`), shell compartido (`16ea53f`) y el fix de consistencia del enlace (`0b7f458`)
-- [ ] **4 — Fase 3: pantallas de vendedor** — `products`, `recipes`, `ingredients`, `orders`
+- [ ] **4 — Fase 3: pantallas de vendedor** — `orders`, `products`, `ingredients`, `recipes` (5 rebanadas, ver «Fase 3 — plan de rebanadas»)
 - [ ] **5 — Verificación independiente y cierre** — review read-only del diff integrado + tracker + Engram
 
 ## Fase 1 — hallazgos del CLI (2026-10-04, antes de escribir nada)
@@ -277,6 +277,57 @@ texto, y lo detectó el writer del slice D por su cuenta. Revertido en `0b7f458`
 la escala de radios del preset (ya aceptada por el usuario), el foco ámbar de los inputs, los tres estados de
 `Badge` en `orders` (ámbar / verde / gris), el ancho y la posición de la ayuda "máx. 10" en el campo Cantidad de
 `order-new`, y el estado activo del nav nuevo.
+
+## Fase 3 — plan de rebanadas (mapeo cerrado 2026-10-04)
+
+Reconocimiento read-only de las cuatro pantallas de vendedor antes de escribir nada. Medido en el árbol:
+
+| Archivo | Líneas | Inputs legacy | `ModalShell` | `window.confirm` | Tabla |
+|---|---|---|---|---|---|
+| `vendor/orders.tsx` | 263 | 1 (`<select>` 245) | — | — | — |
+| `vendor/products.tsx` | 421 | 5 | — | — | — |
+| `vendor/ingredients.tsx` | 598 | 4 | 296 / 312 / 345 | 420 | 511 (sin `scope="col"`) |
+| `vendor/recipes.tsx` | 883 | 5 | 587 / 603 / 666 | 754 | — |
+
+Rebanadas, en este orden (la más chica primero, para que la primera adopte `Select` y `Dialog` con el menor
+radio de daño):
+
+1. **`vendor/orders.tsx`** + consolidación del mapa de estado. El comentario del comprador
+   (`pages/orders.tsx:26-30`) ya anuncia que la duplicación se consolida en la Fase 3, así que esta rebanada
+   extrae `TIME_FORMAT`, `STATUS_LABEL` y el mapa de variantes de `Badge` a un módulo compartido y lo consumen
+   **las dos** pantallas de pedidos. Toca el archivo del comprador ya verificado: diff mínimo, comportamiento
+   idéntico, verificación independiente propia.
+2. **`vendor/products.tsx`** — 5 inputs a `Label`+`Input`/`Select`, tarjetas, `Alert` y `Skeleton`.
+3. **`vendor/ingredients.tsx`** — la tabla (ahí entra `scope="col"`), 4 inputs, los 3 `ModalShell` a `Dialog`
+   y el `window.confirm` a `AlertDialog` (D6).
+4. **`vendor/recipes.tsx`**, en **dos** work units porque 883 líneas exceden una rebanada revisable:
+   (a) `IngredientRow` (69-211) + `RecipeForm` (249-509); (b) `RecipeCard` (511-567) + `EditModal` (569-681) +
+   el shell de página (683-883).
+5. **Retiro de `modal-shell.tsx`** una vez que ni `ingredients` ni `recipes` lo importen.
+6. **Verificación independiente del diff integrado** + tracker + Engram (Fase 4 del tracker).
+
+### Hallazgos del mapeo que condicionan la migración
+
+- **`ModalShell` se monta condicionalmente; `Dialog` no.** Las llamadas actuales renderizan `<ModalShell>` solo
+  cuando hay algo que editar, y `ModalShell` no maneja `Escape`, no atrapa ni devuelve el foco y no enlaza el
+  título. Al pasar a `Dialog` hay que cablear `open`/`onOpenChange` y `DialogTitle`: es una **mejora** de
+  accesibilidad, no una regresión, pero cambia el montaje.
+- **`DialogContent` trae su propio botón de cierre en inglés.** `dialog.tsx:83` renderiza un `sr-only` con el
+  texto `Close`, donde `ModalShell` tenía `aria-label="Cerrar"`. Migrar tal cual **degradaría el idioma del
+  anuncio**: hay que pasar `showCloseButton={false}` y poner el cierre propio, o sobrescribir el rótulo.
+- **El ancho por defecto del `Dialog` es `sm:max-w-sm`**, contra el `max-w-2xl` de `ModalShell`: los formularios
+  de insumo y de receta se angostarían. Se pasa `className` explícito.
+- **`AlertDialog` no es `window.confirm`.** El handler actual confirma de forma síncrona y recién después llama a
+  `remove.mutate`; con `AlertDialog` la mutación se mueve al `onClick` del `AlertDialogAction` y la semántica
+  bloqueante nativa desaparece.
+- **El anuncio de carga no existe en ninguna de las cuatro.** Hoy solo hay `role="status"` para el mensaje de
+  éxito; `recipes` usa `aria-busy` (336) y `orders` un `aria-live="polite"` en el control de guardado (72). Se
+  aplica la convención 3 en las cuatro.
+- **Dos pantallas comparten `modal-shell.tsx`** (`ingredients` y `recipes`), así que el módulo se borra recién al
+  terminar ambas: **no** se editan dos pantallas en una misma rebanada.
+- **`step="0.1"` en Utilidad (%) y Mano de obra (%) de `recipes`** sigue en «Pendientes ajenos a esta feature».
+  No se corrige dentro de la rebanada de migración: el contrato de la migración es **paridad**, y mezclar un
+  cambio de comportamiento haría intestable la verificación de paridad.
 
 ## Constraints
 
