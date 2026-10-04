@@ -25,7 +25,7 @@ export function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-slate-500 hover:bg-slate-100"
+            className="rounded-sm p-1 text-slate-500 hover:bg-slate-100"
             aria-label="Cerrar"
           >
             ×

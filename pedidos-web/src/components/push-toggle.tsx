@@ -34,7 +34,7 @@ export function PushToggle() {
     typeof Notification !== 'undefined' && Notification.permission === 'denied';
 
   const baseBtn =
-    'text-sm px-3 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+    'text-sm px-3 py-1 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
   const onBtnClass = 'bg-amber-500 text-white hover:bg-amber-600';
   const offBtnClass = 'bg-slate-200 text-slate-800 hover:bg-slate-300';
 

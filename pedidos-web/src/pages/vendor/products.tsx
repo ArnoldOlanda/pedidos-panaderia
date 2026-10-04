@@ -53,7 +53,7 @@ function parseYmd(ymd: string): Date | null {
 
 function MyProductCard({ product }: { product: Product }) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-lg font-medium text-slate-900">{product.name}</h2>
@@ -77,9 +77,9 @@ function MyProductCard({ product }: { product: Product }) {
 
 function MyProductSkeleton() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="h-5 w-2/3 rounded bg-slate-200 animate-pulse" />
-      <div className="mt-3 h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
+      <div className="h-5 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="mt-3 h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
     </div>
   );
 }
@@ -199,7 +199,7 @@ export function VendorProductsPage() {
 
   if (user && !isVendor) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm space-y-3">
+      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs space-y-3">
         <h1 className="text-2xl font-semibold text-slate-900">Publicar producto</h1>
         <p className="text-sm text-slate-600">Esta sección es solo para vendedores.</p>
         <Link
@@ -241,14 +241,14 @@ export function VendorProductsPage() {
         )}
 
         {!todayProducts.isLoading && todayProducts.isError && (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
             <p>No pudimos cargar tus productos</p>
             <button
               type="button"
               onClick={() => {
                 void todayProducts.refetch();
               }}
-              className="mt-3 px-4 py-2 rounded bg-amber-500 text-white hover:bg-amber-600"
+              className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
             >
               Reintentar
             </button>
@@ -268,7 +268,7 @@ export function VendorProductsPage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
         <h2 className="text-lg font-semibold text-slate-900">Publicar nuevo producto</h2>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -278,7 +278,7 @@ export function VendorProductsPage() {
               value={recipeId}
               onChange={(e) => handleRecipeChange(e.target.value)}
               required
-              className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+              className="mt-1 w-full rounded-sm border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
             >
               <option value="">Selecciona una receta</option>
               {recipesQuery.data?.map((r) => (
@@ -305,7 +305,7 @@ export function VendorProductsPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
             />
           </label>
 
@@ -329,7 +329,7 @@ export function VendorProductsPage() {
               required
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="mt-1 w-32 rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+              className="mt-1 w-32 rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
             />
           </label>
 
@@ -340,7 +340,7 @@ export function VendorProductsPage() {
               required
               value={availableDate}
               onChange={(e) => setAvailableDate(e.target.value)}
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
             />
           </label>
 
@@ -351,7 +351,7 @@ export function VendorProductsPage() {
               required
               value={closesAtLocal}
               onChange={(e) => setClosesAtLocal(e.target.value)}
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
             />
           </label>
 
@@ -366,7 +366,7 @@ export function VendorProductsPage() {
             if (status === 403) {
               return (
                 <div
-                  className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                  className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
                   role="alert"
                 >
                   <p>Solo los vendedores pueden publicar productos.</p>
@@ -388,12 +388,12 @@ export function VendorProductsPage() {
             }
             if (status === 409) {
               return (
-                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+                <div className="rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
                   <p>{serverError}</p>
                   <button
                     type="button"
                     onClick={() => handleSubmit()}
-                    className="mt-2 px-3 py-1 rounded bg-amber-500 text-white text-sm hover:bg-amber-600"
+                    className="mt-2 px-3 py-1 rounded-sm bg-amber-500 text-white text-sm hover:bg-amber-600"
                   >
                     Reintentar
                   </button>
@@ -410,7 +410,7 @@ export function VendorProductsPage() {
           <button
             type="submit"
             disabled={publish.isPending}
-            className="rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {publish.isPending ? 'Publicando…' : 'Publicar producto'}
           </button>

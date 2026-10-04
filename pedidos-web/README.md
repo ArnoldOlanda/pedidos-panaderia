@@ -7,7 +7,7 @@ Vite + React + TypeScript + Tailwind scaffold for the pedidos-panadería PWA.
 - Vite 5 (dev server + bundler)
 - React 18
 - TypeScript 5 (strict)
-- Tailwind CSS 3.4 (JIT, `slate`/`amber` palette only)
+- Tailwind CSS 4 (`slate`/`amber` palette only)
 
 ## Prerequisites
 
@@ -61,11 +61,9 @@ npm run typecheck
 index.html         # Vite entry, mounts <div id="root">
 src/main.tsx       # createRoot mount + StrictMode
 src/App.tsx        # scaffold landing card
-src/index.css      # Tailwind directives + body font reset
+src/index.css      # Tailwind v4 import (source scope) + body font reset
 src/vite-env.d.ts  # Vite client types
-vite.config.ts     # dev server proxy to backend
-tailwind.config.js # content paths + theme extend
-postcss.config.js  # tailwindcss + autoprefixer
+vite.config.ts     # dev server proxy to backend + @tailwindcss/vite plugin + @/* alias
 ```
 
 ## Client infrastructure (task 3.4)

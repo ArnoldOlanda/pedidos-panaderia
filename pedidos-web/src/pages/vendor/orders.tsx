@@ -50,7 +50,7 @@ function OrderRow({
   };
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-slate-900">
@@ -80,7 +80,7 @@ function OrderRow({
         <button
           type="button"
           onClick={() => trigger('LISTO')}
-          className="mt-3 rounded bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
+          className="mt-3 rounded-sm bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
         >
           Marcar LISTO
         </button>
@@ -90,7 +90,7 @@ function OrderRow({
         <button
           type="button"
           onClick={() => trigger('ENTREGADO')}
-          className="mt-3 rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+          className="mt-3 rounded-sm bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
         >
           Marcar ENTREGADO
         </button>
@@ -98,7 +98,7 @@ function OrderRow({
 
       {thisError && (
         <div
-          className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          className="mt-3 rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
           role="alert"
         >
           <p>
@@ -112,7 +112,7 @@ function OrderRow({
               const next = order.status === 'PENDIENTE' ? 'LISTO' : 'ENTREGADO';
               trigger(next);
             }}
-            className="mt-2 px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700"
+            className="mt-2 px-3 py-1 rounded-sm bg-red-600 text-white text-sm hover:bg-red-700"
           >
             Reintentar
           </button>
@@ -124,10 +124,10 @@ function OrderRow({
 
 function OrderSkeleton() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="h-5 w-1/3 rounded bg-slate-200 animate-pulse" />
-      <div className="mt-3 h-4 w-1/4 rounded bg-slate-200 animate-pulse" />
-      <div className="mt-3 h-4 w-1/5 rounded bg-slate-200 animate-pulse" />
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
+      <div className="h-5 w-1/3 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="mt-3 h-4 w-1/4 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="mt-3 h-4 w-1/5 rounded-sm bg-slate-200 animate-pulse" />
     </div>
   );
 }
@@ -147,14 +147,14 @@ function OrderList({ productId }: { productId: string }) {
 
   if (ordersQuery.isError) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
         <p>No pudimos cargar los pedidos</p>
         <button
           type="button"
           onClick={() => {
             void ordersQuery.refetch();
           }}
-          className="mt-3 px-4 py-2 rounded bg-amber-500 text-white hover:bg-amber-600"
+          className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
         >
           Reintentar
         </button>
@@ -202,7 +202,7 @@ export function VendorOrdersPage() {
 
   if (user && !isVendor) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm space-y-3">
+      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs space-y-3">
         <h1 className="text-2xl font-semibold text-slate-900">Pedidos recibidos</h1>
         <p className="text-sm text-slate-600">Esta sección es solo para vendedores.</p>
         <Link
@@ -227,7 +227,7 @@ export function VendorOrdersPage() {
       </header>
 
       {noProducts && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700 space-y-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700 space-y-3">
           <p>Hoy no has publicado productos.</p>
           <Link
             to="/vendor/products"
@@ -245,7 +245,7 @@ export function VendorOrdersPage() {
             <select
               value={selectedProductId}
               onChange={(e) => handleProductChange(e.target.value)}
-              className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+              className="mt-1 w-full rounded-sm border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
             >
               {products.map((p: Product) => (
                 <option key={p.id} value={p.id}>

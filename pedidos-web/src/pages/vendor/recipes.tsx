@@ -126,7 +126,7 @@ function IngredientRow({
           value={line.ingredientId}
           onChange={(e) => onChange({ ...line, ingredientId: e.target.value })}
           required
-          className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
         >
           <option value="">
             {hasNoOptions
@@ -169,7 +169,7 @@ function IngredientRow({
             onChange({ ...line, quantityUsed: Number(e.target.value) })
           }
           required
-          className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
         />
       </label>
       <div className="text-sm">
@@ -202,7 +202,7 @@ function IngredientRow({
         type="button"
         onClick={onRemove}
         disabled={!canRemove}
-        className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-sm border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Quitar
       </button>
@@ -334,8 +334,8 @@ function RecipeForm({
   if (ingredientsQuery.isLoading) {
     return (
       <div className="space-y-2" aria-busy="true">
-        <div className="h-4 w-2/3 rounded bg-slate-200 animate-pulse" />
-        <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
+        <div className="h-4 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
+        <div className="h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
         <p className="text-sm text-slate-600">Cargando insumos…</p>
       </div>
     );
@@ -353,7 +353,7 @@ function RecipeForm({
           onClick={() => {
             void ingredientsQuery.refetch();
           }}
-          className="rounded bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
+          className="rounded-sm bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
         >
           Reintentar
         </button>
@@ -386,7 +386,7 @@ function RecipeForm({
           required
           minLength={1}
           maxLength={200}
-          className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
         />
       </label>
 
@@ -400,7 +400,7 @@ function RecipeForm({
             value={utilidad}
             onChange={(e) => setUtilidad(Number(e.target.value))}
             required
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
           />
         </label>
         <label className="text-sm">
@@ -412,7 +412,7 @@ function RecipeForm({
             value={manoObra}
             onChange={(e) => setManoObra(Number(e.target.value))}
             required
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
           />
         </label>
       </div>
@@ -423,7 +423,7 @@ function RecipeForm({
           <button
             type="button"
             onClick={addIngredient}
-            className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+            className="rounded-sm border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
           >
             Agregar insumo
           </button>
@@ -453,7 +453,7 @@ function RecipeForm({
         </div>
       </div>
 
-      <div className="rounded border border-slate-200 bg-slate-50 p-3 space-y-1 text-sm text-slate-700">
+      <div className="rounded-sm border border-slate-200 bg-slate-50 p-3 space-y-1 text-sm text-slate-700">
         <p>
           Costo insumos: <span className="font-medium">{formatPrice(breakdown.costoInsumos)}</span>
         </p>
@@ -490,7 +490,7 @@ function RecipeForm({
         <button
           type="submit"
           disabled={busy}
-          className="rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? 'Guardando…' : submitLabel}
         </button>
@@ -498,7 +498,7 @@ function RecipeForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+            className="rounded-sm border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
           >
             Cancelar
           </button>
@@ -522,7 +522,7 @@ function RecipeCard({
   isDeleting: boolean;
 }) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h3 className="text-lg font-semibold text-slate-900">{recipe.name}</h3>
@@ -542,7 +542,7 @@ function RecipeCard({
               <button
                 type="button"
                 onClick={onEdit}
-                className="rounded border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
+                className="rounded-sm border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
               >
                 Editar
               </button>
@@ -550,7 +550,7 @@ function RecipeCard({
                 type="button"
                 onClick={onDelete}
                 disabled={isDeleting}
-                className="rounded border border-red-300 px-3 py-1 text-xs text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-sm border border-red-300 px-3 py-1 text-xs text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isDeleting ? 'Eliminando…' : 'Eliminar'}
               </button>
@@ -602,8 +602,8 @@ function EditModal({
     return (
       <ModalShell title="Editar receta" onClose={onClose}>
         <div className="space-y-2">
-          <div className="h-4 w-2/3 rounded bg-slate-200 animate-pulse" />
-          <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
+          <div className="h-4 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
+          <div className="h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
         </div>
       </ModalShell>
     );
@@ -701,7 +701,7 @@ export function VendorRecipesPage() {
 
   if (user && user.role !== 'VENDEDOR') {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm space-y-3">
+      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs space-y-3">
         <h1 className="text-2xl font-semibold text-slate-900">Mis recetas</h1>
         <p className="text-sm text-slate-600">Esta sección es solo para vendedores.</p>
         <Link
@@ -815,22 +815,22 @@ export function VendorRecipesPage() {
 
         {recipesQuery.isLoading && (
           <div className="space-y-3">
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="h-5 w-2/3 rounded bg-slate-200 animate-pulse" />
-              <div className="mt-3 h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="h-5 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
+              <div className="mt-3 h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
             </div>
           </div>
         )}
 
         {!recipesQuery.isLoading && recipesQuery.isError && (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
             <p>No pudimos cargar las recetas</p>
             <button
               type="button"
               onClick={() => {
                 void recipesQuery.refetch();
               }}
-              className="mt-3 px-4 py-2 rounded bg-amber-500 text-white hover:bg-amber-600"
+              className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
             >
               Reintentar
             </button>
@@ -838,7 +838,7 @@ export function VendorRecipesPage() {
         )}
 
         {!recipesQuery.isLoading && !recipesQuery.isError && sortedRecipes.length === 0 && (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-600">
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-600">
             <p>Aún no hay recetas creadas.</p>
           </div>
         )}
@@ -859,7 +859,7 @@ export function VendorRecipesPage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
         <h2 className="text-lg font-semibold text-slate-900">Crear nueva receta</h2>
         <p className="mt-1 text-sm text-slate-600">
           Elige insumos del catálogo y su cantidad. Calculamos el costo y el precio

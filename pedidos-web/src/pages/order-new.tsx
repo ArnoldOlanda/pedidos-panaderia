@@ -20,11 +20,11 @@ interface BuyerInfo {
 
 function NewOrderSkeleton() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-3">
-      <div className="h-7 w-2/3 rounded bg-slate-200 animate-pulse" />
-      <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
-      <div className="h-10 w-full rounded bg-slate-200 animate-pulse" />
-      <div className="h-10 w-32 rounded bg-slate-200 animate-pulse" />
+    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs space-y-3">
+      <div className="h-7 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="h-10 w-full rounded-sm bg-slate-200 animate-pulse" />
+      <div className="h-10 w-32 rounded-sm bg-slate-200 animate-pulse" />
     </div>
   );
 }
@@ -118,7 +118,7 @@ export function OrderNewPage() {
       {isLoading && <NewOrderSkeleton />}
 
       {!isLoading && isNotFound && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
           <p>No encontramos este producto</p>
           <Link
             to="/catalog"
@@ -130,14 +130,14 @@ export function OrderNewPage() {
       )}
 
       {!isLoading && isError && !isNotFound && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
           <p>No pudimos cargar este producto</p>
           <button
             type="button"
             onClick={() => {
               void refetch();
             }}
-            className="mt-3 px-4 py-2 rounded bg-amber-500 text-white hover:bg-amber-600"
+            className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
           >
             Reintentar
           </button>
@@ -145,7 +145,7 @@ export function OrderNewPage() {
       )}
 
       {!isLoading && !isError && data && productIsClosed && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-3 text-slate-700">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs space-y-3 text-slate-700">
           <h1 className="text-2xl font-semibold text-slate-900">{data.name}</h1>
           <p className="text-sm">Este producto ya no acepta pedidos.</p>
           <Link
@@ -160,7 +160,7 @@ export function OrderNewPage() {
       {!isLoading && !isError && data && !productIsClosed && (
         <form
           onSubmit={handleSubmit}
-          className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4"
+          className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs space-y-4"
         >
           <header className="space-y-1">
             <h1 className="text-2xl font-semibold text-slate-900">{data.name}</h1>
@@ -183,7 +183,7 @@ export function OrderNewPage() {
                   required
                   value={buyer.buyerDni}
                   onChange={(e) => setBuyer({ ...buyer, buyerDni: e.target.value.replace(/\D/g, '') })}
-                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+                  className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
                 />
               </label>
               <label className="block text-sm">
@@ -194,7 +194,7 @@ export function OrderNewPage() {
                   required
                   value={buyer.buyerCarrera}
                   onChange={(e) => setBuyer({ ...buyer, buyerCarrera: e.target.value })}
-                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+                  className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
                 />
               </label>
               <label className="block text-sm">
@@ -205,7 +205,7 @@ export function OrderNewPage() {
                   required
                   value={buyer.buyerName}
                   onChange={(e) => setBuyer({ ...buyer, buyerName: e.target.value })}
-                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+                  className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
                 />
               </label>
               <label className="block text-sm">
@@ -216,7 +216,7 @@ export function OrderNewPage() {
                   required
                   value={buyer.buyerApellidos}
                   onChange={(e) => setBuyer({ ...buyer, buyerApellidos: e.target.value })}
-                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+                  className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
                 />
               </label>
             </div>
@@ -238,7 +238,7 @@ export function OrderNewPage() {
                 }
                 setQuantity(Math.min(MAX_QUANTITY, Math.max(1, raw)));
               }}
-              className="mt-1 w-32 rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+              className="mt-1 w-32 rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
             />
             <span className="ml-2 text-xs text-slate-500">máx. {MAX_QUANTITY}</span>
           </label>
@@ -248,12 +248,12 @@ export function OrderNewPage() {
           </p>
 
           {orderError && (
-            <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+            <div className="rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
               <p>{orderError.message || 'No pudimos registrar el pedido'}</p>
               <button
                 type="button"
                 onClick={() => handleSubmit()}
-                className="mt-2 px-3 py-1 rounded bg-amber-500 text-white text-sm hover:bg-amber-600"
+                className="mt-2 px-3 py-1 rounded-sm bg-amber-500 text-white text-sm hover:bg-amber-600"
               >
                 Reintentar
               </button>
@@ -263,7 +263,7 @@ export function OrderNewPage() {
           <button
             type="submit"
             disabled={pending || !buyerValid}
-            className="rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {pending ? 'Procesando…' : 'Confirmar pedido'}
           </button>

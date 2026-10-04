@@ -40,7 +40,7 @@ export function Layout() {
               onClick={() => {
                 void handleLogout();
               }}
-              className="rounded px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+              className="rounded-sm px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
             >
               Salir
             </button>

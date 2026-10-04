@@ -146,7 +146,7 @@ function IngredientForm({
           required
           minLength={1}
           maxLength={150}
-          className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
         />
       </label>
 
@@ -156,7 +156,7 @@ function IngredientForm({
           <select
             value={usageUnit}
             onChange={(e) => setUsageUnit(e.target.value as IngredientUnit)}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
           >
             {INGREDIENT_UNITS.map((unit) => (
               <option key={unit} value={unit}>
@@ -171,7 +171,7 @@ function IngredientForm({
           <select
             value={purchaseUnit}
             onChange={(e) => setPurchaseUnit(e.target.value as IngredientUnit)}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
           >
             {INGREDIENT_UNITS.map((unit) => (
               <option key={unit} value={unit}>
@@ -191,11 +191,11 @@ function IngredientForm({
           value={Number.isFinite(purchasePrice) ? purchasePrice : 0}
           onChange={(e) => setPurchasePrice(Number(e.target.value))}
           required
-          className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
         />
       </label>
 
-      <div className="rounded border border-slate-200 bg-slate-50 p-3 space-y-1 text-sm text-slate-700">
+      <div className="rounded-sm border border-slate-200 bg-slate-50 p-3 space-y-1 text-sm text-slate-700">
         <p>
           Factor de conversión:{' '}
           <span className="font-medium">
@@ -255,7 +255,7 @@ function IngredientForm({
         <button
           type="submit"
           disabled={!canSubmit}
-          className="rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? 'Guardando…' : submitLabel}
         </button>
@@ -263,7 +263,7 @@ function IngredientForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+            className="rounded-sm border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
           >
             Cancelar
           </button>
@@ -311,8 +311,8 @@ function EditModal({
     return (
       <ModalShell title="Editar insumo" onClose={onClose}>
         <div className="space-y-2">
-          <div className="h-4 w-2/3 rounded bg-slate-200 animate-pulse" />
-          <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
+          <div className="h-4 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
+          <div className="h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
         </div>
       </ModalShell>
     );
@@ -383,7 +383,7 @@ export function VendorIngredientsPage() {
 
   if (user && user.role !== 'VENDEDOR') {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm space-y-3">
+      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs space-y-3">
         <h1 className="text-2xl font-semibold text-slate-900">Insumos</h1>
         <p className="text-sm text-slate-600">Esta sección es solo para vendedores.</p>
         <Link
@@ -471,22 +471,22 @@ export function VendorIngredientsPage() {
 
         {ingredientsQuery.isLoading && (
           <div className="space-y-3">
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="h-5 w-2/3 rounded bg-slate-200 animate-pulse" />
-              <div className="mt-3 h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="h-5 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
+              <div className="mt-3 h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
             </div>
           </div>
         )}
 
         {!ingredientsQuery.isLoading && ingredientsQuery.isError && (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
             <p>No pudimos cargar los insumos</p>
             <button
               type="button"
               onClick={() => {
                 void ingredientsQuery.refetch();
               }}
-              className="mt-3 px-4 py-2 rounded bg-amber-500 text-white hover:bg-amber-600"
+              className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
             >
               Reintentar
             </button>
@@ -496,7 +496,7 @@ export function VendorIngredientsPage() {
         {!ingredientsQuery.isLoading &&
           !ingredientsQuery.isError &&
           ingredients.length === 0 && (
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-600">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-600">
               <p>Aún no hay insumos creados.</p>
               <p className="mt-1">
                 Crea el primer insumo para poder usarlo en tus recetas.
@@ -507,7 +507,7 @@ export function VendorIngredientsPage() {
         {!ingredientsQuery.isLoading &&
           !ingredientsQuery.isError &&
           ingredients.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-xs">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-slate-500">
@@ -542,7 +542,7 @@ export function VendorIngredientsPage() {
                           <button
                             type="button"
                             onClick={() => setEditingId(ingredient.id)}
-                            className="rounded border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
+                            className="rounded-sm border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
                           >
                             Editar
                           </button>
@@ -553,7 +553,7 @@ export function VendorIngredientsPage() {
                               remove.isPending &&
                               remove.variables === ingredient.id
                             }
-                            className="rounded border border-red-300 px-3 py-1 text-xs text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="rounded-sm border border-red-300 px-3 py-1 text-xs text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {remove.isPending &&
                             remove.variables === ingredient.id
@@ -570,7 +570,7 @@ export function VendorIngredientsPage() {
           )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
         <h2 className="text-lg font-semibold text-slate-900">Crear nuevo insumo</h2>
         <p className="mt-1 text-sm text-slate-600">
           Define nombre, unidades y precio de compra. El factor de conversión se

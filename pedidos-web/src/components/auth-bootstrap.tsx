@@ -14,7 +14,7 @@ export function AuthBootstrap({ children }: { children: ReactNode }) {
           onClick={() => {
             void refetch();
           }}
-          className="px-4 py-2 rounded bg-amber-500 text-white hover:bg-amber-600"
+          className="px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
         >
           Reintentar
         </button>

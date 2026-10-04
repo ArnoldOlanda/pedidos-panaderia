@@ -5,12 +5,12 @@ import { toApiError } from '../lib/api';
 
 function DetailSkeleton() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-3">
-      <div className="h-7 w-2/3 rounded bg-slate-200 animate-pulse" />
-      <div className="h-6 w-1/3 rounded bg-slate-200 animate-pulse" />
-      <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
-      <div className="h-4 w-1/3 rounded bg-slate-200 animate-pulse" />
-      <div className="h-10 w-32 rounded bg-slate-200 animate-pulse" />
+    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs space-y-3">
+      <div className="h-7 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="h-6 w-1/3 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="h-4 w-1/3 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="h-10 w-32 rounded-sm bg-slate-200 animate-pulse" />
     </div>
   );
 }
@@ -30,7 +30,7 @@ export function ProductDetailPage() {
       {isLoading && <DetailSkeleton />}
 
       {!isLoading && isNotFound && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
           <p>No encontramos este producto</p>
           <Link
             to="/catalog"
@@ -42,14 +42,14 @@ export function ProductDetailPage() {
       )}
 
       {!isLoading && isError && !isNotFound && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
           <p>No pudimos cargar este producto</p>
           <button
             type="button"
             onClick={() => {
               void refetch();
             }}
-            className="mt-3 px-4 py-2 rounded bg-amber-500 text-white hover:bg-amber-600"
+            className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
           >
             Reintentar
           </button>
@@ -57,7 +57,7 @@ export function ProductDetailPage() {
       )}
 
       {!isLoading && !isError && data && (
-        <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-3">
+        <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs space-y-3">
           <h1 className="text-3xl font-semibold text-slate-900">{data.name}</h1>
           <p className="text-2xl text-amber-600">{formatPrice(data.price)}</p>
           <p className="text-sm text-slate-700">
@@ -71,14 +71,14 @@ export function ProductDetailPage() {
             <button
               type="button"
               disabled
-              className="inline-block bg-slate-300 text-slate-600 px-4 py-2 rounded cursor-not-allowed"
+              className="inline-block bg-slate-300 text-slate-600 px-4 py-2 rounded-sm cursor-not-allowed"
             >
               Pedido cerrado
             </button>
           ) : (
             <Link
               to={`/orders/new?productId=${data.id}`}
-              className="inline-block bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600"
+              className="inline-block bg-amber-500 text-white px-4 py-2 rounded-sm hover:bg-amber-600"
             >
               Pedir
             </Link>

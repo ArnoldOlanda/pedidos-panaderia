@@ -35,7 +35,7 @@ export function LoginPage() {
     <div className="min-h-[60vh] flex items-center justify-center">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+        className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-xs"
       >
         <h1 className="text-xl font-semibold text-slate-900">Ingreso de vendedores</h1>
         <p className="mt-1 text-sm text-slate-600">
@@ -58,7 +58,7 @@ export function LoginPage() {
               required
               value={dni}
               onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
             />
           </label>
 
@@ -72,7 +72,7 @@ export function LoginPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
             />
           </label>
         </div>
@@ -87,7 +87,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={pending}
-          className="mt-5 w-full rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-5 w-full rounded-sm bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? 'Ingresando…' : 'Ingresar'}
         </button>

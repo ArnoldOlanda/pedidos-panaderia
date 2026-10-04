@@ -28,7 +28,7 @@ const DNI_PATTERN = /^\d{8}$/;
 function OrderCard({ order }: { order: Order }) {
   const total = order.product.price * order.quantity;
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-slate-900">
@@ -53,10 +53,10 @@ function OrderCard({ order }: { order: Order }) {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="h-5 w-2/3 rounded bg-slate-200 animate-pulse" />
-      <div className="mt-3 h-4 w-1/3 rounded bg-slate-200 animate-pulse" />
-      <div className="mt-3 h-4 w-1/4 rounded bg-slate-200 animate-pulse" />
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
+      <div className="h-5 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="mt-3 h-4 w-1/3 rounded-sm bg-slate-200 animate-pulse" />
+      <div className="mt-3 h-4 w-1/4 rounded-sm bg-slate-200 animate-pulse" />
     </div>
   );
 }
@@ -91,7 +91,7 @@ export function OrdersPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3"
+        className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs space-y-3"
       >
         <label className="block text-sm">
           <span className="text-slate-700">DNI</span>
@@ -103,13 +103,13 @@ export function OrdersPage() {
             required
             value={dni}
             onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
+            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
           />
         </label>
         <button
           type="submit"
           disabled={!DNI_PATTERN.test(dni)}
-          className="rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Buscar pedidos
         </button>
@@ -132,14 +132,14 @@ export function OrdersPage() {
       )}
 
       {!isLoading && isError && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
           <p>No pudimos cargar tus pedidos</p>
           <button
             type="button"
             onClick={() => {
               void refetch();
             }}
-            className="mt-3 px-4 py-2 rounded bg-amber-500 text-white hover:bg-amber-600"
+            className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
           >
             Reintentar
           </button>
@@ -147,7 +147,7 @@ export function OrdersPage() {
       )}
 
       {!isLoading && !isError && submittedDni && data && data.length === 0 && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-600 space-y-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-600 space-y-3">
           <p>No encontramos pedidos para este DNI.</p>
           <Link
             to="/catalog"
