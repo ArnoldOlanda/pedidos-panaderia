@@ -39,9 +39,12 @@ export function ProductDetailPage() {
         <Card>
           <CardContent>
             <p className="text-muted-foreground">No encontramos este producto</p>
-            <Button asChild className="mt-3">
-              <Link to="/catalog">Volver al catálogo</Link>
-            </Button>
+            <Link
+              to="/catalog"
+              className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+            >
+              Volver al catálogo
+            </Link>
           </CardContent>
         </Card>
       )}
