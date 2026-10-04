@@ -6,7 +6,7 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 ## Status
 
 - Started: 2026-10-03
-- Current task: **4 — Fase 2 (pantallas de comprador)**; React 19.3.0 ya está (D10), así que las 14 primitivas se pueden adoptar **verbatim**
+- Current task: **4 — Fase 2 (pantallas de comprador)** — slice A cerrado (`acfa146`: `login` + `not-found`); faltan `catalog`, `product-detail`, `order-new`, `orders`
 - Branch: `feat/ui-refactor-shadcn` (base `main` @ `6018b3e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local)
 - Deploy: **pospuesto** por decisión del usuario hasta terminar el refactor (ODD-3.12/3.13 van después)
@@ -60,7 +60,7 @@ Huecos de accesibilidad que la librería cierra (o deja a la vista):
       `Card`, `Badge`, `Alert`, `Skeleton`, `Dialog` (reemplaza `ModalShell`), `Toast`, `AlertDialog` + checklist
       de accesibilidad (foco visible, `aria-current`, `aria-live`, `scope="col"`)
 - [ ] **3 — Fase 2: pantallas de comprador** — `catalog`, `product-detail`, `order-new`, `orders`, `login`,
-      `not-found`
+      `not-found` → ✅ `login` y `not-found` en `acfa146`; faltan `catalog`, `product-detail`, `order-new`, `orders`
 - [ ] **4 — Fase 3: pantallas de vendedor** — `products`, `recipes`, `ingredients`, `orders`
 - [ ] **5 — Verificación independiente y cierre** — review read-only del diff integrado + tracker + Engram
 
@@ -206,6 +206,34 @@ Dos salidas, ninguna tomada aún:
 - **Quedarse en React 18** y agregar `forwardRef` a cada primitiva que se adopte: divergencia extra respecto del
   registry y una convención más para recordar (y a deshacer si algún día se sube a 19).
 
+## Convenciones de migración (Fases 2-3)
+
+Fijadas al migrar las dos primeras pantallas. Aplican a todas las que siguen.
+
+1. **Los títulos de página son `<h1>` reales, NO `CardTitle`.** `CardTitle` renderiza un `<div>`: usarlo deja la
+   página sin elemento de encabezado, y eso rompe la navegación por encabezados del lector de pantalla. Se usa un
+   `<h1>` con `font-heading` y el tamaño que ya tenía la pantalla, y queda un comentario en el archivo para que
+   nadie lo "arregle" volviendo a `CardTitle`.
+2. **`Label` + `Input` para formularios simples; `Field` solo cuando hay descripción o error por campo.**
+   `Field` trae el cableado de `aria-invalid`/`data-invalid` y de descripción/error; se usa cuando eso hace falta.
+   Para dos campos con un error a nivel de formulario, `Label` + `Input` es más simple sin perder accesibilidad.
+3. **Anunciar los estados de carga con una región `role="status"` persistente, no con `aria-live` en el control.**
+   Una región viva tiene que preexistir y anunciar el cambio de su propio contenido, no el nombre accesible del
+   botón que el usuario acaba de activar. Cuando el texto visible y el anunciado coinciden, se definen una sola
+   vez en una constante para que no puedan divergir.
+4. **Cero colores hardcodeados en los archivos migrados**: nada de `slate-`, `amber-`, `bg-white`, `text-white`,
+   `red-`, `green-`. El color sale de los tokens semánticos.
+5. **El `Alert` de shadcn ya trae `role="alert"`** (`alert.tsx:29`), así que reemplaza al `<p role="alert">`
+   sin perder el anuncio.
+6. **El `Input` arregla el foco al migrar**: trae `focus-visible:border-ring`, que es ámbar-700 a alpha completo
+   (**5.05:1**), así que el indicador de foco del campo pasa a cumplir 3:1. El halo de 3px (`ring-ring/50`) mide
+   2.13:1 y es decorativo, no el indicador que califica. Quedan **21 inputs legacy** con `focus:border-amber-500`
+   (2.15:1) en `vendor/ingredients` (4), `vendor/products` (5), `vendor/recipes` (5), `order-new` (5),
+   `vendor/orders` (1) y `orders` (1), que se cierran al migrar cada pantalla.
+7. **`asChild` todavía no se ejercitó.** Ninguna de las dos pantallas migradas lo usa, así que la propagación de
+   `ref` de Radix bajo React 19 —el motivo del upgrade— sigue sin prueba de runtime. Llega con la primera pantalla
+   que tenga un disparador de diálogo o de selector.
+
 ## Constraints
 
 - Rebanadas de ≤400 líneas por commit: es el umbral propio del repo (skill chained-pr) y protege la review.
@@ -350,3 +378,16 @@ directas. `npm ls` exit 0 y sin peers sin cumplir. Gate verde dos veces (writer 
 sin blockers. Pendiente: smoke test humano del app bajo React 19 — no hay runner de tests y las primitivas
 siguen sin consumidor, así que la propagación de `ref` por `asChild` se verifica recién con la primera pantalla
 que adopte una primitiva (Fase 2). -->
+
+<!-- 2026-10-04: **Fase 2 slice A** (`acfa146`) — `login.tsx` y `not-found.tsx` migrados a `Card`, `Label`,
+`Input`, `Button` y `Alert`. Primera vez que las primitivas renderizan en el app. Comportamiento y copia visible
+idénticos carácter por carácter (el `U+2026` de 'Ingresando…', los dos em dashes y el punto final del 404
+sobreviven); cero colores hardcodeados en los dos archivos. El worker usó `CardTitle`, que renderiza un `<div>`,
+y las dos páginas se habían quedado **sin `<h1>`**: el padre lo detectó y lo revirtió a `<h1>` reales con el
+tamaño original, dejando comentario en cada archivo. La verificación independiente marcó que el
+`aria-live="polite"` que el worker puso en el botón **no es efectivo** (una región viva debe preexistir y anunciar
+su propio cambio, no el nombre del control recién activado): se reemplazó por un `<span role="status"
+className="sr-only">` persistente con el texto definido una sola vez. Gate verde y verificación sin blockers. El
+foco de los campos ahora cumple 3:1 (5.05:1 vía `focus-visible:border-ring`), contra los 2.15:1 de antes.
+Pendiente: `catalog`, `product-detail`, `order-new`, `orders`; y el smoke test visual del usuario, porque nada
+ejercita las primitivas en runtime. -->
