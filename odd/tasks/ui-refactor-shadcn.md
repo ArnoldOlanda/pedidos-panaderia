@@ -6,7 +6,7 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 ## Status
 
 - Started: 2026-10-03
-- Current task: **4 — Fase 2 (pantallas de comprador)** — slice A cerrado (`acfa146`: `login` + `not-found`); faltan `catalog`, `product-detail`, `order-new`, `orders`
+- Current task: **5 — Fase 3 (pantallas de vendedor)** — la Fase 2 está cerrada y el shell ya está migrado, así que las pantallas de vendedor heredan el aspecto nuevo mientras su contenido siga con `slate` hasta migrarse
 - Branch: `feat/ui-refactor-shadcn` (base `main` @ `6018b3e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local)
 - Deploy: **pospuesto** por decisión del usuario hasta terminar el refactor (ODD-3.12/3.13 van después)
@@ -59,8 +59,7 @@ Huecos de accesibilidad que la librería cierra (o deja a la vista):
 - [x] **2 — Fase 1: primitivas** — `shadcn init` ✅ (slice 1, `e4f5019`) y las **14 primitivas** ✅ (slice 2: `5803463`, `a809ec1`, `26be206`, `89b295e`). El checklist de a11y (foco visible, `aria-current`, `aria-live`, `scope="col"`) se aplica al migrar cada pantalla, en las Fases 2-3. Lista: `Button`, `Input`/`Label`/`Field`, `Select`, `Textarea`,
       `Card`, `Badge`, `Alert`, `Skeleton`, `Dialog` (reemplaza `ModalShell`), `Toast`, `AlertDialog` + checklist
       de accesibilidad (foco visible, `aria-current`, `aria-live`, `scope="col"`)
-- [ ] **3 — Fase 2: pantallas de comprador** — `catalog`, `product-detail`, `order-new`, `orders`, `login`,
-      `not-found` → ✅ `login` y `not-found` en `acfa146`; faltan `catalog`, `product-detail`, `order-new`, `orders`
+- [x] **3 — Fase 2: pantallas de comprador** — ✅ **CERRADA**. `login` + `not-found` (`acfa146`), `catalog` + `product-detail` (`9125171`), `orders` (`57173c1`), `order-new` (`6cb2419`), shell compartido (`16ea53f`) y el fix de consistencia del enlace (`0b7f458`)
 - [ ] **4 — Fase 3: pantallas de vendedor** — `products`, `recipes`, `ingredients`, `orders`
 - [ ] **5 — Verificación independiente y cierre** — review read-only del diff integrado + tracker + Engram
 
@@ -214,9 +213,12 @@ Fijadas al migrar las dos primeras pantallas. Aplican a todas las que siguen.
    página sin elemento de encabezado, y eso rompe la navegación por encabezados del lector de pantalla. Se usa un
    `<h1>` con `font-heading` y el tamaño que ya tenía la pantalla, y queda un comentario en el archivo para que
    nadie lo "arregle" volviendo a `CardTitle`.
-2. **`Label` + `Input` para formularios simples; `Field` solo cuando hay descripción o error por campo.**
-   `Field` trae el cableado de `aria-invalid`/`data-invalid` y de descripción/error; se usa cuando eso hace falta.
-   Para dos campos con un error a nivel de formulario, `Label` + `Input` es más simple sin perder accesibilidad.
+2. **`Label` + `Input` para formularios simples; `Field` solo cuando el campo tiene su propia descripción.**
+   Aclaración verificada: en esta versión del registry `FieldDescription` renderiza un `<p>` **presentacional** y
+   NO lo cablea con `aria-describedby` (no hay `aria-describedby` en `field.tsx`). O sea que `Field` aporta la
+   agrupación (`role="group"`), la etiqueta y el layout, no el enlace programático de la descripción. La
+descripción de un campo sigue sin ser su descripción accesible, igual que antes de migrar: paridad, no
+regresión. Si se quiere ese enlace, hay que agregarlo a mano.
 3. **Anunciar los estados de carga con una región `role="status"` persistente, no con `aria-live` en el control.**
    Una región viva tiene que preexistir y anunciar el cambio de su propio contenido, no el nombre accesible del
    botón que el usuario acaba de activar. Cuando el texto visible y el anunciado coinciden, se definen una sola
@@ -227,12 +229,54 @@ Fijadas al migrar las dos primeras pantallas. Aplican a todas las que siguen.
    sin perder el anuncio.
 6. **El `Input` arregla el foco al migrar**: trae `focus-visible:border-ring`, que es ámbar-700 a alpha completo
    (**5.05:1**), así que el indicador de foco del campo pasa a cumplir 3:1. El halo de 3px (`ring-ring/50`) mide
-   2.13:1 y es decorativo, no el indicador que califica. Quedan **21 inputs legacy** con `focus:border-amber-500`
-   (2.15:1) en `vendor/ingredients` (4), `vendor/products` (5), `vendor/recipes` (5), `order-new` (5),
-   `vendor/orders` (1) y `orders` (1), que se cierran al migrar cada pantalla.
-7. **`asChild` todavía no se ejercitó.** Ninguna de las dos pantallas migradas lo usa, así que la propagación de
-   `ref` de Radix bajo React 19 —el motivo del upgrade— sigue sin prueba de runtime. Llega con la primera pantalla
-   que tenga un disparador de diálogo o de selector.
+   2.13:1 y es decorativo, no el indicador que califica. Tras la Fase 2 quedan **15 inputs legacy** con
+   `focus:border-amber-500` (2.15:1), todos en pantallas de vendedor: `vendor/products` (5), `vendor/recipes`
+   (5), `vendor/ingredients` (4) y `vendor/orders` (1). Se cierran al migrar cada una en la Fase 3. (El conteo
+   bajó de 23 en `main` a 15: 1 en `orders`, 2 en `login` y 5 en `order-new`.)
+7. **`asChild` ya se ejercita en una pantalla, pero sigue sin prueba de runtime.** `product-detail.tsx` usa
+   `Button asChild` para la acción "Pedir" —hoy el único `asChild` a nivel de aplicación—, así que el camino de
+   Radix `Slot` compila en una pantalla real. **Que `Slot` reciba y propague el `ref` del DOM bajo React 19 sigue
+   siendo una afirmación de runtime que nada en este repo puede probar.** El caso que sí falta es el inverso: un
+   disparador de `Dialog` o `Select` que pase su `ref` *hacia dentro* de nuestras primitivas. Eso llega en la
+   Fase 3, al reemplazar `ModalShell`.
+
+## Fase 2 — cerrada: seis pantallas más el shell
+
+Migradas una por vez a las primitivas y a los tokens, todas por debajo del umbral de 400 líneas:
+
+| Commit | Alcance |
+|---|---|
+| `acfa146` | `login`, `not-found` |
+| `9125171` | `catalog`, `product-detail` |
+| `57173c1` | `orders` (+ los tokens `--success` / `--success-foreground`) |
+| `6cb2419` | `order-new` |
+| `16ea53f` | `layout.tsx`, el shell compartido |
+| `0b7f458` | fix de consistencia: "Volver al catálogo" vuelve a ser enlace de texto |
+
+Estado verificado de los siete archivos: **cero colores hardcodeados**, **cero `CardTitle`**, un `<h1>` real por
+pantalla (`order-new` tiene dos, en ramas mutuamente excluyentes) y anuncio de carga por `role="status"`
+persistente en todos los que cargan.
+
+**Tres hallazgos que valen más que el código**:
+
+1. **`CardTitle` renderiza un `<div>`.** Usado como título de página deja la página sin elemento de encabezado.
+   Apareció en el primer slice y se corrigió; de ahí sale la convención 1.
+2. **`aria-live` en el control que el usuario acaba de activar no anuncia de forma confiable.** Se reemplazó por
+   una región `role="status"` persistente; de ahí sale la convención 3.
+3. **El sistema no tenía color de éxito.** Sin él, PENDIENTE y LISTO habrían quedado ambas en ámbar y habrían
+dejado de distinguirse de un vistazo, así que se agregaron `--success` / `--success-foreground` midiendo el
+contraste: 6.45:1 en claro y 7.49:1 en oscuro. El par apagado que se probó primero para "Entregado" daba
+4.34:1 y se descartó por eso.
+
+**Un error propio, corregido**: en el slice B le indiqué al writer que el enlace "Volver al catálogo" era un
+enlace con forma de botón, y no lo era. Quedó un `Button asChild` donde en las otras pantallas es un enlace de
+texto, y lo detectó el writer del slice D por su cuenta. Revertido en `0b7f458`.
+
+**Pendiente de esta fase**: la confirmación visual del usuario. Nada ejercita las primitivas en runtime y
+`pedidos-web` no tiene runner de tests, así que la corrección visual **no está probada**. Puntos concretos:
+la escala de radios del preset (ya aceptada por el usuario), el foco ámbar de los inputs, los tres estados de
+`Badge` en `orders` (ámbar / verde / gris), el ancho y la posición de la ayuda "máx. 10" en el campo Cantidad de
+`order-new`, y el estado activo del nav nuevo.
 
 ## Constraints
 
@@ -378,6 +422,20 @@ directas. `npm ls` exit 0 y sin peers sin cumplir. Gate verde dos veces (writer 
 sin blockers. Pendiente: smoke test humano del app bajo React 19 — no hay runner de tests y las primitivas
 siguen sin consumidor, así que la propagación de `ref` por `asChild` se verifica recién con la primera pantalla
 que adopte una primitiva (Fase 2). -->
+
+<!-- 2026-10-04: **Fase 2 CERRADA** — seis pantallas de comprador más el shell compartido, commits `acfa146`
+(`login`/`not-found`), `9125171` (`catalog`/`product-detail`), `57173c1` (`orders`), `6cb2419` (`order-new`),
+`16ea53f` (`layout.tsx`) y `0b7f458` (fix). Todos ≤400 líneas y cada uno con verificación independiente
+read-only; ninguna encontró blockers. Verificado en los siete archivos: cero colores hardcodeados, cero
+`CardTitle`, un `<h1>` real por pantalla y anuncio de carga persistente por `role="status"`. Hallazgos que
+valieron más que el código: `CardTitle` renderiza un `<div>` y dejaba las páginas sin encabezado (detectado y
+corregido en el primer slice); `aria-live` en el botón recién activado no anuncia de forma confiable (se pasó a
+región `role="status"` persistente); y al sistema le faltaba un color de éxito, sin el cual PENDIENTE y LISTO
+habrían quedado indistinguibles (se agregaron `--success`/`--success-foreground`, 6.45:1 y 7.49:1). Error propio
+corregido: en el slice B indiqué mal que "Volver al catálogo" era un enlace con forma de botón; lo detectó el
+writer del slice D y se revirtió en `0b7f458`. `asChild` ya se ejercita en `product-detail` ("Pedir") pero su
+propagación de `ref` sigue sin prueba de runtime; el caso inverso (trigger de `Dialog`) llega en la Fase 3.
+Pendiente: confirmación visual del usuario. -->
 
 <!-- 2026-10-04: **Fase 2 slice A** (`acfa146`) — `login.tsx` y `not-found.tsx` migrados a `Card`, `Label`,
 `Input`, `Button` y `Alert`. Primera vez que las primitivas renderizan en el app. Comportamiento y copia visible
