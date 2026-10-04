@@ -1,12 +1,13 @@
 # Feature: ui-refactor-shadcn
 
-Refactor de UI de `pedidos-web` para pasar de "un estilo copiado a mano en 15 pantallas" a un sistema de
-componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos propios.
+Refactor de UI de `pedidos-web` para pasar de un estilo copiado a mano en cada pantalla y componente a un sistema
+de componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos propios. El inventario inicial
+son 17 archivos `.tsx` y 3 157 líneas.
 
 ## Status
 
 - Started: 2026-10-03
-- Current task: **4 — Fase 3 (pantallas de vendedor)**, en curso. Mapeo de la fase cerrado el 2026-10-04 (4 pantallas, 2 163 líneas) y desglosado en 5 rebanadas + el retiro de `modal-shell.tsx`; el plan está en la sección «Fase 3 — plan de rebanadas»
+- Current task: **5 — Verificación independiente y cierre**. **La Fase 3 está CERRADA** el 2026-10-04: las cuatro pantallas de vendedor migradas en **siete** work units (`7a91510`, `5412a63`, `15b74dc`, `9784419`, `1d1a790`, `57ecc3b`, `cf15349`) más el retiro de `modal-shell.tsx` (`a10f6c1`). El diff integrado de la fase son 2 052 líneas de código en 7 archivos, ya pasó una verificación integrada read-only **sin blockers de código**, y queda la confirmación visual del usuario antes de cerrar el tracker
 - Branch: `feat/ui-refactor-shadcn` (base `main` @ `6018b3e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local)
 - Deploy: **pospuesto** por decisión del usuario hasta terminar el refactor (ODD-3.12/3.13 van después)
@@ -60,8 +61,8 @@ Huecos de accesibilidad que la librería cierra (o deja a la vista):
       `Card`, `Badge`, `Alert`, `Skeleton`, `Dialog` (reemplaza `ModalShell`), `Toast`, `AlertDialog` + checklist
       de accesibilidad (foco visible, `aria-current`, `aria-live`, `scope="col"`)
 - [x] **3 — Fase 2: pantallas de comprador** — ✅ **CERRADA**. `login` + `not-found` (`acfa146`), `catalog` + `product-detail` (`9125171`), `orders` (`57173c1`), `order-new` (`6cb2419`), shell compartido (`16ea53f`) y el fix de consistencia del enlace (`0b7f458`)
-- [ ] **4 — Fase 3: pantallas de vendedor** — `orders`, `products`, `ingredients`, `recipes` (5 rebanadas, ver «Fase 3 — plan de rebanadas»)
-- [ ] **5 — Verificación independiente y cierre** — review read-only del diff integrado + tracker + Engram
+- [x] **4 — Fase 3: pantallas de vendedor** — ✅ **CERRADA**. Cuatro pantallas en **siete** work units: `vendor/orders` (`7a91510`), `vendor/products` (`5412a63`), `vendor/ingredients` (`15b74dc`), y `recipes` en **cuatro** (`9784419`, `1d1a790`, `57ecc3b`, `cf15349`), más el retiro de `modal-shell.tsx` (`a10f6c1`)
+- [ ] **5 — Verificación independiente y cierre** — la verificación integrada read-only ya corrió sin blockers de código; falta la confirmación visual del usuario, el cierre del tracker y Engram
 
 ## Fase 1 — hallazgos del CLI (2026-10-04, antes de escribir nada)
 
@@ -301,8 +302,11 @@ Reconocimiento read-only de las cuatro pantallas de vendedor antes de escribir n
 | `vendor/ingredients.tsx` | 598 | 4 | 296 / 312 / 345 | 420 | 511 (sin `scope="col"`) |
 | `vendor/recipes.tsx` | 883 | 5 | 587 / 603 / 666 | 754 | — |
 
-Rebanadas, en este orden (la más chica primero, para que la primera adopte `Select` y `Dialog` con el menor
-radio de daño):
+(La suma de la tabla es 2 165 líneas; 2 163 es la suma de `wc -l`, porque `vendor/orders.tsx` y
+`vendor/products.tsx` no terminan en salto de línea.)
+
+Rebanadas, en este orden (la más chica primero, para que la primera adopte `Select` con menor radio de daño;
+`Dialog` entra recién en la tercera, y el plan se ajustó dos veces al medir el árbol: ver slices 4a y 4c):
 
 1. **`vendor/orders.tsx`** + consolidación del mapa de estado. El comentario del comprador
    (`pages/orders.tsx:26-30`) ya anuncia que la duplicación se consolida en la Fase 3, así que esta rebanada
@@ -324,17 +328,19 @@ radio de daño):
   cuando hay algo que editar, y `ModalShell` no maneja `Escape`, no atrapa ni devuelve el foco y no enlaza el
   título. Al pasar a `Dialog` hay que cablear `open`/`onOpenChange` y `DialogTitle`: es una **mejora** de
   accesibilidad, no una regresión, pero cambia el montaje.
-- **`DialogContent` trae su propio botón de cierre en inglés.** `dialog.tsx:83` renderiza un `sr-only` con el
+- **`DialogContent` trae su propio botón de cierre en inglés.** `dialog.tsx:79` renderiza un `sr-only` con el
   texto `Close`, donde `ModalShell` tenía `aria-label="Cerrar"`. Migrar tal cual **degradaría el idioma del
-  anuncio**: hay que pasar `showCloseButton={false}` y poner el cierre propio, o sobrescribir el rótulo.
+  anuncio**. Se evaluaron tres salidas (cierre propio por llamada, localizar el primitivo una vez, o aceptarlo) y
+  **el usuario decidió aceptarlo**: ver el slice 3, donde queda registrado como **desviación aceptada, no como
+  paridad**.
 - **El ancho por defecto del `Dialog` es `sm:max-w-sm`**, contra el `max-w-2xl` de `ModalShell`: los formularios
   de insumo y de receta se angostarían. Se pasa `className` explícito.
 - **`AlertDialog` no es `window.confirm`.** El handler actual confirma de forma síncrona y recién después llama a
   `remove.mutate`; con `AlertDialog` la mutación se mueve al `onClick` del `AlertDialogAction` y la semántica
   bloqueante nativa desaparece.
 - **El anuncio de carga no existe en ninguna de las cuatro.** Hoy solo hay `role="status"` para el mensaje de
-  éxito; `recipes` usa `aria-busy` (336) y `orders` un `aria-live="polite"` en el control de guardado (72). Se
-  aplica la convención 3 en las cuatro.
+  éxito y para el aviso de fila de `recipes` (150); `recipes` usa además `aria-busy` (336) y `orders` un
+  `aria-live="polite"` en el control de guardado (72). Se aplica la convención 3 en las cuatro.
 - **Dos pantallas comparten `modal-shell.tsx`** (`ingredients` y `recipes`), así que el módulo se borra recién al
   terminar ambas: **no** se editan dos pantallas en una misma rebanada.
 - **`step="0.1"` en Utilidad (%) y Mano de obra (%) de `recipes`** sigue en «Pendientes ajenos a esta feature».
@@ -434,6 +440,15 @@ De `https://ui.shadcn.com/docs/installation/vite` (Fase 1):
 
 - `Utilidad (%)` y `Mano de obra (%)` en el formulario de recetas siguen con `step="0.1"` (misma familia del bug
   `5cf2694`): hoy el navegador rechaza `20.25 %`. Alinear a `step="0.01"`.
+- **Tres componentes compartidos no entraron en el alcance de ninguna fase** y siguen con utilidades de paleta
+  escritas a mano: `src/components/push-toggle.tsx` (74 líneas, 7 utilidades, 3 botones, sin `focus-visible`, sin
+  anuncio de carga y sin `aria-pressed`), `src/components/auth-bootstrap.tsx` (33 líneas, 6 utilidades, 1 botón,
+  sin `focus-visible` ni `role="status"`) y `src/components/protected-route.tsx` (13 líneas, 1 utilidad, su
+  `Cargando…` es un `<div>` sin región viva). Importa la ubicación: `PushToggle` se renderiza **dentro del shell
+  compartido** (`layout.tsx:58`), así que el árbol renderizado de toda pantalla autenticada todavía contiene
+  ámbar y slate escritos a mano. El refactor queda completo **a nivel de archivo de pantalla**, no de app.
+  Estimado: **una** work unit chica (~120-150 líneas), todo mapea mecánicamente a las primitivas ya
+  vendorizadas. **Es el primer candidato después de cerrar esta feature.**
 - `.codegraph/` al `.gitignore` raíz (es el único untracked que ensucia cada `git status`).
 
 ## Progress Log
@@ -604,8 +619,10 @@ rebanada seguida por encima. Causa: es el reemplazo más grande de la fase — s
 commitear media pantalla migrada. Siguiente: `vendor/recipes.tsx`, en dos work units. -->
 
 <!-- 2026-10-04: **Fase 3 slice 4a** — `IngredientRow` de `vendor/recipes.tsx` migrado en `9784419`, **126 líneas
-cambiadas** (79+/47−), muy por debajo del umbral. `recipes.tsx` (883 líneas) se terminó partiendo en **tres**
-work units y no dos: el plan decía dos, pero tres deja cada diff cómodamente bajo 400. Esta rebanada toca
+cambiadas** (79+/47−), muy por debajo del umbral. `recipes.tsx` (883 líneas) se terminó partiendo en **cuatro**
+work units y no dos como decía el plan (4a-4d): 4c se volvió a partir al comprobar que el botón de borrado vive
+en `RecipeCard` pero el `window.confirm` en la página, así que la conversión a `AlertDialog` cruza los dos. Esta
+rebanada toca
 **solo** el componente (HEAD 69-211) más dos hunks de import que solo agregan (`useId` y las primitivas); el
 verificador lo probó reconstruyendo el archivo sin el cuerpo del componente y diffeando el resto: las únicas
 diferencias son esos dos imports. `calculateCost`, `formatPercent`, `badRequestMessage` y `validateRecipe`
@@ -682,7 +699,7 @@ rebanada por líneas hay que ubicar dónde viven el disparador y el handler de c
 `onOpenChange` que enruta Escape/overlay/cierre hacia `onClose`, `sm:max-w-2xl` para reponer el ancho de
 `ModalShell`, `DialogTitle` incondicional presente en los tres estados, error como `<p className="text-sm
 text-destructive" role="alert">` y carga con `Skeleton`. Los diez props de `RecipeForm` quedaron byte-idénticos.
-Verificación independiente **sin blockers**: las otras cinco regiones del archivo (helpers, `IngredientRow`,
+Verificación independiente **sin blockers**: las otras seis regiones del archivo (helpers, `IngredientRow`,
 `validateRecipe`, `RecipeForm`, `RecipeCard`, `VendorRecipesPage`) byte-idénticas por hash, y cero colores
 hardcodeados dentro de `EditModal`.
 
@@ -700,3 +717,39 @@ aporta `Dialog` sobre él. Con esto la **D6 y el reemplazo de `ModalShell` queda
 **Declarado**: el ancho por debajo del breakpoint `sm` cambia. `ModalShell` era un panel que se encogía al
 contenido con `max-w-2xl`; `DialogContent` es `w-full max-w-[calc(100%-2rem)] sm:max-w-2xl`. De `sm` para arriba
 coinciden. Es una desviación visual menor, consistente con el precedente de `ingredients.tsx`. Siguiente: 4d. -->
+
+<!-- 2026-10-04: **Fase 3 slice 4d — CIERRE DE LA FASE 3** — `RecipeCard` y `VendorRecipesPage` migrados en
+`cf15349`, **293 líneas cambiadas** (174+/119−). Se eliminó el último `window.confirm` de la app y el botón de
+borrado pasó a `AlertDialogTrigger asChild` + `AlertDialogAction variant="destructive"`, con el **título llevando
+exactamente la misma pregunta** que usaba el confirm nativo y la mutación movida al `onClick`; `handleDelete`
+quedó solo con la mutación y conservó su mapeo de errores de 403/404/otro, su `Alert` de borrado y su flash de
+éxito. La lista ganó la región `role="status"` de carga que le faltaba.
+
+**Criterio de aceptación cumplido**: `vendor/recipes.tsx` quedó con **cero colores de paleta** y la verificación
+comprobó además que **cada token nuevo resuelve en el CSS emitido** — un grep limpio no alcanza si una clase no
+compila.
+
+**Dos correcciones que la verificación destapó y el padre aplicó**: (1) `RecipeCard` había perdido su elemento
+`<article>` — `HEAD` lo tenía como raíz y los dos slices hermanos (`products`, `orders`) envuelven la `Card` en
+`<article>`; al pasar la raíz a `Card` (un `div`) el agrupamiento por receta desaparecía en silencio, así que se
+restauró. (2) El comentario nuevo de la región `role="status"` afirmaba que un hijo directo `sr-only` en el
+`space-y-3` «agregaría 0.75rem permanentes bajo el h2»; el CSS emitido lo desmiente: el `space-y-*` pone el margen
+sobre el nodo `sr-only`, que es `position: absolute`, así que ese margen queda fuera de flujo y **no** produce
+hueco. El escritor había extendido esa conclusión falsa a las otras tres pantallas («aceptan un hueco
+permanente»); también es falso. El envoltorio `<div>` se conservó y el comentario se reescribió con la razón
+correcta.
+
+**Verificación integrada de la fase** (una pasada read-only sobre `504b2db..HEAD`): **ningún blocker de código**.
+Medido en el árbol: cero utilidades de paleta en los cinco archivos migrados y en `lib/order-status.ts`; cero
+`focus:border-amber-500` en todo `src/`; cero `window.confirm`; `modal-shell.tsx` borrado y sin imports ni usos;
+`scope="col"` en los cinco `<th>`; sin código viejo comentado, sin `console.log`/`debugger`/`TODO`; `typecheck` y
+`build` en 0. La pasada encontró las imprecisiones del propio tracker que se corrigieron acá: el bloque `sr-only`
+`Close` está en `dialog.tsx:79` y no 83, «las otras cinco regiones» eran seis, la tabla suma 2 165 líneas, la
+entrada 4a decía «tres work units» cuando fueron cuatro, el aviso de fila de `recipes` ya tenía `role="status"`,
+la razón de ordenar las rebanadas mezclaba `Dialog` en el slice 1, y el inventario inicial no eran 15 pantallas.
+
+**Hallazgo de alcance, registrado en «Pendientes ajenos»**: tres componentes compartidos nunca estuvieron en el
+alcance de ninguna fase y siguen con colores de paleta a mano (14 utilidades, 4 botones, y los mismos huecos de
+`focus-visible` y de anuncio de carga que tenían las pantallas antes de migrar). Como `PushToggle` vive dentro del
+shell compartido, el árbol renderizado de toda pantalla autenticada todavía los incluye. Estimado: una work unit
+chica. **Fin de la Fase 3.** -->
