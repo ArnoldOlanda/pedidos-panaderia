@@ -9,6 +9,22 @@ import { toApiError } from '../../lib/api';
 import { closesInLabel, formatCloseTimeLima, formatPrice } from '../../lib/format';
 import type { Product } from '../../lib/products';
 import type { Recipe } from '../../lib/recipes';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const LOADING_LABEL = 'Cargando productos';
 
 function limaParts(date: Date): { ymd: string; hm: string; ymdhm: string } {
   const f = new Intl.DateTimeFormat('en-CA', {
@@ -53,34 +69,37 @@ function parseYmd(ymd: string): Date | null {
 
 function MyProductCard({ product }: { product: Product }) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-lg font-medium text-slate-900">{product.name}</h2>
-          <p className="text-sm text-slate-600">
-            Cierra a las {formatCloseTimeLima(product.closesAt)} ·{' '}
-            {closesInLabel(product.closesAt, product.closed)}
-          </p>
-        </div>
-        <div className="text-right space-y-1">
-          <p className="text-amber-600 font-medium">{formatPrice(product.price)}</p>
-          {product.closed && (
-            <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              cerrado
-            </span>
-          )}
-        </div>
-      </div>
+    <article>
+      <Card>
+        <CardContent>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the card without a heading element. */}
+              <h2 className="font-heading text-lg font-semibold">{product.name}</h2>
+              <p className="text-sm text-muted-foreground">
+                Cierra a las {formatCloseTimeLima(product.closesAt)} ·{' '}
+                {closesInLabel(product.closesAt, product.closed)}
+              </p>
+            </div>
+            <div className="text-right space-y-1">
+              <p className="text-primary font-medium">{formatPrice(product.price)}</p>
+              {product.closed && <Badge variant="secondary">cerrado</Badge>}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </article>
   );
 }
 
 function MyProductSkeleton() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
-      <div className="h-5 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
-      <div className="mt-3 h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
-    </div>
+    <Card>
+      <CardContent className="space-y-3">
+        <Skeleton className="h-5 w-2/3" />
+        <Skeleton className="h-4 w-1/2" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -199,64 +218,80 @@ export function VendorProductsPage() {
 
   if (user && !isVendor) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs space-y-3">
-        <h1 className="text-2xl font-semibold text-slate-900">Publicar producto</h1>
-        <p className="text-sm text-slate-600">Esta sección es solo para vendedores.</p>
-        <Link
-          to="/catalog"
-          className="inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-        >
-          Volver al catálogo →
-        </Link>
-      </section>
+      <Card className="text-muted-foreground">
+        <CardContent className="space-y-3">
+          {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+          <h1 className="font-heading text-2xl font-semibold text-foreground">Publicar producto</h1>
+          <p className="text-sm">Esta sección es solo para vendedores.</p>
+          <Link
+            to="/catalog"
+            className="inline-block text-sm font-medium text-primary hover:underline"
+          >
+            Volver al catálogo →
+          </Link>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <section className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-slate-900">Publicar producto</h1>
+        {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+        <h1 className="font-heading text-2xl font-semibold">Publicar producto</h1>
         {user?.name && (
-          <p className="text-sm text-slate-600">Estás publicando como {user.name}</p>
+          <p className="text-sm text-muted-foreground">Estás publicando como {user.name}</p>
         )}
       </header>
 
       {flashMessage && (
         <div
-          className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
           role="status"
+          className="rounded-lg bg-success px-4 py-3 text-sm text-success-foreground"
         >
           {flashMessage}
         </div>
       )}
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">Tus productos de hoy</h2>
+        <h2 className="font-heading text-lg font-semibold">Tus productos de hoy</h2>
+
+        {/* role=status rather than aria-live on the skeleton: a live region has to
+            pre-exist and announce its own content change, not the decorative bars. */}
+        <span role="status" className="sr-only">
+          {todayProducts.isLoading ? LOADING_LABEL : ''}
+        </span>
 
         {todayProducts.isLoading && (
-          <div className="space-y-3">
+          <div aria-hidden="true" className="space-y-3">
             <MyProductSkeleton />
             <MyProductSkeleton />
           </div>
         )}
 
         {!todayProducts.isLoading && todayProducts.isError && (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
-            <p>No pudimos cargar tus productos</p>
-            <button
-              type="button"
-              onClick={() => {
-                void todayProducts.refetch();
-              }}
-              className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
-            >
-              Reintentar
-            </button>
-          </div>
+          <Alert variant="destructive">
+            <AlertTitle>No pudimos cargar tus productos</AlertTitle>
+            <AlertDescription>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  void todayProducts.refetch();
+                }}
+              >
+                Reintentar
+              </Button>
+            </AlertDescription>
+          </Alert>
         )}
 
         {!todayProducts.isLoading && !todayProducts.isError && sortedToday.length === 0 && (
-          <p className="text-sm text-slate-600">Hoy no has publicado productos.</p>
+          <Card className="text-muted-foreground">
+            <CardContent>
+              <p>Hoy no has publicado productos.</p>
+            </CardContent>
+          </Card>
         )}
 
         {!todayProducts.isLoading && !todayProducts.isError && sortedToday.length > 0 && (
@@ -268,154 +303,150 @@ export function VendorProductsPage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <h2 className="text-lg font-semibold text-slate-900">Publicar nuevo producto</h2>
+      <Card>
+        <CardContent>
+          {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the section without a heading element. */}
+          <h2 className="font-heading text-lg font-semibold">Publicar nuevo producto</h2>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <label className="block text-sm">
-            <span className="text-slate-700">Receta</span>
-            <select
-              value={recipeId}
-              onChange={(e) => handleRecipeChange(e.target.value)}
-              required
-              className="mt-1 w-full rounded-sm border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-            >
-              <option value="">Selecciona una receta</option>
-              {recipesQuery.data?.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name} · sugerido {formatPrice(r.suggestedPrice)}
-                </option>
-              ))}
-            </select>
-            <Link
-              to="/vendor/recipes"
-              className="mt-1 inline-block text-xs font-medium text-amber-600 hover:text-amber-700"
-            >
-              Gestionar recetas →
-            </Link>
-          </label>
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="vendor-products-recipe">Receta</Label>
+              <Select required value={recipeId} onValueChange={handleRecipeChange}>
+                <SelectTrigger id="vendor-products-recipe" className="w-full">
+                  <SelectValue placeholder="Selecciona una receta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {recipesQuery.data?.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name} · sugerido {formatPrice(r.suggestedPrice)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Link
+                to="/vendor/recipes"
+                className="inline-block text-xs font-medium text-primary hover:underline"
+              >
+                Gestionar recetas →
+              </Link>
+            </div>
 
-          <label className="block text-sm">
-            <span className="text-slate-700">Nombre del producto</span>
-            <input
-              type="text"
-              maxLength={200}
-              minLength={1}
-              placeholder="Pan de yema (docena)"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-            />
-          </label>
+            <div className="space-y-1">
+              <Label htmlFor="vendor-products-name">Nombre del producto</Label>
+              <Input
+                id="vendor-products-name"
+                type="text"
+                maxLength={200}
+                minLength={1}
+                placeholder="Pan de yema (docena)"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
 
-          <label className="block text-sm">
-            <span className="text-slate-700">
-              Precio{' '}
-              {selectedRecipe && (
-                <span className="text-xs text-slate-500">
-                  Sugerido: {formatPrice(selectedRecipe.suggestedPrice)}
-                </span>
-              )}
-            </span>
-            {/* step must be one centavo. With step="0.10" and min="0.01" the
-                browser only accepts min + n*0.10 (0.01, 0.11, ... 9.21, 9.31),
-                so a round price and most suggested prices were rejected by
-                native constraint validation before validate() ever ran. */}
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              required
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="mt-1 w-32 rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-            />
-          </label>
+            <div className="space-y-1">
+              <Label htmlFor="vendor-products-price">
+                Precio{' '}
+                {selectedRecipe && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    Sugerido: {formatPrice(selectedRecipe.suggestedPrice)}
+                  </span>
+                )}
+              </Label>
+              {/* step must be one centavo. With step="0.10" and min="0.01" the
+                  browser only accepts min + n*0.10 (0.01, 0.11, ... 9.21, 9.31),
+                  so a round price and most suggested prices were rejected by
+                  native constraint validation before validate() ever ran. */}
+              <Input
+                id="vendor-products-price"
+                type="number"
+                step="0.01"
+                min="0.01"
+                required
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-32"
+              />
+            </div>
 
-          <label className="block text-sm">
-            <span className="text-slate-700">Fecha disponible</span>
-            <input
-              type="date"
-              required
-              value={availableDate}
-              onChange={(e) => setAvailableDate(e.target.value)}
-              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-            />
-          </label>
+            <div className="space-y-1">
+              <Label htmlFor="vendor-products-available-date">Fecha disponible</Label>
+              <Input
+                id="vendor-products-available-date"
+                type="date"
+                required
+                value={availableDate}
+                onChange={(e) => setAvailableDate(e.target.value)}
+              />
+            </div>
 
-          <label className="block text-sm">
-            <span className="text-slate-700">Hora de cierre</span>
-            <input
-              type="datetime-local"
-              required
-              value={closesAtLocal}
-              onChange={(e) => setClosesAtLocal(e.target.value)}
-              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-            />
-          </label>
+            <div className="space-y-1">
+              <Label htmlFor="vendor-products-closes-at">Hora de cierre</Label>
+              <Input
+                id="vendor-products-closes-at"
+                type="datetime-local"
+                required
+                value={closesAtLocal}
+                onChange={(e) => setClosesAtLocal(e.target.value)}
+              />
+            </div>
 
-          {validationError && (
-            <p className="text-sm text-red-600" role="alert">
-              {validationError}
-            </p>
-          )}
-
-          {serverError && publish.error && (() => {
-            const status = toApiError(publish.error).status;
-            if (status === 403) {
-              return (
-                <div
-                  className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
-                  role="alert"
-                >
-                  <p>Solo los vendedores pueden publicar productos.</p>
-                  <Link
-                    to="/catalog"
-                    className="mt-2 inline-block text-sm font-medium text-amber-700 hover:text-amber-800"
-                  >
-                    Volver al catálogo →
-                  </Link>
-                </div>
-              );
-            }
-            if (status === 404) {
-              return (
-                <p className="text-sm text-red-600" role="alert">
-                  La receta seleccionada ya no existe.
-                </p>
-              );
-            }
-            if (status === 409) {
-              return (
-                <div className="rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-                  <p>{serverError}</p>
-                  <button
-                    type="button"
-                    onClick={() => handleSubmit()}
-                    className="mt-2 px-3 py-1 rounded-sm bg-amber-500 text-white text-sm hover:bg-amber-600"
-                  >
-                    Reintentar
-                  </button>
-                </div>
-              );
-            }
-            return (
-              <p className="text-sm text-red-600" role="alert">
-                {serverError}
+            {validationError && (
+              <p className="text-sm text-destructive" role="alert">
+                {validationError}
               </p>
-            );
-          })()}
+            )}
 
-          <button
-            type="submit"
-            disabled={publish.isPending}
-            className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {publish.isPending ? 'Publicando…' : 'Publicar producto'}
-          </button>
-        </form>
-      </section>
+            {serverError && publish.error && (() => {
+              const status = toApiError(publish.error).status;
+              if (status === 403) {
+                return (
+                  <Alert>
+                    <AlertTitle>Solo los vendedores pueden publicar productos.</AlertTitle>
+                    <AlertDescription>
+                      <Link
+                        to="/catalog"
+                        className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
+                      >
+                        Volver al catálogo →
+                      </Link>
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+              if (status === 404) {
+                return (
+                  <Alert variant="destructive">
+                    <AlertTitle>La receta seleccionada ya no existe.</AlertTitle>
+                  </Alert>
+                );
+              }
+              if (status === 409) {
+                return (
+                  <Alert variant="destructive">
+                    <AlertTitle>{serverError}</AlertTitle>
+                    <AlertDescription>
+                      <Button type="button" variant="outline" onClick={() => handleSubmit()}>
+                        Reintentar
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+              return (
+                <Alert variant="destructive">
+                  <AlertTitle>{serverError}</AlertTitle>
+                </Alert>
+              );
+            })()}
+
+            <Button type="submit" disabled={publish.isPending}>
+              {publish.isPending ? 'Publicando…' : 'Publicar producto'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </section>
   );
 }
