@@ -1,6 +1,11 @@
 import { FormEvent, useState } from 'react';
 import { useLogin } from '../hooks/use-login';
 import { toApiError } from '../lib/auth';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export function LoginPage() {
   const [dni, setDni] = useState('');
@@ -10,6 +15,7 @@ export function LoginPage() {
   const login = useLogin();
 
   const pending = login.isPending;
+  const submitLabel = pending ? 'Ingresando…' : 'Ingresar';
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,64 +39,66 @@ export function LoginPage() {
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-xs"
-      >
-        <h1 className="text-xl font-semibold text-slate-900">Ingreso de vendedores</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Este ingreso es exclusivo para vendedores.
-        </p>
-        <p className="mt-3 text-xs text-slate-500">
-          Ingresa tu DNI y tu nombre para continuar.
-        </p>
+      <form onSubmit={handleSubmit} className="w-full max-w-sm">
+        <Card>
+          <CardHeader>
+            {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+            <h1 className="font-heading text-xl font-semibold tracking-tight">Ingreso de vendedores</h1>
+            <CardDescription>Este ingreso es exclusivo para vendedores.</CardDescription>
+            <CardDescription>Ingresa tu DNI y tu nombre para continuar.</CardDescription>
+          </CardHeader>
 
-        <div className="mt-5 space-y-4">
-          <label className="block text-sm">
-            <span className="text-slate-700">DNI</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="\d{8}"
-              maxLength={8}
-              autoComplete="username"
-              placeholder="12345678"
-              required
-              value={dni}
-              onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
-              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-            />
-          </label>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="dni">DNI</Label>
+                <Input
+                  id="dni"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{8}"
+                  maxLength={8}
+                  autoComplete="username"
+                  placeholder="12345678"
+                  required
+                  value={dni}
+                  onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
 
-          <label className="block text-sm">
-            <span className="text-slate-700">Nombre</span>
-            <input
-              type="text"
-              minLength={2}
-              autoComplete="name"
-              placeholder="Tu nombre"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-            />
-          </label>
-        </div>
+              <div className="space-y-1">
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  minLength={2}
+                  autoComplete="name"
+                  placeholder="Tu nombre"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            </div>
 
-        {serverMessage && (
-          <p className="mt-4 text-sm text-red-600" role="alert">
-            {serverMessage}
-            {hint ? <span className="text-slate-500"> — {hint}</span> : null}
-          </p>
-        )}
+            {serverMessage && (
+              <Alert variant="destructive" className="mt-4">
+                {serverMessage}
+                {hint ? <span className="text-muted-foreground"> — {hint}</span> : null}
+              </Alert>
+            )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="mt-5 w-full rounded-sm bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? 'Ingresando…' : 'Ingresar'}
-        </button>
+            <Button type="submit" disabled={pending} className="mt-5 w-full">
+              {submitLabel}
+            </Button>
+            {/* role=status rather than aria-live on the button: a live region has to
+                pre-exist and announce its own content change, not the name of the
+                control the user just activated. */}
+            <span role="status" className="sr-only">
+              {pending ? submitLabel : ''}
+            </span>
+          </CardContent>
+        </Card>
       </form>
     </div>
   );

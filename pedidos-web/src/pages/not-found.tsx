@@ -1,16 +1,20 @@
 import { Link } from 'react-router-dom';
+import { Card, CardDescription, CardHeader } from '@/components/ui/card';
 
 export function NotFoundPage() {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs text-center">
-      <h1 className="text-2xl font-semibold text-slate-900">404 — no encontramos esa página</h1>
-      <p className="mt-2 text-sm text-slate-600">
-        Volver al{' '}
-        <Link to="/" className="text-amber-600 hover:underline">
-          inicio
-        </Link>
-        .
-      </p>
-    </section>
+    <Card className="text-center">
+      <CardHeader>
+        {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">404 — no encontramos esa página</h1>
+        <CardDescription>
+          Volver al{' '}
+          <Link to="/" className="text-primary hover:underline">
+            inicio
+          </Link>
+          .
+        </CardDescription>
+      </CardHeader>
+    </Card>
   );
 }
