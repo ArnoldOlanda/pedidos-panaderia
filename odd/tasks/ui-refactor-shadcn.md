@@ -6,10 +6,13 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 ## Status
 
 - Started: 2026-10-03
-- Current task: **2 — Fase 0 (Tailwind v4), todavía sin empezar**
+- Current task: **3 — Fase 1 (shadcn init + primitivas)**, pendiente de la confirmación visual de la Fase 0
 - Branch: `feat/ui-refactor-shadcn` (base `main` @ `6018b3e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local)
 - Deploy: **pospuesto** por decisión del usuario hasta terminar el refactor (ODD-3.12/3.13 van después)
+- **Fase 0 cerrada y commiteada en `8c28e40`**: Tailwind v4.3.3, alias `@/*`, `cn()`, token `ink` fuera.
+  Gate automático verde (typecheck + build) y verificación independiente sin blockers. Queda pendiente la
+  **confirmación visual del usuario** con `npm run dev` antes de apilar la Fase 1 encima.
 - **Handoff**: la feature se arranca en una **sesión nueva**. Este documento es autosuficiente: decisiones,
   evidencia medida, datos duros de versiones y el primer paso concreto están abajo.
 
@@ -46,8 +49,9 @@ Huecos de accesibilidad que la librería cierra (o deja a la vista):
 
 ## Fases
 
-- [ ] **1 — Fase 0: Tailwind v4 y base** — migración 3.4 → 4.x, alias `@/*`, helper `cn()`, borrar el token
+- [x] **1 — Fase 0: Tailwind v4 y base** — migración 3.4 → 4.x, alias `@/*`, helper `cn()`, borrar el token
       `ink`. Sin tocar la API de ningún componente ni inventar tokens semánticos (los define la Fase 1)
+      — **cerrada en `8c28e40`**
 - [ ] **2 — Fase 1: primitivas** — `shadcn init` + `Button`, `Input`/`Label`/`Field`, `Select`, `Textarea`,
       `Card`, `Badge`, `Alert`, `Skeleton`, `Dialog` (reemplaza `ModalShell`), `Toast`, `AlertDialog` + checklist
       de accesibilidad (foco visible, `aria-current`, `aria-live`, `scope="col"`)
@@ -113,7 +117,7 @@ De `https://ui.shadcn.com/docs/installation/vite` (Fase 1):
 3. `npx shadcn@latest init` y luego `npx shadcn@latest add <componente>`; los archivos caen en
    `src/components/ui/*` y se importan como `@/components/ui/button`.
 
-## Primer paso concreto (Fase 0, tarea 2)
+## Primer paso concreto (Fase 0, tarea 2) — HECHO en `8c28e40`
 
 1. `npx @tailwindcss/upgrade` (codemod oficial) sobre `pedidos-web`, partiendo de árbol limpio.
 2. Revisar el diff del codemod: renombres de utilidades (`shadow-sm`→`shadow-xs`, `outline-none`→`outline-hidden`,
@@ -123,6 +127,27 @@ De `https://ui.shadcn.com/docs/installation/vite` (Fase 1):
 4. Borrar el token `ink` (definido y sin usar). **No** definir tokens semánticos acá: los emite `shadcn init`
    en la Fase 1 (D4).
 5. Gate: `npm run typecheck` y `npm run build` verdes + aviso al usuario de qué mirar a ojo con `npm run dev`.
+
+### Resultado real (para no re-derivarlo)
+
+- El codemod `@tailwindcss/upgrade` **exige árbol limpio** y se negó por el `.codegraph/` untracked: se corrió con
+  `--force` (flag previsto por la herramienta) en vez de stagear nada.
+- Renombres aplicados: `shadow-sm` → `shadow-xs` (42), `outline-none` → `outline-hidden` (23) y **`rounded` →
+  `rounded-sm` (93)**, este último no estaba en la lista original: en v4 `rounded` pasó a ser `rounded-sm`
+  (`--radius-sm: .25rem`, el mismo valor de v3). No había `rounded-sm` previo, así que la otra mitad del mapa
+  (v3 `rounded-sm` → v4 `rounded-xs`) no aplicaba. Totales verificados: 93 + 40 `rounded-lg` + 9 `rounded-2xl` +
+  4 `rounded-full`.
+- El codemod también emitió `@theme { --color-ink }` y una capa de compatibilidad de `border-color`: ambas se
+  **borraron** (el token por estar sin usar y por D4; la capa porque todo `border` desnudo ya lleva color
+  explícito, así que el cambio de default a `currentColor` es un no-op visual acá).
+- `src/index.css` quedó en `@import 'tailwindcss' source('./');`. La base del `source` es el directorio del CSS
+  (`pedidos-web/src`), así que el escaneo no ingiere `pedidos-api/` ni `odd/`. `index.html` no tiene ninguna
+  clase Tailwind, así que omitirlo equivale al `content` de v3.
+- `@/*` está cableado en `tsconfig.json` (solution-style, `files: []` + references) y en `tsconfig.app.json`,
+  más el alias de Vite. Vite carga `vite.config.ts` como ESM (`"type": "module"`) e inyecta `__dirname`, así que
+  funciona; **ningún `import` real lo usa todavía** (el primero será `@/components/ui/*` en la Fase 1).
+- `cn()` en `src/lib/utils.ts` es la implementación canónica de shadcn (`twMerge(clsx(inputs))`).
+- `pedidos-web/README.md` quedó actualizado: describía `tailwind.config.js`, `postcss.config.js` y Tailwind 3.4.
 
 ## Pendientes ajenos a esta feature
 
@@ -134,3 +159,13 @@ De `https://ui.shadcn.com/docs/installation/vite` (Fase 1):
 
 <!-- entries appended here after each task lands -->
 <!-- 2026-10-03: feature abierta y decidida con el usuario (D1-D6). Rama `feat/ui-refactor-shadcn` + este tracker commiteado. Investigación previa hecha: inventario de UI medido, huecos de accesibilidad identificados y versiones/peer deps verificados en el registro de npm. La Fase 0 no se empezó: el usuario prefirió arrancar en una sesión nueva con contexto limpio, así que el trabajo se retoma en `Current task: 2` -->
+
+<!-- 2026-10-04: **Fase 0 cerrada** en `8c28e40` (work unit) sobre `feat/ui-refactor-shadcn`. Tailwind 3.4.19 →
+4.3.3 con el codemod oficial; cadena PostCSS sustituida por `@tailwindcss/vite`; `tailwind.config.js` y
+`postcss.config.js` borrados; `autoprefixer`, `postcss` y `@tailwindcss/postcss` fuera de `package.json`; token
+`ink` eliminado sin introducir capa semántica (D4); renombres de utilidades (ver "Resultado real"); alias `@/*`
+en ambos tsconfig + Vite; `cn()` con `clsx` + `tailwind-merge`; README actualizado. Gate: `npm run typecheck` y
+`npm run build` verdes. Verificación independiente read-only (gentle-ai-verify): **sin blockers**; probó el
+rename-only reconstruyendo cada `.tsx` desde HEAD byte a byte y confirmó la paridad de radios/sombras en el CSS
+emitido. Único hallazgo no bloqueante: README desactualizado — corregido en el mismo work unit. Siguiente: Fase 1
+(`shadcn init` + primitivas), previa confirmación visual del usuario con `npm run dev`. -->
