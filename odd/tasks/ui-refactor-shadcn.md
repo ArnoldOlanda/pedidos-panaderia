@@ -222,7 +222,11 @@ regresión. Si se quiere ese enlace, hay que agregarlo a mano.
 3. **Anunciar los estados de carga con una región `role="status"` persistente, no con `aria-live` en el control.**
    Una región viva tiene que preexistir y anunciar el cambio de su propio contenido, no el nombre accesible del
    botón que el usuario acaba de activar. Cuando el texto visible y el anunciado coinciden, se definen una sola
-   vez en una constante para que no puedan divergir.
+   vez en una constante para que no puedan divergir. **Caveat medido el 2026-10-04**: en las pantallas de
+   vendedor la región se monta **ya con texto**, porque `isLoading` es verdadero en el primer render y no vuelve a
+   verdadero en un refetch; o sea que la región no «preexiste» al cambio y el anuncio no es confiable. Las
+   pantallas de comprador tienen el mismo patrón, así que se mantiene por consistencia y queda como pendiente
+   transversal, no como defecto de una pantalla.
 4. **Cero colores hardcodeados en los archivos migrados**: nada de `slate-`, `amber-`, `bg-white`, `text-white`,
    `red-`, `green-`. El color sale de los tokens semánticos.
 5. **El `Alert` de shadcn ya trae `role="alert"`** (`alert.tsx:29`), así que reemplaza al `<p role="alert">`
@@ -553,3 +557,40 @@ real del original, no razonar sobre si el error «suena destructivo».
 encabezado y el `role="status"` nuevo. Sigue siendo **una** pantalla y una sola unidad coherente de review; se
 acepta y se declara en lugar de partir un archivo en dos commits a medias. Siguiente: `vendor/ingredients.tsx`
 (la tabla, `ModalShell`→`Dialog` y `window.confirm`→`AlertDialog`). -->
+
+<!-- 2026-10-04: **Fase 3 slice 3** — `vendor/ingredients.tsx` migrado en `15b74dc`. La tabla sigue siendo una
+`<table>` semántica (no hay primitiva `Table` vendorizada) y ganó `scope="col"` en los cinco `<th>`. Los tres
+montajes de `ModalShell` colapsaron en **un** `Dialog`: `open` constante porque `EditModal` solo existe mientras
+se edita, y `onOpenChange` enruta Escape, clic en el overlay y el botón de cierre hacia el `onClose` existente;
+`sm:max-w-2xl` repone el ancho de `ModalShell`. `window.confirm` pasó a `AlertDialog` con la misma pregunta como
+título y la mutación movida al `onClick` del action. Gate verde y verificación independiente **sin blockers**:
+cero colores hardcodeados, paridad de copia carácter por carácter salvo los controles propios del diálogo
+(`Cancelar`/`Eliminar`, que reemplazan el chrome del confirm del navegador), las cuatro funciones auxiliares
+byte-idénticas y `modal-shell.tsx` intacto (todavía lo importa `recipes`).
+
+**Decisión del usuario, no del padre**: el botón de cierre del `Dialog` conserva su rótulo `sr-only` en inglés
+(`Close`) porque el usuario prefirió no tocar el archivo vendorizado. Queda registrado como **desviación
+aceptada explícitamente, no como paridad** respecto del `aria-label="Cerrar"` de `ModalShell`. El remedio es una
+línea en `dialog.tsx` si algún día se quiere.
+
+**Corregido por el padre tras la verificación**: (1) el comentario del `Dialog` afirmaba que `ModalShell` no
+manejaba «ninguno» de los tres caminos de cierre, y sí manejaba el clic en el overlay y traía su propio botón de
+cierre; lo que Radix aporta de nuevo es Escape, contención de foco y devolución de foco. (2) El `AlertDialogAction`
+quedaba con la variante `default` (ámbar de marca), así que **confirmar un borrado** se veía como la acción
+primaria; pasó a `variant="destructive"`, que la primitiva acepta de forma nativa.
+
+**Hallazgo que evitó una corrección errónea del padre**: se sospechó que `variant="destructive"` en la fila era
+un bloque rojo pesado frente al `border-red-300 text-red-700` de HEAD, pero en **este** registry `destructive` es
+un **tinte** (`bg-destructive/10 text-destructive hover:bg-destructive/20`), no el relleno canónico de shadcn. Es
+un reemplazo plausible. Lección: antes de «corregir» una elección visual hay que leer la definición real de la
+variante en el primitivo, no asumir el aspecto canónico de la librería.
+
+**Advertencia transversal registrada en la convención 3**: la región `role="status"` de carga se monta ya con
+texto en las tres pantallas de vendedor (y en las de comprador), así que el anuncio no es confiable. Es un
+pendiente transversal, no un defecto de esta rebanada.
+
+**Desviación de tamaño, declarada**: **483 líneas cambiadas** (+281/−202), 83 sobre el umbral de 400, segunda
+rebanada seguida por encima. Causa: es el reemplazo más grande de la fase — se van `ModalShell` y
+`window.confirm`, entran nueve imports de primitivas, el árbol de `Dialog` y el de `AlertDialog`, `id`/`htmlFor`,
+`scope="col"` y la región de estado. Sigue siendo **una** pantalla y una unidad coherente; partirla obligaría a
+commitear media pantalla migrada. Siguiente: `vendor/recipes.tsx`, en dos work units. -->
