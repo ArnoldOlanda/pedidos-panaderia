@@ -1,8 +1,15 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { ComponentProps, FormEvent, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useOrdersByDni } from '../hooks/use-orders-by-dni';
 import { formatPrice } from '../lib/format';
 import type { Order } from '../lib/orders';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const TIME_FORMAT = new Intl.DateTimeFormat('es-PE', {
   timeStyle: 'short',
@@ -16,10 +23,15 @@ const STATUS_LABEL: Record<Order['status'], string> = {
   ENTREGADO: 'Entregado',
 };
 
-const STATUS_CLASSES: Record<Order['status'], string> = {
-  PENDIENTE: 'bg-amber-100 text-amber-800',
-  LISTO: 'bg-green-100 text-green-800',
-  ENTREGADO: 'bg-slate-100 text-slate-600',
+// Token utilities instead of literal colours: the primary/amber variant for
+// pending, the new success token for ready, the muted secondary variant for
+// delivered. Kept keyed by Order['status'] so TypeScript still enforces
+// exhaustiveness. vendor/orders.tsx keeps its own copy; both are consolidated in
+// Phase 3.
+const STATUS_BADGE: Record<Order['status'], ComponentProps<typeof Badge>> = {
+  PENDIENTE: { variant: 'default' },
+  LISTO: { className: 'bg-success text-success-foreground' },
+  ENTREGADO: { variant: 'secondary' },
 };
 
 const LAST_DNI_KEY = 'buyer:last-dni';
@@ -28,36 +40,37 @@ const DNI_PATTERN = /^\d{8}$/;
 function OrderCard({ order }: { order: Order }) {
   const total = order.product.price * order.quantity;
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold text-slate-900">
-            {order.product.name} × {order.quantity}
-          </h2>
-          <p className="text-xs text-slate-500">
-            {TIME_FORMAT.format(new Date(order.createdAt))}
-          </p>
-        </div>
-        <div className="text-right space-y-1">
-          <span
-            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[order.status]}`}
-          >
-            {STATUS_LABEL[order.status]}
-          </span>
-          <p className="text-sm font-medium text-slate-700">{formatPrice(total)}</p>
-        </div>
-      </div>
+    <article>
+      <Card>
+        <CardContent className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the card without a heading element. */}
+            <h2 className="font-heading text-lg font-semibold">
+              {order.product.name} × {order.quantity}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {TIME_FORMAT.format(new Date(order.createdAt))}
+            </p>
+          </div>
+          <div className="text-right space-y-1">
+            <Badge {...STATUS_BADGE[order.status]}>{STATUS_LABEL[order.status]}</Badge>
+            <p className="text-sm font-medium text-foreground">{formatPrice(total)}</p>
+          </div>
+        </CardContent>
+      </Card>
     </article>
   );
 }
 
 function SkeletonCard() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
-      <div className="h-5 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
-      <div className="mt-3 h-4 w-1/3 rounded-sm bg-slate-200 animate-pulse" />
-      <div className="mt-3 h-4 w-1/4 rounded-sm bg-slate-200 animate-pulse" />
-    </div>
+    <Card>
+      <CardContent className="space-y-3">
+        <Skeleton className="h-5 w-2/3" />
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-4 w-1/4" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -87,44 +100,48 @@ export function OrdersPage() {
 
   return (
     <section className="space-y-4">
-      <h1 className="text-2xl font-semibold text-slate-900">Mis pedidos</h1>
+      {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+      <h1 className="font-heading text-2xl font-semibold">Mis pedidos</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs space-y-3"
-      >
-        <label className="block text-sm">
-          <span className="text-slate-700">DNI</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="\d{8}"
-            maxLength={8}
-            required
-            value={dni}
-            onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
-            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={!DNI_PATTERN.test(dni)}
-          className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Buscar pedidos
-        </button>
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <CardContent className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="dni">DNI</Label>
+              <Input
+                id="dni"
+                type="text"
+                inputMode="numeric"
+                pattern="\d{8}"
+                maxLength={8}
+                required
+                value={dni}
+                onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
+              />
+            </div>
+            <Button type="submit" disabled={!DNI_PATTERN.test(dni)}>
+              Buscar pedidos
+            </Button>
+          </CardContent>
+        </Card>
       </form>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted-foreground">
         Vendedores: ver pedidos recibidos{' '}
-        <Link to="/vendor/orders" className="text-amber-600 hover:text-amber-700">
+        <Link to="/vendor/orders" className="text-primary hover:underline">
           aquí
         </Link>
         .
       </p>
 
+      {/* role=status rather than aria-live: a live region must pre-exist and announce
+          its own content change, not the name of the control the user just activated. */}
+      <span role="status" className="sr-only">
+        {isLoading ? 'Cargando pedidos' : ''}
+      </span>
+
       {isLoading && (
-        <div className="space-y-3">
+        <div aria-hidden="true" className="space-y-3">
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
@@ -132,30 +149,34 @@ export function OrdersPage() {
       )}
 
       {!isLoading && isError && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
-          <p>No pudimos cargar tus pedidos</p>
-          <button
-            type="button"
-            onClick={() => {
-              void refetch();
-            }}
-            className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
-          >
-            Reintentar
-          </button>
-        </div>
+        <Alert variant="destructive">
+          <AlertTitle>No pudimos cargar tus pedidos</AlertTitle>
+          <AlertDescription>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                void refetch();
+              }}
+            >
+              Reintentar
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       {!isLoading && !isError && submittedDni && data && data.length === 0 && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-600 space-y-3">
-          <p>No encontramos pedidos para este DNI.</p>
-          <Link
-            to="/catalog"
-            className="inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-          >
-            Ver catálogo →
-          </Link>
-        </div>
+        <Card className="text-muted-foreground">
+          <CardContent className="space-y-3">
+            <p>No encontramos pedidos para este DNI.</p>
+            <Link
+              to="/catalog"
+              className="inline-block text-sm font-medium text-primary hover:underline"
+            >
+              Ver catálogo →
+            </Link>
+          </CardContent>
+        </Card>
       )}
 
       {!isLoading && !isError && data && data.length > 0 && (
