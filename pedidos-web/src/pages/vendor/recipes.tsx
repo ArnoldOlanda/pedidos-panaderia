@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
 import { useIngredients } from '../../hooks/use-ingredients';
@@ -13,6 +13,16 @@ import { INGREDIENT_UNIT_LABELS } from '../../lib/ingredients';
 import type { Ingredient } from '../../lib/ingredients';
 import type { Recipe, RecipeIngredientInput } from '../../lib/recipes';
 import { ModalShell } from '../../components/modal-shell';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface CostBreakdown {
   costoInsumos: number;
@@ -85,6 +95,11 @@ function IngredientRow({
   onRemove: () => void;
   canRemove: boolean;
 }) {
+  // Radix Select has no empty-value item, so the label/control pairs need
+  // explicit ids. The caller keys rows by index, so no id arrives as a prop.
+  const rowId = useId();
+  const ingredientSelectId = `${rowId}-ingredient`;
+  const quantityInputId = `${rowId}-quantity`;
   const isMissing = line.ingredientId.length > 0 && ingredient === undefined;
   const quantityLabel = ingredient
     ? `Cantidad (${INGREDIENT_UNIT_LABELS[ingredient.usageUnit]})`
@@ -120,47 +135,64 @@ function IngredientRow({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_190px_120px_auto] gap-2 items-end">
-      <label className="text-sm">
-        <span className="text-slate-700">Insumo</span>
-        <select
+      <div className="text-sm">
+        <Label htmlFor={ingredientSelectId}>Insumo</Label>
+        {/* mt-1 instead of a space-y on the cell: the live region below is always
+            mounted, so a space-y would add a permanent 0.25rem under the select
+            even while the region is idle. */}
+        <Select
           value={line.ingredientId}
-          onChange={(e) => onChange({ ...line, ingredientId: e.target.value })}
+          onValueChange={(value) => onChange({ ...line, ingredientId: value })}
           required
-          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
         >
-          <option value="">
-            {hasNoOptions
-              ? 'No quedan insumos disponibles'
-              : 'Selecciona un insumo'}
-          </option>
-          {isMissing && (
-            <option value={line.ingredientId}>
-              {missingIngredientName
-                ? `${missingIngredientName} (no disponible)`
-                : 'Insumo no disponible'}
-            </option>
-          )}
-          {options.map((candidate) => (
-            <option key={candidate.id} value={candidate.id}>
-              {candidate.name}
-            </option>
-          ))}
-        </select>
-        {hasNoOptions && (
-          <p className="mt-1 text-xs text-amber-700" role="status">
-            Todos los insumos ya están en otras filas. Quita una fila o cambia
-            otro insumo para liberar uno.
-          </p>
-        )}
+          <SelectTrigger id={ingredientSelectId} className="mt-1 w-full">
+            <SelectValue
+              placeholder={
+                hasNoOptions
+                  ? 'No quedan insumos disponibles'
+                  : 'Selecciona un insumo'
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {isMissing && (
+              <SelectItem value={line.ingredientId}>
+                {missingIngredientName
+                  ? `${missingIngredientName} (no disponible)`
+                  : 'Insumo no disponible'}
+              </SelectItem>
+            )}
+            {options.map((candidate) => (
+              <SelectItem key={candidate.id} value={candidate.id}>
+                {candidate.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {/* role=status rather than aria-live on the select itself: a live region
+            has to pre-exist and announce its own content change. The node stays
+            mounted and only toggles its visibility, so the row announces the
+            notice when the last free insumo is taken. */}
+        <p
+          role="status"
+          className={
+            hasNoOptions ? 'mt-1 text-xs text-muted-foreground' : 'sr-only'
+          }
+        >
+          {hasNoOptions
+            ? 'Todos los insumos ya están en otras filas. Quita una fila o cambia otro insumo para liberar uno.'
+            : ''}
+        </p>
         {!hasNoOptions && !hasAlternatives && line.ingredientId.length > 0 && (
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             No hay otros insumos libres para esta fila.
           </p>
         )}
-      </label>
-      <label className="text-sm">
-        <span className="text-slate-700">{quantityLabel}</span>
-        <input
+      </div>
+      <div className="text-sm">
+        <Label htmlFor={quantityInputId}>{quantityLabel}</Label>
+        <Input
+          id={quantityInputId}
           type="number"
           step="0.01"
           min="0"
@@ -169,43 +201,43 @@ function IngredientRow({
             onChange({ ...line, quantityUsed: Number(e.target.value) })
           }
           required
-          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
+          className="mt-1"
         />
-      </label>
+      </div>
       <div className="text-sm">
-        <span className="text-slate-700">Precio</span>
+        <span className="text-muted-foreground">Precio</span>
         {ingredient ? (
           <>
-            <p className="mt-2 font-medium text-slate-900">
+            <p className="mt-2 font-medium text-foreground">
               {formatPrice(ingredient.purchasePrice)}{' '}
-              <span className="text-xs font-normal text-slate-500">
+              <span className="text-xs font-normal text-muted-foreground">
                 por {purchaseUnitLabel}
               </span>
             </p>
             {showsConversion && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {formatPrecisePrice(unitCost)} por {usageUnitLabel}
               </p>
             )}
           </>
         ) : (
-          <p className="mt-2 text-slate-400">—</p>
+          <p className="mt-2 text-muted-foreground">—</p>
         )}
       </div>
       <div className="text-sm">
-        <span className="text-slate-700">Costo</span>
-        <p className="mt-2 font-medium text-slate-900">
+        <span className="text-muted-foreground">Costo</span>
+        <p className="mt-2 font-medium text-foreground">
           {formatPrecisePrice(partialCost)}
         </p>
       </div>
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={onRemove}
         disabled={!canRemove}
-        className="rounded-sm border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Quitar
-      </button>
+      </Button>
     </div>
   );
 }
