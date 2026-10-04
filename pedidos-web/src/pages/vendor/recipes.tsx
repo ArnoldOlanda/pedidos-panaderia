@@ -12,10 +12,15 @@ import { formatPrice, formatPrecisePrice } from '../../lib/format';
 import { INGREDIENT_UNIT_LABELS } from '../../lib/ingredients';
 import type { Ingredient } from '../../lib/ingredients';
 import type { Recipe, RecipeIngredientInput } from '../../lib/recipes';
-import { ModalShell } from '../../components/modal-shell';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -626,48 +631,26 @@ function EditModal({
     setServerError(null);
   }, [recipeId]);
 
-  if (recipeQuery.isError) {
-    const status = toApiError(recipeQuery.error).status;
-    return (
-      <ModalShell title="Editar receta" onClose={onClose}>
-        {status === 404 ? (
-          <p className="text-sm text-red-600" role="alert">
-            La receta ya no existe.
-          </p>
-        ) : (
-          <p className="text-sm text-red-600" role="alert">
-            No pudimos cargar la receta.
-          </p>
-        )}
-      </ModalShell>
-    );
-  }
-
-  if (recipeQuery.isLoading || !recipeQuery.data) {
-    return (
-      <ModalShell title="Editar receta" onClose={onClose}>
-        <div className="space-y-2">
-          <div className="h-4 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
-          <div className="h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
-        </div>
-      </ModalShell>
-    );
-  }
-
   const recipe = recipeQuery.data;
+
+  const errorStatus = recipeQuery.isError
+    ? toApiError(recipeQuery.error).status
+    : null;
 
   // Convert the read lines (with nested insumo) back to the write shape the
   // form edits. The nested name only labels a line whose insumo disappeared
   // from the catalog, so the select can show it instead of a blank value.
-  const initialIngredients: RecipeIngredientInput[] = recipe.ingredients.map(
-    (line) => ({
-      ingredientId: line.ingredientId,
-      quantityUsed: line.quantityUsed,
-    }),
-  );
+  const initialIngredients: RecipeIngredientInput[] = recipe
+    ? recipe.ingredients.map((line) => ({
+        ingredientId: line.ingredientId,
+        quantityUsed: line.quantityUsed,
+      }))
+    : [];
   const initialIngredientNames: Record<string, string | undefined> = {};
-  for (const line of recipe.ingredients) {
-    initialIngredientNames[line.ingredientId] = line.ingredient?.name;
+  if (recipe) {
+    for (const line of recipe.ingredients) {
+      initialIngredientNames[line.ingredientId] = line.ingredient?.name;
+    }
   }
 
   const submit = (input: {
@@ -676,6 +659,7 @@ function EditModal({
     utilidad: number;
     manoObra: number;
   }) => {
+    if (!recipe) return;
     setServerError(null);
     update.mutate(
       {
@@ -707,21 +691,56 @@ function EditModal({
     );
   };
 
+  // EditModal is mounted only while editing, so `open` is constant true and
+  // onOpenChange is what routes Escape, overlay click and the close button back
+  // to onClose. ModalShell already handled overlay click and had its own close
+  // button; what Radix adds is Escape, focus containment and focus return. The
+  // registry's own close button is kept deliberately: its sr-only label is the
+  // English "Close", an accepted deviation from ModalShell's Spanish
+  // aria-label="Cerrar", chosen over patching the vendored primitive.
   return (
-    <ModalShell title="Editar receta" onClose={onClose}>
-      <RecipeForm
-        initialName={recipe.name}
-        initialIngredients={initialIngredients}
-        initialIngredientNames={initialIngredientNames}
-        initialUtilidad={recipe.utilidad}
-        initialManoObra={recipe.manoObra}
-        submitLabel="Guardar cambios"
-        busy={update.isPending}
-        serverError={serverError}
-        onSubmit={submit}
-        onCancel={onClose}
-      />
-    </ModalShell>
+    <Dialog
+      open
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Editar receta</DialogTitle>
+        </DialogHeader>
+
+        {recipeQuery.isError && (
+          <p className="text-sm text-destructive" role="alert">
+            {errorStatus === 404
+              ? 'La receta ya no existe.'
+              : 'No pudimos cargar la receta.'}
+          </p>
+        )}
+
+        {!recipeQuery.isError && (recipeQuery.isLoading || !recipe) && (
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        )}
+
+        {!recipeQuery.isError && !recipeQuery.isLoading && recipe && (
+          <RecipeForm
+            initialName={recipe.name}
+            initialIngredients={initialIngredients}
+            initialIngredientNames={initialIngredientNames}
+            initialUtilidad={recipe.utilidad}
+            initialManoObra={recipe.manoObra}
+            submitLabel="Guardar cambios"
+            busy={update.isPending}
+            serverError={serverError}
+            onSubmit={submit}
+            onCancel={onClose}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
