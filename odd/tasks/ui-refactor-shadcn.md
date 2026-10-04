@@ -243,6 +243,14 @@ regresión. Si se quiere ese enlace, hay que agregarlo a mano.
    siendo una afirmación de runtime que nada en este repo puede probar.** El caso que sí falta es el inverso: un
    disparador de `Dialog` o `Select` que pase su `ref` *hacia dentro* de nuestras primitivas. Eso llega en la
    Fase 3, al reemplazar `ModalShell`.
+8. **Nota sistémica de Tailwind v4 (`space-y-*`) — ya causó dos correcciones reales.** `space-y-*` compila a
+   `margin-block-end` en **todo hijo que no sea el último**, incluidos los nodos vacíos y los que están fuera de
+   flujo. En el slice 1, la región `role="status"` montada dentro de una columna con `space-y-2` le daba 0.5rem
+   permanentes al `Badge`. En el slice 4b, un componente que pasó de devolver **un** raíz a devolver un fragmento
+   dejó que el `space-y-4` **del llamador** (`ModalShell`) le pusiera 1rem al elemento anterior, en los cuatro
+   estados. Regla práctica: no usar `space-y-*` alrededor de un nodo que se monta siempre y a veces está vacío, y
+   **no cambiar cuántos raíces devuelve un componente dentro de una migración de estilos** — el contrato con el
+   llamador no forma parte del rediseño.
 
 ## Fase 2 — cerrada: seis pantallas más el shell
 
@@ -632,4 +640,63 @@ errada.
 
 **Nota de entorno**: el verificador reportó que `.codegraph/` cambió de mtime y que hay procesos
 `codegraph serve --mcp` corriendo. Es estado de herramienta untracked (y ya está en «Pendientes ajenos» por el
-`.gitignore`); no afectá al contenido del repo. Siguiente: `RecipeForm` (slice 4b). -->
+`.gitignore`); no afecta al contenido del repo. Siguiente: `RecipeForm` (slice 4b). -->
+
+<!-- 2026-10-04: **Fase 3 slice 4b** — `RecipeForm` migrado en `1d1a790`, **179 líneas cambiadas** (96+/83−). Los
+tres inputs a `Label` + `Input` con ids derivados de `useId`; el error de carga de insumos a `Alert
+variant="destructive"` con `Reintentar`; el catálogo vacío a `Card` con su enlace `Crear insumos →` (verificado
+como enlace de texto real, no `Button asChild`). **`step="0.1" min="0"` se transportó sin tocar en los dos inputs
+de porcentaje**, a propósito: es el bug ya registrado en «Pendientes ajenos» y arreglarlo dentro de la migración
+habría hecho intestable la verificación de paridad.
+
+**El episodio estructural que vale más que el código.** Para que la región `role="status"` sobreviviera a todos
+los estados, el writer colapsó los `early return` originales en condiciones hermanas bajo un fragmento. La
+verificación independiente **probó que la equivalencia por estado se mantenía** (exclusión mutua, presencia del
+`<form>` en los mismos estados, orden de hooks intacto, paridad de copia carácter por carácter) **pero encontró el
+costo**: al devolver un fragmento, los hijos de `RecipeForm` caen en el layout del llamador, y el `space-y-4` de
+`ModalShell` le ponía 1rem permanentes al elemento anterior en los cuatro estados del modal. Se revirtió a los
+`early return` y la segunda verificación confirmó que ningún elemento recibe ahora un margen que no tuviera antes.
+
+**Decisión derivada, registrada**: la convención 3 exige una región viva **persistente**, y eso solo es posible
+cuando el componente tiene una raíz estable entre estados. `RecipeForm` está diseñado con un `early return` por
+estado, así que no la tiene: al devolver un solo raíz por estado, la región vive en el estado de carga. El precio
+para hacerla persistente era reestructurar el flujo de control de un componente dentro de una migración de
+espacios, y eso se rechazó. Lo que sí se hizo fue cambiar `aria-busy="true"` por `role="status"` en la raíz de
+carga, porque `aria-busy` en el mismo nodo le indica al lector que **retenga** los anuncios: habría suprimido
+justo la región que se quería. La lección quedó escrita en el código.
+
+**Lección sistémica elevada a la convención 8**: este es el **segundo** caso del mismo mecanismo (`space-y-*` →
+`margin-block-end` en todo hijo no último). El primero fue el `Badge` del slice 1; este fue el llamador. Siguiente:
+slice 4c (`RecipeCard` + `EditModal` + el shell de página) y el retiro de `modal-shell.tsx`. -->
+
+<!-- 2026-10-04: **Fase 3 slice 4c + retiro de `ModalShell`** — `EditModal` migrado a `Dialog` en `57ecc3b` y
+`modal-shell.tsx` **borrado** en `a10f6c1`.
+
+**Reordenamiento del plan, con causa**: el plan decía «4c = `RecipeCard` + `EditModal` + shell». Al inspeccionar el
+árbol apareció que el botón «Eliminar» vive en `RecipeCard` pero el `window.confirm` está en el handler de
+`VendorRecipesPage`: la conversión a `AlertDialog` (D6) cruza los dos. Así que 4c quedó en **solo `EditModal`** y
+4d junta `RecipeCard` + shell de página + `AlertDialog`, que es la unidad coherente. Lección: antes de partir una
+rebanada por líneas hay que ubicar dónde viven el disparador y el handler de cada interacción.
+
+`EditModal` siguió el precedente exacto del slice 3 (`ingredients.tsx`): **un** `Dialog`, `open` constante,
+`onOpenChange` que enruta Escape/overlay/cierre hacia `onClose`, `sm:max-w-2xl` para reponer el ancho de
+`ModalShell`, `DialogTitle` incondicional presente en los tres estados, error como `<p className="text-sm
+text-destructive" role="alert">` y carga con `Skeleton`. Los diez props de `RecipeForm` quedaron byte-idénticos.
+Verificación independiente **sin blockers**: las otras cinco regiones del archivo (helpers, `IngredientRow`,
+`validateRecipe`, `RecipeForm`, `RecipeCard`, `VendorRecipesPage`) byte-idénticas por hash, y cero colores
+hardcodeados dentro de `EditModal`.
+
+**Un riesgo que el writer reportó mal y la verificación desactivó**: el writer avisó que `initialIngredients` e
+`initialIngredientNames` pasaban a calcularse en cada render «cuando antes eran estables». Falso: **nunca
+esuvieron memoizados** (se construían después de los `early return`, así que también se recreaban por render). Y
+no importa, porque el consumidor los usa **solo** como inicializadores de `useState`, nunca como dependencia de un
+`useEffect`/`useMemo`. Se verificó explícitamente que no hay reset del formulario ni bucle. Buen recordatorio: un
+riesgo autodeclarado por el writer también hay que probarlo, no solo anotarlo.
+
+**`modal-shell.tsx` borrado**: era el último consumidor cruzado de las dos pantallas, por eso sobrevivió hasta
+acá. Ya no quedan ni imports ni usos; las dos menciones que restan en el árbol son comentarios que documentan qué
+aporta `Dialog` sobre él. Con esto la **D6 y el reemplazo de `ModalShell` quedan cerrados en toda la app**.
+
+**Declarado**: el ancho por debajo del breakpoint `sm` cambia. `ModalShell` era un panel que se encogía al
+contenido con `max-w-2xl`; `DialogContent` es `w-full max-w-[calc(100%-2rem)] sm:max-w-2xl`. De `sm` para arriba
+coinciden. Es una desviación visual menor, consistente con el precedente de `ingredients.tsx`. Siguiente: 4d. -->
