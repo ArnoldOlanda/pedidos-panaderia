@@ -9,7 +9,6 @@ import { useDeleteIngredient } from '../../hooks/use-delete-ingredient';
 import { useUnitPairs } from '../../hooks/use-unit-pairs';
 import { toApiError } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
-import { ModalShell } from '../../components/modal-shell';
 import {
   INGREDIENT_UNITS,
   INGREDIENT_UNIT_LABELS,
@@ -20,9 +19,40 @@ import type {
   IngredientUnit,
   UnitPair,
 } from '../../lib/ingredients';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const INVALID_PAIR_MESSAGE =
   'Combinación de unidades no permitida: la unidad de compra debe ser del mismo tipo y mayor o igual que la unidad de uso.';
+
+const LOADING_LABEL = 'Cargando insumos';
 
 function conversionLabel(ingredient: Ingredient): string {
   return `1 ${INGREDIENT_UNIT_LABELS[ingredient.purchaseUnit]} = ${ingredient.conversionFactor} ${INGREDIENT_UNIT_LABELS[ingredient.usageUnit]}`;
@@ -77,6 +107,7 @@ function deleteErrorMessage(err: unknown): string {
 }
 
 function IngredientForm({
+  idPrefix,
   initialName,
   initialUsageUnit,
   initialPurchaseUnit,
@@ -88,6 +119,7 @@ function IngredientForm({
   onSubmit,
   onCancel,
 }: {
+  idPrefix: string;
   initialName?: string;
   initialUsageUnit?: IngredientUnit;
   initialPurchaseUnit?: IngredientUnit;
@@ -137,65 +169,73 @@ function IngredientForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <label className="block text-sm">
-        <span className="text-slate-700">Nombre</span>
-        <input
+      <div className="space-y-1">
+        <Label htmlFor={`${idPrefix}-name`}>Nombre</Label>
+        <Input
+          id={`${idPrefix}-name`}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
           minLength={1}
           maxLength={150}
-          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
         />
-      </label>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <label className="block text-sm">
-          <span className="text-slate-700">Unidad de uso</span>
-          <select
-            value={usageUnit}
-            onChange={(e) => setUsageUnit(e.target.value as IngredientUnit)}
-            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-          >
-            {INGREDIENT_UNITS.map((unit) => (
-              <option key={unit} value={unit}>
-                {INGREDIENT_UNIT_LABELS[unit]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block text-sm">
-          <span className="text-slate-700">Unidad de compra</span>
-          <select
-            value={purchaseUnit}
-            onChange={(e) => setPurchaseUnit(e.target.value as IngredientUnit)}
-            className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
-          >
-            {INGREDIENT_UNITS.map((unit) => (
-              <option key={unit} value={unit}>
-                {INGREDIENT_UNIT_LABELS[unit]}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
-      <label className="block text-sm">
-        <span className="text-slate-700">Precio de compra</span>
-        <input
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <Label htmlFor={`${idPrefix}-usage-unit`}>Unidad de uso</Label>
+          <Select
+            value={usageUnit}
+            onValueChange={(value) => setUsageUnit(value as IngredientUnit)}
+          >
+            <SelectTrigger id={`${idPrefix}-usage-unit`} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {INGREDIENT_UNITS.map((unit) => (
+                <SelectItem key={unit} value={unit}>
+                  {INGREDIENT_UNIT_LABELS[unit]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor={`${idPrefix}-purchase-unit`}>Unidad de compra</Label>
+          <Select
+            value={purchaseUnit}
+            onValueChange={(value) => setPurchaseUnit(value as IngredientUnit)}
+          >
+            <SelectTrigger id={`${idPrefix}-purchase-unit`} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {INGREDIENT_UNITS.map((unit) => (
+                <SelectItem key={unit} value={unit}>
+                  {INGREDIENT_UNIT_LABELS[unit]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor={`${idPrefix}-purchase-price`}>Precio de compra</Label>
+        <Input
+          id={`${idPrefix}-purchase-price`}
           type="number"
           step="0.01"
           min="0"
           value={Number.isFinite(purchasePrice) ? purchasePrice : 0}
           onChange={(e) => setPurchasePrice(Number(e.target.value))}
           required
-          className="mt-1 w-full rounded-sm border border-slate-300 px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-hidden"
         />
-      </label>
+      </div>
 
-      <div className="rounded-sm border border-slate-200 bg-slate-50 p-3 space-y-1 text-sm text-slate-700">
+      <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1 text-sm">
         <p>
           Factor de conversión:{' '}
           <span className="font-medium">
@@ -216,57 +256,51 @@ function IngredientForm({
           </>
         )}
         {unitPairsQuery.isLoading && (
-          <p className="text-slate-500">Cargando unidades disponibles…</p>
+          <p className="text-muted-foreground">Cargando unidades disponibles…</p>
         )}
         {unitPairsQuery.isError && (
-          <div className="text-red-600" role="alert">
-            <p>No pudimos cargar las unidades disponibles.</p>
-            <button
-              type="button"
-              onClick={() => {
-                void unitPairsQuery.refetch();
-              }}
-              className="font-medium text-amber-600 hover:text-amber-700"
-            >
-              Reintentar
-            </button>
-          </div>
+          <Alert variant="destructive">
+            <AlertTitle>No pudimos cargar las unidades disponibles.</AlertTitle>
+            <AlertDescription>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  void unitPairsQuery.refetch();
+                }}
+              >
+                Reintentar
+              </Button>
+            </AlertDescription>
+          </Alert>
         )}
         {pairUnavailable && (
-          <p className="text-red-600" role="alert">
+          <p className="text-destructive" role="alert">
             {INVALID_PAIR_MESSAGE}
           </p>
         )}
       </div>
 
       {validationError && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {validationError}
         </p>
       )}
 
       {serverError && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {serverError}
         </p>
       )}
 
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="rounded-sm bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" disabled={!canSubmit}>
           {busy ? 'Guardando…' : submitLabel}
-        </button>
+        </Button>
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-sm border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-          >
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
-          </button>
+          </Button>
         )}
       </div>
     </form>
@@ -290,37 +324,10 @@ function EditModal({
     setServerError(null);
   }, [ingredientId]);
 
-  if (ingredientQuery.isError) {
-    const status = toApiError(ingredientQuery.error).status;
-    return (
-      <ModalShell title="Editar insumo" onClose={onClose}>
-        {status === 404 ? (
-          <p className="text-sm text-red-600" role="alert">
-            El insumo ya no existe.
-          </p>
-        ) : (
-          <p className="text-sm text-red-600" role="alert">
-            No pudimos cargar el insumo.
-          </p>
-        )}
-      </ModalShell>
-    );
-  }
-
-  if (ingredientQuery.isLoading || !ingredientQuery.data) {
-    return (
-      <ModalShell title="Editar insumo" onClose={onClose}>
-        <div className="space-y-2">
-          <div className="h-4 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
-          <div className="h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
-        </div>
-      </ModalShell>
-    );
-  }
-
   const ingredient = ingredientQuery.data;
 
   const submit = (input: CreateIngredientInput) => {
+    if (!ingredient) return;
     setValidationError(null);
     setServerError(null);
     const v = validateIngredient(input.name, input.purchasePrice);
@@ -341,21 +348,62 @@ function EditModal({
     );
   };
 
+  const errorStatus = ingredientQuery.isError
+    ? toApiError(ingredientQuery.error).status
+    : null;
+
+  // EditModal is mounted only while editing, so `open` is constant true and
+  // onOpenChange is what routes Escape, overlay click and the close button back
+  // to onClose. ModalShell already handled overlay click and had its own close
+  // button; what Radix adds is Escape, focus containment and focus return. The
+  // registry's own close button is kept deliberately: its sr-only label is the
+  // English "Close", an accepted deviation from ModalShell's Spanish
+  // aria-label="Cerrar", chosen over patching the vendored primitive.
   return (
-    <ModalShell title="Editar insumo" onClose={onClose}>
-      <IngredientForm
-        initialName={ingredient.name}
-        initialUsageUnit={ingredient.usageUnit}
-        initialPurchaseUnit={ingredient.purchaseUnit}
-        initialPurchasePrice={ingredient.purchasePrice}
-        submitLabel="Guardar cambios"
-        busy={update.isPending}
-        validationError={validationError}
-        serverError={serverError}
-        onSubmit={submit}
-        onCancel={onClose}
-      />
-    </ModalShell>
+    <Dialog
+      open
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Editar insumo</DialogTitle>
+        </DialogHeader>
+
+        {ingredientQuery.isError && (
+          <p className="text-sm text-destructive" role="alert">
+            {errorStatus === 404
+              ? 'El insumo ya no existe.'
+              : 'No pudimos cargar el insumo.'}
+          </p>
+        )}
+
+        {!ingredientQuery.isError &&
+          (ingredientQuery.isLoading || !ingredient) && (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          )}
+
+        {!ingredientQuery.isError && !ingredientQuery.isLoading && ingredient && (
+          <IngredientForm
+            idPrefix="ingredient-edit"
+            initialName={ingredient.name}
+            initialUsageUnit={ingredient.usageUnit}
+            initialPurchaseUnit={ingredient.purchaseUnit}
+            initialPurchasePrice={ingredient.purchasePrice}
+            submitLabel="Guardar cambios"
+            busy={update.isPending}
+            validationError={validationError}
+            serverError={serverError}
+            onSubmit={submit}
+            onCancel={onClose}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -383,16 +431,19 @@ export function VendorIngredientsPage() {
 
   if (user && user.role !== 'VENDEDOR') {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs space-y-3">
-        <h1 className="text-2xl font-semibold text-slate-900">Insumos</h1>
-        <p className="text-sm text-slate-600">Esta sección es solo para vendedores.</p>
-        <Link
-          to="/catalog"
-          className="inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-        >
-          Volver al catálogo →
-        </Link>
-      </section>
+      <Card className="text-muted-foreground">
+        <CardContent className="space-y-3">
+          {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+          <h1 className="font-heading text-2xl font-semibold text-foreground">Insumos</h1>
+          <p className="text-sm">Esta sección es solo para vendedores.</p>
+          <Link
+            to="/catalog"
+            className="inline-block text-sm font-medium text-primary hover:underline"
+          >
+            Volver al catálogo →
+          </Link>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -417,9 +468,6 @@ export function VendorIngredientsPage() {
   };
 
   const handleDelete = (ingredient: Ingredient) => {
-    if (!window.confirm(`¿Eliminar el insumo "${ingredient.name}"?`)) {
-      return;
-    }
     setDeleteError(null);
     remove.mutate(ingredient.id, {
       onSuccess: () => {
@@ -435,14 +483,15 @@ export function VendorIngredientsPage() {
     <section className="space-y-6">
       <header className="flex items-center justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-slate-900">Insumos</h1>
-          <p className="text-sm text-slate-600">
+          {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+          <h1 className="font-heading text-2xl font-semibold">Insumos</h1>
+          <p className="text-sm text-muted-foreground">
             Catálogo compartido de insumos y sus unidades
           </p>
         </div>
         <Link
           to="/vendor/recipes"
-          className="text-sm font-medium text-amber-600 hover:text-amber-700"
+          className="text-sm font-medium text-primary hover:underline"
         >
           Mis recetas →
         </Link>
@@ -450,116 +499,142 @@ export function VendorIngredientsPage() {
 
       {flashMessage && (
         <div
-          className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
           role="status"
+          className="rounded-lg bg-success px-4 py-3 text-sm text-success-foreground"
         >
           {flashMessage}
         </div>
       )}
 
       {deleteError && (
-        <div
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          role="alert"
-        >
-          {deleteError}
-        </div>
+        <Alert variant="destructive">
+          <AlertTitle>{deleteError}</AlertTitle>
+        </Alert>
       )}
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">Insumos existentes</h2>
+        {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the section without a heading element. */}
+        <h2 className="font-heading text-lg font-semibold">Insumos existentes</h2>
+
+        {/* role=status rather than aria-live on the skeleton: a live region has to
+            pre-exist and announce its own content change, not the decorative bars. */}
+        <span role="status" className="sr-only">
+          {ingredientsQuery.isLoading ? LOADING_LABEL : ''}
+        </span>
 
         {ingredientsQuery.isLoading && (
-          <div className="space-y-3">
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
-              <div className="h-5 w-2/3 rounded-sm bg-slate-200 animate-pulse" />
-              <div className="mt-3 h-4 w-1/2 rounded-sm bg-slate-200 animate-pulse" />
-            </div>
+          <div aria-hidden="true">
+            <Card>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-5 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {!ingredientsQuery.isLoading && ingredientsQuery.isError && (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-700">
-            <p>No pudimos cargar los insumos</p>
-            <button
-              type="button"
-              onClick={() => {
-                void ingredientsQuery.refetch();
-              }}
-              className="mt-3 px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
-            >
-              Reintentar
-            </button>
-          </div>
+          <Alert variant="destructive">
+            <AlertTitle>No pudimos cargar los insumos</AlertTitle>
+            <AlertDescription>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  void ingredientsQuery.refetch();
+                }}
+              >
+                Reintentar
+              </Button>
+            </AlertDescription>
+          </Alert>
         )}
 
         {!ingredientsQuery.isLoading &&
           !ingredientsQuery.isError &&
           ingredients.length === 0 && (
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-slate-600">
-              <p>Aún no hay insumos creados.</p>
-              <p className="mt-1">
-                Crea el primer insumo para poder usarlo en tus recetas.
-              </p>
-            </div>
+            <Card className="text-muted-foreground">
+              <CardContent className="space-y-1">
+                <p>Aún no hay insumos creados.</p>
+                <p>Crea el primer insumo para poder usarlo en tus recetas.</p>
+              </CardContent>
+            </Card>
           )}
 
         {!ingredientsQuery.isLoading &&
           !ingredientsQuery.isError &&
           ingredients.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-xs">
+            <div className="overflow-x-auto rounded-lg border border-border bg-card ring-1 ring-foreground/10">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-slate-500">
-                    <th className="px-4 py-3 font-medium">Nombre</th>
-                    <th className="px-4 py-3 font-medium">Compra</th>
-                    <th className="px-4 py-3 font-medium">Conversión</th>
-                    <th className="px-4 py-3 font-medium">Uso</th>
-                    <th className="px-4 py-3 font-medium text-right">Acciones</th>
+                  <tr className="text-left text-muted-foreground">
+                    <th scope="col" className="px-4 py-3 font-medium">Nombre</th>
+                    <th scope="col" className="px-4 py-3 font-medium">Compra</th>
+                    <th scope="col" className="px-4 py-3 font-medium">Conversión</th>
+                    <th scope="col" className="px-4 py-3 font-medium">Uso</th>
+                    <th scope="col" className="px-4 py-3 font-medium text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ingredients.map((ingredient) => (
-                    <tr
-                      key={ingredient.id}
-                      className="border-t border-slate-100"
-                    >
-                      <td className="px-4 py-3 text-slate-900">
+                    <tr key={ingredient.id} className="border-t border-border">
+                      <td className="px-4 py-3 text-foreground">
                         {ingredient.name}
                       </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      <td className="px-4 py-3 text-muted-foreground">
                         {formatPrice(ingredient.purchasePrice)} /{' '}
                         {INGREDIENT_UNIT_LABELS[ingredient.purchaseUnit]}
                       </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      <td className="px-4 py-3 text-muted-foreground">
                         {conversionLabel(ingredient)}
                       </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      <td className="px-4 py-3 text-muted-foreground">
                         {INGREDIENT_UNIT_LABELS[ingredient.usageUnit]}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2 justify-end">
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="xs"
                             onClick={() => setEditingId(ingredient.id)}
-                            className="rounded-sm border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
                           >
                             Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(ingredient)}
-                            disabled={
-                              remove.isPending &&
-                              remove.variables === ingredient.id
-                            }
-                            className="rounded-sm border border-red-300 px-3 py-1 text-xs text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {remove.isPending &&
-                            remove.variables === ingredient.id
-                              ? 'Eliminando…'
-                              : 'Eliminar'}
-                          </button>
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="xs"
+                                disabled={
+                                  remove.isPending &&
+                                  remove.variables === ingredient.id
+                                }
+                              >
+                                {remove.isPending &&
+                                remove.variables === ingredient.id
+                                  ? 'Eliminando…'
+                                  : 'Eliminar'}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {`¿Eliminar el insumo "${ingredient.name}"?`}
+                                </AlertDialogTitle>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  variant="destructive"
+                                  onClick={() => handleDelete(ingredient)}
+                                >
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </td>
                     </tr>
@@ -570,22 +645,26 @@ export function VendorIngredientsPage() {
           )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <h2 className="text-lg font-semibold text-slate-900">Crear nuevo insumo</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Define nombre, unidades y precio de compra. El factor de conversión se
-          calcula solo a partir del par de unidades permitido.
-        </p>
-        <div className="mt-4">
-          <IngredientForm
-            submitLabel="Crear insumo"
-            busy={create.isPending}
-            validationError={createValidationError}
-            serverError={createServerError}
-            onSubmit={handleCreate}
-          />
-        </div>
-      </section>
+      <Card>
+        <CardContent>
+          {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the section without a heading element. */}
+          <h2 className="font-heading text-lg font-semibold">Crear nuevo insumo</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Define nombre, unidades y precio de compra. El factor de conversión
+            se calcula solo a partir del par de unidades permitido.
+          </p>
+          <div className="mt-4">
+            <IngredientForm
+              idPrefix="ingredient-create"
+              submitLabel="Crear insumo"
+              busy={create.isPending}
+              validationError={createValidationError}
+              serverError={createServerError}
+              onSubmit={handleCreate}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {editingId && (
         <EditModal
