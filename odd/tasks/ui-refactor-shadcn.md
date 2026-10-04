@@ -526,3 +526,30 @@ nada porque un `<section>` sin nombre accesible no se expone como landmark.
 Hallazgo de plataforma: `vendor/orders.tsx` es la **primera adopción de `Select`** (Radix + propagación de `ref`
 por `Slot`) y de un `Dialog`-free overlay. Compila y buildea, pero nada lo ejercita en runtime. Siguiente:
 `vendor/products.tsx`. -->
+
+<!-- 2026-10-04: **Fase 3 slice 2** — `vendor/products.tsx` migrado en `5412a63`. Los 5 controles crudos pasaron
+a `Label htmlFor` + `Input`/`Select` con `id` que enlaza (el `required` del recetario se conserva: HEAD lo tenía
+en el `<select>` nativo y ahora viaja al `required` de la raíz de Radix `Select`, que lo reenvía a un `<select>`
+nativo oculto visualmente pero no `display:none`; además `validate()` sigue devolviendo `Selecciona una receta`,
+así que no se pierde guarda). Prellenado del precio, `toFixed(2)` y `step="0.01" min="0.01"` intactos; los cuatro
+helpers de fecha/hora y las 8 guardas de `validate()` byte-idénticas. Gate verde y verificación independiente
+**sin blockers**: paridad de copia carácter por carácter (multiconjunto de codepoints idéntico: `…`×1, `→`×3,
+`·`×2), cero colores hardcodeados, `h1` 2→2, `h2` 3→3, cero `CardTitle`, y el `role="status"` de carga que
+faltaba.
+
+Tres juicios registrados: (1) **Aceptado** — el `<option value="">Selecciona una receta</option>` de HEAD ya no
+es reseleccionable: ahora es el `placeholder` del `Select` y no hay `SelectItem` vacío (Radix prohíbe `value=""`
+en un item). No se pierde una acción válida, porque publicar sin receta es inválido (`required` + `validate()`),
+así que la opción vacía era un afordance sin desenlace válido. (2) **Aceptado** — el fallo de carga de «Tus
+productos de hoy» era neutro en HEAD y ahora es `Alert variant="destructive"`, que es exactamente lo que hace
+`vendor/orders.tsx` para su propio fallo de carga: HEAD era el inconsistente, no la migración. (3) **Corregido por
+el padre tras la verificación** — el 404 («La receta seleccionada ya no existe.») quedó en `Alert` por defecto por
+una instrucción mía, pero en HEAD ese mensaje era rojo (`text-red-600`) y es un fallo de envío, mientras que el 403
+es un aviso de permiso: el 404 pasó a `variant="destructive"`. Lección: al mapear severidad hay que mirar el color
+real del original, no razonar sobre si el error «suena destructivo».
+
+**Desviación de tamaño, declarada**: el diff son **425 líneas cambiadas** (+228/−197), 25 por encima del umbral de
+400. No es expansión de alcance: son +31 líneas netas de envoltorios de primitivas, `id`/`htmlFor`, comentarios de
+encabezado y el `role="status"` nuevo. Sigue siendo **una** pantalla y una sola unidad coherente de review; se
+acepta y se declara en lugar de partir un archivo en dos commits a medias. Siguiente: `vendor/ingredients.tsx`
+(la tabla, `ModalShell`→`Dialog` y `window.confirm`→`AlertDialog`). -->
