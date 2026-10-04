@@ -1,8 +1,9 @@
-import { ComponentProps, FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useOrdersByDni } from '../hooks/use-orders-by-dni';
 import { formatPrice } from '../lib/format';
 import type { Order } from '../lib/orders';
+import { STATUS_BADGE, STATUS_LABEL, TIME_FORMAT } from '../lib/order-status';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,29 +11,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const TIME_FORMAT = new Intl.DateTimeFormat('es-PE', {
-  timeStyle: 'short',
-  dateStyle: 'short',
-  timeZone: 'America/Lima',
-});
-
-const STATUS_LABEL: Record<Order['status'], string> = {
-  PENDIENTE: 'Pendiente',
-  LISTO: 'Listo',
-  ENTREGADO: 'Entregado',
-};
-
-// Token utilities instead of literal colours: the primary/amber variant for
-// pending, the new success token for ready, the muted secondary variant for
-// delivered. Kept keyed by Order['status'] so TypeScript still enforces
-// exhaustiveness. vendor/orders.tsx keeps its own copy; both are consolidated in
-// Phase 3.
-const STATUS_BADGE: Record<Order['status'], ComponentProps<typeof Badge>> = {
-  PENDIENTE: { variant: 'default' },
-  LISTO: { className: 'bg-success text-success-foreground' },
-  ENTREGADO: { variant: 'secondary' },
-};
 
 const LAST_DNI_KEY = 'buyer:last-dni';
 const DNI_PATTERN = /^\d{8}$/;
