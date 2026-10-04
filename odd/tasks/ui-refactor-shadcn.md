@@ -6,7 +6,7 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 ## Status
 
 - Started: 2026-10-03
-- Current task: **3 — Fase 1 (shadcn init + primitivas)** — slice 1 (init + capa de tokens) cerrada en `e4f5019`; falta el slice de primitivas
+- Current task: **4 — Fase 2 (pantallas de comprador)**, tras resolver el desfase React 18 / registry React 19 (ver más abajo)
 - Branch: `feat/ui-refactor-shadcn` (base `main` @ `6018b3e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local)
 - Deploy: **pospuesto** por decisión del usuario hasta terminar el refactor (ODD-3.12/3.13 van después)
@@ -55,7 +55,7 @@ Huecos de accesibilidad que la librería cierra (o deja a la vista):
 - [x] **1 — Fase 0: Tailwind v4 y base** — migración 3.4 → 4.x, alias `@/*`, helper `cn()`, borrar el token
       `ink`. Sin tocar la API de ningún componente ni inventar tokens semánticos (los define la Fase 1)
       — **cerrada en `8c28e40`**
-- [ ] **2 — Fase 1: primitivas** — `shadcn init` + `Button`, `Input`/`Label`/`Field`, `Select`, `Textarea`,
+- [x] **2 — Fase 1: primitivas** — `shadcn init` ✅ (slice 1, `e4f5019`) y las **14 primitivas** ✅ (slice 2: `5803463`, `a809ec1`, `26be206`, `89b295e`). El checklist de a11y (foco visible, `aria-current`, `aria-live`, `scope="col"`) se aplica al migrar cada pantalla, en las Fases 2-3. Lista: `Button`, `Input`/`Label`/`Field`, `Select`, `Textarea`,
       `Card`, `Badge`, `Alert`, `Skeleton`, `Dialog` (reemplaza `ModalShell`), `Toast`, `AlertDialog` + checklist
       de accesibilidad (foco visible, `aria-current`, `aria-live`, `scope="col"`)
 - [ ] **3 — Fase 2: pantallas de comprador** — `catalog`, `product-detail`, `order-new`, `orders`, `login`,
@@ -128,6 +128,57 @@ byte-idéntico en tamaño (22.68 kB) con `shadcn` como devDependency, así que e
 - El bloque `.dark` quedó **inerte** (ningún elemento lleva la clase `dark`), pero `.dark --primary` es casi
   blanco: si algún día se activa el modo oscuro, la marca ámbar no se hereda.
 - `tsc -b` no cubre el CSS: los tokens son datos, no tipos. Su verificación es el CSS emitido y el ojo del usuario.
+
+## Fase 1 — slice 2: las primitivas (cerrada en `5803463`, `a809ec1`, `26be206`, `89b295e`)
+
+Instaladas con `npx shadcn@latest add ... -y`: **14 archivos** en `src/components/ui/` — `alert-dialog`, `alert`,
+`badge`, `button`, `card`, `dialog`, `field`, `input`, `label`, `select`, `separator`, `skeleton`, `sonner`,
+`textarea`. `separator` vino como dependencia de `field`, y `select` se agregó aparte porque faltaba en el primer
+comando. **`toast` no existe para Radix**: su reemplazo es `sonner`.
+
+Ninguna primitiva está adoptada todavía y no se tocó un solo archivo preexistente: `index.css` quedó
+byte-idéntico, y `ModalShell` sigue intacto y en uso por `vendor/ingredients` y `vendor/recipes`.
+
+Commits, todos por debajo del umbral de 400 líneas: form (326), display + toast (368), overlays (365), select (189).
+
+**Dos desvíos deliberados del registry**, ambos documentados en el código:
+
+1. **`cn`**: el registry hace que cada archivo importe `cn` desde el paquete `cn`; acá se repunta a
+   `@/lib/utils` y el helper local sigue siendo la única implementación. La convención está anotada en
+   `src/lib/utils.ts`. Ojo: el CLI **re-agrega el dep `cn` en cada `add`**, así que después de cada `add` hay que
+   (a) repuntar el import y (b) volver a sacar `cn` de `package.json`.
+2. **`sonner.tsx`**: se le quitó `next-themes` y se fijó `theme="light"`, porque el modo oscuro está dormido y
+   `next-themes` existe solo para conmutarlo. El mapa de tokens a variables CSS de Sonner quedó intacto.
+
+Dependencia neta del slice: **solo `sonner`**. `cn` y `next-themes` no quedan como deps directas.
+
+Gate: `typecheck` y `build` verdes. La verificación independiente read-only **no encontró blockers**, pero dejó
+una precisión honesta: como ningún archivo fuera de `src/components/ui/` importa estas primitivas, `tsc` las
+typechequea pero **`vite build` no las empaqueta**. Verde significa "compilan", no "renderizan". Nada las
+ejercita en runtime todavía.
+
+## El desfase React 18 vs el registry (bloquea las Fases 2-3)
+
+Las 14 primitivas usan el patrón de **`ref` como prop de React 19** y **ninguna** declara `forwardRef`
+(`grep -rc forwardRef src/components/ui/*.tsx` → 0 en todas). En React 18.3.1 ese `ref` se **descarta en
+silencio**: `@types/react@18` lo incluye en `React.ComponentProps<…>`, así que `<Input ref={r} />` **compila**,
+pero React 18 no propaga el `ref` a un componente de función.
+
+Por qué importa: la composición estándar de shadcn es `<DialogTrigger asChild><Button /></DialogTrigger>` y
+`<SelectTrigger asChild>`; Radix pasa su propio `ref` por `Slot` y, sin propagación, se pierden el anclaje de
+posicionamiento y el retorno de foco. Tampoco va a funcionar ningún `ref` que ponga una pantalla.
+
+No es un problema de dependencias: `radix-ui@1.6.7` acepta `react ^16.8 || ^17 || ^18 || ^19`, `sonner` `^18 ||
+^19`, `lucide-react` hasta 19, y el install no emite warnings de peer. Es solo el estilo del código generado.
+
+Dos salidas, ninguna tomada aún:
+
+- **Subir React 18.3 → 19** (con `@types/react@19`): el registry queda correcto tal como viene y desaparece para
+  siempre la convención de repuntar imports y de agregar `forwardRef`. Todos los deps del repo ya lo soportan
+  (`react-router-dom` `>=18`, `zustand` `>=18`, `@tanstack/react-query` `^18 || ^19`). Coste: un salto de major
+  fuera del alcance declarado del refactor.
+- **Quedarse en React 18** y agregar `forwardRef` a cada primitiva que se adopte: divergencia extra respecto del
+  registry y una convención más para recordar (y a deshacer si algún día se sube a 19).
 
 ## Constraints
 
@@ -251,3 +302,14 @@ producción igual que antes (2 moderate preexistentes). Sin componentes y sin un
 slice de primitivas (`Button`, `Input`/`Label`/`Field`, `Select`, `Textarea`, `Card`, `Badge`, `Alert`,
 `Skeleton`, `Dialog`, `Toast`, `AlertDialog`) + checklist de a11y, previa confirmación visual del usuario de que
 la escala de radios nueva (sm/lg/2xl +2px) es aceptable. -->
+
+<!-- 2026-10-04: **Fase 1 slice 2 cerrada** — las 14 primitivas del plan instaladas en `src/components/ui/`
+(`5803463` form, `a809ec1` display + toast, `26be206` overlays, `89b295e` select), todas ≤400 líneas. `toast` no
+existe para Radix: se usó `sonner`. Dos desvíos del registry documentados en el código: el import de `cn`
+repuntado a `@/lib/utils` (el CLI re-agrega el dep `cn` en cada `add` y hay que volver a sacarlo) y `sonner.tsx`
+sin `next-themes`, con el tema fijado en light. Dep neta: solo `sonner`. Gate verde; verificación independiente
+sin blockers, con la precisión de que `vite build` no empaqueta estas primitivas porque nada las importa
+todavía: verde = compilan, no = renderizan. **Deuda nueva y bloqueante para las Fases 2-3**: las 14 primitivas
+son código React 19 (ref como prop, sin `forwardRef`), que en React 18.3.1 se descarta en silencio y rompería la
+composición `asChild` de Radix. Decisión pendiente del usuario: subir a React 19 o quedarse en 18 y agregar
+`forwardRef`. El usuario aceptó además la escala de radios nueva del preset (sm/lg/2xl +2px). -->
