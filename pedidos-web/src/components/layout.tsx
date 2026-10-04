@@ -1,4 +1,6 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate, type NavLinkRenderProps } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useAuth } from '../store/auth';
 import { logoutRequest } from '../lib/auth';
 import { PushToggle } from './push-toggle';
@@ -19,31 +21,39 @@ export function Layout() {
     navigate('/catalog', { replace: true });
   };
 
+  // NavLink sets aria-current="page" on the active link, so keyboard and
+  // screen-reader users get the current page. The active item uses the full
+  // foreground colour; the rest stay muted.
+  const navLinkClassName = ({ isActive }: NavLinkRenderProps) =>
+    cn('hover:underline', isActive ? 'font-medium text-foreground' : 'text-muted-foreground');
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="font-semibold text-amber-600">Pedidos Panadería</Link>
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
+        <Link to="/" className="font-semibold text-primary">Pedidos Panadería</Link>
         <nav className="flex gap-4 text-sm items-center">
-          <Link to="/catalog" className="hover:underline">Catálogo</Link>
+          <NavLink to="/catalog" className={navLinkClassName}>Catálogo</NavLink>
           {user?.role === 'VENDEDOR' && (
             <>
-              <Link to="/vendor/recipes" className="hover:underline">Mis recetas</Link>
-              <Link to="/vendor/ingredients" className="hover:underline">Insumos</Link>
-              <Link to="/vendor/products" className="hover:underline">Mis productos</Link>
-              <Link to="/vendor/orders" className="hover:underline">Pedidos</Link>
+              <NavLink to="/vendor/recipes" className={navLinkClassName}>Mis recetas</NavLink>
+              <NavLink to="/vendor/ingredients" className={navLinkClassName}>Insumos</NavLink>
+              <NavLink to="/vendor/products" className={navLinkClassName}>Mis productos</NavLink>
+              <NavLink to="/vendor/orders" className={navLinkClassName}>Pedidos</NavLink>
             </>
           )}
-          {!user && <Link to="/login" className="hover:underline">Ingresar</Link>}
+          {!user && <NavLink to="/login" className={navLinkClassName}>Ingresar</NavLink>}
           {user?.role === 'VENDEDOR' && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 void handleLogout();
               }}
-              className="rounded-sm px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+              className="text-muted-foreground"
             >
               Salir
-            </button>
+            </Button>
           )}
           {user && <PushToggle />}
         </nav>
@@ -51,7 +61,7 @@ export function Layout() {
       <main className="flex-1 px-4 py-6 max-w-4xl mx-auto w-full">
         <Outlet />
       </main>
-      <footer className="text-center text-xs text-slate-500 py-4">
+      <footer className="text-center text-xs text-muted-foreground py-4">
         Pedidos Panadería · MVP
       </footer>
     </div>
