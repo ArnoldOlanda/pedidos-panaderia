@@ -125,6 +125,17 @@ export function VendorProductsPage() {
     setClosesAtLocal(defaultClosesAt());
   };
 
+  // Picking a recipe prefills the price with its suggested price, so the common
+  // case (sell at the suggested price) is one click; the field stays editable.
+  // This runs only on an explicit selection: doing it in an effect keyed on the
+  // selected recipe would overwrite whatever the vendor typed every time the
+  // recipes query refetches. Clearing the selection clears the price with it.
+  const handleRecipeChange = (nextRecipeId: string) => {
+    setRecipeId(nextRecipeId);
+    const recipe = recipesQuery.data?.find((r) => r.id === nextRecipeId);
+    setPrice(recipe ? recipe.suggestedPrice.toFixed(2) : '');
+  };
+
   const validate = (): string | null => {
     if (!recipeId.trim()) return 'Selecciona una receta';
     const trimmedName = name.trim();
@@ -265,7 +276,7 @@ export function VendorProductsPage() {
             <span className="text-slate-700">Receta</span>
             <select
               value={recipeId}
-              onChange={(e) => setRecipeId(e.target.value)}
+              onChange={(e) => handleRecipeChange(e.target.value)}
               required
               className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-amber-500 focus:outline-none"
             >
