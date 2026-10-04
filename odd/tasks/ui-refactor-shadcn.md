@@ -500,3 +500,29 @@ className="sr-only">` persistente con el texto definido una sola vez. Gate verde
 foco de los campos ahora cumple 3:1 (5.05:1 vía `focus-visible:border-ring`), contra los 2.15:1 de antes.
 Pendiente: `catalog`, `product-detail`, `order-new`, `orders`; y el smoke test visual del usuario, porque nada
 ejercita las primitivas en runtime. -->
+
+<!-- 2026-10-04: **Fase 3 slice 1** — `vendor/orders.tsx` migrado y el mapa de estado consolidado. Commits
+`6369194` (plan de la fase, docs) y `7a91510` (work unit). Se extrajo `pedidos-web/src/lib/order-status.ts`
+(`TIME_FORMAT`, `STATUS_LABEL` y el mapa de props de `Badge`) y lo consumen **las dos** pantallas de pedidos; el
+writer probó byte a byte que `TIME_FORMAT` y `STATUS_LABEL` eran idénticos en ambos archivos antes de
+consolidarlos, y el tercer bloque (`STATUS_CLASSES` con utilidades de color crudas contra `STATUS_BADGE` con
+tokens) no era una copia sino el mismo rol por dos mecanismos, así que se adoptó el de tokens. Diff: 362 líneas
+de código + 25 del archivo nuevo. Gate verde y verificación independiente **sin blockers**, con paridad de copia
+carácter por carácter en 21 cadenas.
+
+Dos desviaciones que la verificación marcó y el padre **no** aceptó, corregidas antes de commitear: (1) los
+botones de acción y el `Alert` de error habían quedado **fuera** de la `Card`, cuando en `HEAD` vivían dentro de
+la caja con `p-4`; el remedio fue un único `CardContent` que contiene la fila de encabezado más botones y alerta,
+porque `CardContent` aporta `px-4` y la `Card` aporta `py-4` y el `gap`, así que un solo `CardContent` reproduce
+`HEAD` y repartirlos como hijos de la `Card` habría usado un `gap-1rem` y perdido el padding horizontal. (2) La
+columna derecha conservaba `space-y-2`, que compila a `margin-block-end` en todo hijo que no sea el último, así
+que el `Badge` ganaba 0.5rem permanentes mientras la región viva estuviera vacía; se quitó `space-y-2` y el
+`<p role="status">` pasó a alternar `mt-2 …` / `sr-only`, que da 0.5rem solo cuando hay texto y ninguna altura
+cuando está ocioso (el `sr-only` está posicionado en absoluto y sigue en el árbol de accesibilidad).
+
+Tercera desviación **aceptada**: el guard de no-vendedor cambió su raíz de `<section>` a `<Card>`. No se pierde
+nada porque un `<section>` sin nombre accesible no se expone como landmark.
+
+Hallazgo de plataforma: `vendor/orders.tsx` es la **primera adopción de `Select`** (Radix + propagación de `ref`
+por `Slot`) y de un `Dialog`-free overlay. Compila y buildea, pero nada lo ejercita en runtime. Siguiente:
+`vendor/products.tsx`. -->
