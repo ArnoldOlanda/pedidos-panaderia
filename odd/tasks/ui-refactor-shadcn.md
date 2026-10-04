@@ -6,13 +6,13 @@ componentes: **shadcn/ui sobre Radix**, con **Tailwind v4** y tokens semánticos
 ## Status
 
 - Started: 2026-10-03
-- Current task: **3 — Fase 1 (shadcn init + primitivas)**, pendiente de la confirmación visual de la Fase 0
+- Current task: **3 — Fase 1 (shadcn init + primitivas)**, detenida en decisiones de la CLI (ver "Fase 1 — hallazgos del CLI")
 - Branch: `feat/ui-refactor-shadcn` (base `main` @ `6018b3e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local)
 - Deploy: **pospuesto** por decisión del usuario hasta terminar el refactor (ODD-3.12/3.13 van después)
 - **Fase 0 cerrada y commiteada en `8c28e40`**: Tailwind v4.3.3, alias `@/*`, `cn()`, token `ink` fuera.
   Gate automático verde (typecheck + build) y verificación independiente sin blockers. Queda pendiente la
-  **confirmación visual del usuario** con `npm run dev` antes de apilar la Fase 1 encima.
+  **confirmación visual del usuario**, que llegó el 2026-10-04: radios, sombras y foco se ven igual que antes.
 - **Handoff**: la feature se arranca en una **sesión nueva**. Este documento es autosuficiente: decisiones,
   evidencia medida, datos duros de versiones y el primer paso concreto están abajo.
 
@@ -59,6 +59,27 @@ Huecos de accesibilidad que la librería cierra (o deja a la vista):
       `not-found`
 - [ ] **4 — Fase 3: pantallas de vendedor** — `products`, `recipes`, `ingredients`, `orders`
 - [ ] **5 — Verificación independiente y cierre** — review read-only del diff integrado + tracker + Engram
+
+## Fase 1 — hallazgos del CLI (2026-10-04, antes de escribir nada)
+
+El reconocimiento de `shadcn@4.21.1` encontró **tres desvíos respecto de D1/D4**, así que la Fase 1 quedó detenida
+esperando decisión del usuario. Nada fue escrito: el árbol quedó intacto en `0f1cd75` + `.codegraph/` untracked.
+Detalle completo en la memoria `pedidos-web/shadcn-cli-4.21-reality`.
+
+1. **`slate` y `gray` ya no son colores base.** Los únicos siete son `neutral`, `zinc`, `stone`, `mauve`,
+   `olive`, `mist`, `taupe`. La app es `slate`-based, así que ninguna opción nueva coincide; `mist` es la más
+   cercana en familia de tono y `neutral` es gris puro. D4 asumía la paleta clásica.
+2. **`init` es interactivo** y `-y` no lo suprime: pregunta el preset. La forma no interactiva es `-p <preset>`.
+   `-d/--defaults` fuerza `--template=next` y scaffoldea Next.js sobre el proyecto: **prohibido**.
+3. **El modelo de dependencias cambió.** Un preset agrega `shadcn` como dependencia de **runtime** (por
+   `@import "shadcn/tailwind.css"`), instala una **fuente** e inyecta un `@layer base` global. Existe
+   `npx shadcn eject` para inlinearlo y quitar la dependencia. D1 decía "el código se copia y queda en el repo".
+
+Riesgo a re-verificar apenas se corra el init: que `@import 'tailwindcss' source('./')` siga teniendo el
+`source('./')` (por inspección del updater debería sobrevivir, pero no está observado).
+
+Decisiones pendientes del usuario: neutro base, camino de instalación (preset vs vendorizado) y el contraste de
+`--primary-foreground` sobre el ámbar de la marca.
 
 ## Constraints
 
