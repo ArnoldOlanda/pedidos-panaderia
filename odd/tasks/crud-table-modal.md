@@ -11,7 +11,7 @@ de crear o editar un registro.
 ## Status
 
 - Started: 2026-10-05
-- Current task: **2 — fundamentos compartidos**
+- Current task: **3 — Insumos, alta en modal**
 - Branch: `feat/crud-table-modal` (base `main` @ `c4fee2e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local con pasadas read-only independientes)
 - Gate automático: **`npm run typecheck` + `npm run build`**. No hay runner de tests en `pedidos-web`
@@ -66,7 +66,8 @@ El interruptor tabla/cards. Firma:
 interface RecordColumn<T> {
   key: string
   header: React.ReactNode
-  className?: string          // ancho de columna, text-right
+  className?: string          // celda de datos
+  headerClassName?: string    // celda de encabezado, encima del muted del shell
   render: (record: T) => React.ReactNode
 }
 
@@ -89,8 +90,11 @@ Dos decisiones de diseño, con razón:
 2. **`hidden` compila a `display: none`**, así que la rama oculta sale del árbol de accesibilidad: no hay
    contenido duplicado ni anuncio doble. Es la diferencia con renderizar ambas y ocultarlas visualmente.
 
-`overflow-x-auto` se conserva en `md+` como red de seguridad: la tabla de insumos (5 columnas con acciones)
-pide ~700px y en `md` entra ajustada.
+`overflow-x-auto` lo aporta la propia primitiva `Table`, que se envuelve sola en
+`<div className="relative w-full overflow-x-auto">`. El shell agrega la superficie —`hidden md:block overflow-hidden
+rounded-xl bg-card ring-1 ring-foreground/10`— calcada de la primitiva `Card` (que también usa solo `ring`, sin
+`border`) para que las tres tablas se vean como las cards. `overflow-hidden` recorta al radio el contenedor con
+scroll de la primitiva.
 
 ### `src/components/records/form-dialog.tsx`
 
@@ -108,9 +112,12 @@ Un solo modal para alta y edición, con `mode` decidiendo título, etiquetas, va
 - [x] **0 — Base y andamiaje** (2026-10-05)
       Merge de `feat/ui-refactor-shadcn` a `main` (`c4fee2e`), rama `feat/crud-table-modal` desde `main`,
       `.codegraph/` al `.gitignore` raíz y este tracker
-- [ ] **1 — Fundamentos compartidos**: primitiva `Table` + `responsive-record-list.tsx` + `form-dialog.tsx`.
-      Sin consumidores todavía (se declara: se verifica con typecheck + build)
-- [ ] **2 — Insumos, lista**: `<table>` artesanal → `ResponsiveRecordList`, con card mobile real
+- [x] **1 — Fundamentos compartidos** (2026-10-05, `84ef0b7` y `9b837eb`): primitiva `Table` vendorizada +
+      `responsive-record-list.tsx` + `form-dialog.tsx`. **291 líneas** en 3 archivos, sin consumidores todavía
+      (se declara: el gate es typecheck + build). El gate quedó en 0
+- [x] **2 — Insumos, lista** (2026-10-05, `907836c`): `<table>` artesanal → `ResponsiveRecordList`, con card
+      mobile real. **277 líneas cambiadas** en 5 archivos, 183+/94−. Verificación read-only independiente **sin
+      blockers**, con dos advisories corregidos en la misma unidad
 - [ ] **3 — Insumos, alta**: crear → `FormDialog`. Extrae `IngredientForm` a `components/ingredients/` y lo
       reusa en los dos modos; borra el `<Card>` inline y agrega el botón «Crear insumo» en el header
 - [ ] **4 — Recetas, extracción pura**: `IngredientRow` + `validateRecipe` a `components/recipes/`
@@ -228,3 +235,40 @@ desperdicio caro de esta feature.
 `.codegraph/` agregado al `.gitignore` raíz: era el único untracked en cada `git status` y ya había obligado a
 `--force` en el codemod de Tailwind de la feature anterior. Este tracker se commitea con las siete decisiones
 aprobadas y el plan de rebanadas. Siguiente: task 1 (fundamentos). -->
+
+<!-- 2026-10-05: **Task 1 — fundamentos compartidos** — `84ef0b7` (primitiva `Table` vendorizada) y `9b837eb`
+(`ResponsiveRecordList` + `FormDialog`), **291 líneas** en 3 archivos. La CLI de shadcn rompió otra vez la
+convención ya documentada en `src/lib/utils.ts`: agregó `cn@^0.4.0` a `package.json` e importó `cn` desde el
+paquete. Se repuntó el import a `@/lib/utils` y se desinstaló el paquete, así que `package.json` y el lockfile
+quedaron **sin cambios** (verificado con `git diff --stat`). Gate en 0. Estos dos componentes se commitean **sin
+consumidores**: en esta unidad la verificación es typecheck + build, y el comportamiento en runtime queda para las
+tasks siguientes. Comprobación con `twMerge` que sostiene el diseño de `FormDialog`: `cn('… grid …','flex
+max-h-[85svh] flex-col')` **sí** reemplaza `grid` por `flex`, que es lo que permite que el cuerpo scrollee en vez
+de desbordar el viewport. Siguiente: task 2. -->
+
+<!-- 2026-10-05: **Task 2 — insumos, lista** — `907836c`, **277 líneas cambiadas** (183+/94−) en 5 archivos.
+`conversionLabel` se movió de la página a `src/lib/ingredients.ts` (helper de dominio, la card también lo
+necesita); `IngredientActions` extrae el botón «Editar» + el `AlertDialog` de borrado para que la tabla y la card
+no puedan divergir; `IngredientCard` es la representación mobile; y la página pasa la lista por el shell.
+
+**Verificación read-only independiente: sin blockers**, con dos advisories que se corrigieron en la misma unidad.
+(1) **El encabezado quedó con color mixto** — defecto real: `column.className` se aplicaba a la vez a `th` y `td`,
+que son dos concerns distintos; como solo 3 de 5 columnas llevaban `text-muted-foreground`, el shell pintaba
+`Nombre` y `Acciones` con el `text-foreground` de la primitiva, cuando `HEAD` tenía los cinco muted. Remedio
+adoptado: `RecordColumn` ganó **`headerClassName`** separado de `className`, y el shell pinta **todo** encabezado
+con `text-muted-foreground` por defecto. (2) La card usaba `<h2>`, hermano del `<h2>` de la sección; pasó a
+**`<h3>`**. **Convención nueva para las tasks 7 y 9**: las cards de registro usan `<h3>` bajo el `<h2>` de la
+sección, y hay que alinear ahí `RecipeCard` y `MyProductCard`, que hoy usan `<h2>`.
+
+**Deltas visuales declarados y aceptados** (el gate visual del usuario sigue pendiente y es el único que los
+confirma): (a) el padding de celdas y encabezados pasa a la densidad de la primitiva (`p-2` / `h-10 px-2` en vez
+de `px-4 py-3`) — **no se intentó restaurar** el original porque se midió que `twMerge('p-2','px-4 py-3')`
+conserva **ambas** clases y el ganador dependería del orden del CSS; (b) las filas ganan `border-b` y
+`hover:bg-muted/50`; (c) la superficie pasa de `overflow-x-auto rounded-lg border border-border bg-card
+ring-1 ring-foreground/10` a `overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10`, calcada de `Card`
+(sin `border` propio, radio `xl`). El color del encabezado **volvió a la paridad** con el arreglo del advisory 1.
+
+**Nota de estructura, verificada**: como el shell renderiza las dos ramas, cada registro existe dos veces en el
+DOM (una por rama), pero la rama oculta es `display: none` y sale del árbol de accesibilidad; Radix monta el
+`AlertDialog` cerrado solo con su trigger, y los componentes nuevos no declaran `id`/`htmlFor`/`aria-*`, así que
+no hay colisiones. No es duplicación de código. Siguiente: task 3. -->
