@@ -10,6 +10,7 @@ import { useUnitPairs } from '../../hooks/use-unit-pairs';
 import { toApiError } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
 import {
+  conversionLabel,
   INGREDIENT_UNITS,
   INGREDIENT_UNIT_LABELS,
 } from '../../lib/ingredients';
@@ -20,16 +21,6 @@ import type {
   UnitPair,
 } from '../../lib/ingredients';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -48,15 +39,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { IngredientActions } from '@/components/ingredients/ingredient-actions';
+import { IngredientCard } from '@/components/ingredients/ingredient-card';
+import { ResponsiveRecordList } from '@/components/records/responsive-record-list';
+import type { RecordColumn } from '@/components/records/responsive-record-list';
 
 const INVALID_PAIR_MESSAGE =
   'Combinación de unidades no permitida: la unidad de compra debe ser del mismo tipo y mayor o igual que la unidad de uso.';
 
 const LOADING_LABEL = 'Cargando insumos';
-
-function conversionLabel(ingredient: Ingredient): string {
-  return `1 ${INGREDIENT_UNIT_LABELS[ingredient.purchaseUnit]} = ${ingredient.conversionFactor} ${INGREDIENT_UNIT_LABELS[ingredient.usageUnit]}`;
-}
 
 function validateIngredient(name: string, purchasePrice: number): string | null {
   if (name.length < 1 || name.length > 150) {
@@ -479,6 +470,42 @@ export function VendorIngredientsPage() {
     });
   };
 
+  const columns: RecordColumn<Ingredient>[] = [
+    { key: 'name', header: 'Nombre', className: 'text-foreground', render: (i) => i.name },
+    {
+      key: 'purchase',
+      header: 'Compra',
+      className: 'text-muted-foreground',
+      render: (i) =>
+        `${formatPrice(i.purchasePrice)} / ${INGREDIENT_UNIT_LABELS[i.purchaseUnit]}`,
+    },
+    {
+      key: 'conversion',
+      header: 'Conversión',
+      className: 'text-muted-foreground',
+      render: (i) => conversionLabel(i),
+    },
+    {
+      key: 'usage',
+      header: 'Uso',
+      className: 'text-muted-foreground',
+      render: (i) => INGREDIENT_UNIT_LABELS[i.usageUnit],
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      headerClassName: 'text-right',
+      render: (i) => (
+        <IngredientActions
+          ingredient={i}
+          onEdit={() => setEditingId(i.id)}
+          onDelete={() => handleDelete(i)}
+          isDeleting={remove.isPending && remove.variables === i.id}
+        />
+      ),
+    },
+  ];
+
   return (
     <section className="space-y-6">
       <header className="flex items-center justify-between gap-3">
@@ -564,84 +591,19 @@ export function VendorIngredientsPage() {
         {!ingredientsQuery.isLoading &&
           !ingredientsQuery.isError &&
           ingredients.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border border-border bg-card ring-1 ring-foreground/10">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-muted-foreground">
-                    <th scope="col" className="px-4 py-3 font-medium">Nombre</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Compra</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Conversión</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Uso</th>
-                    <th scope="col" className="px-4 py-3 font-medium text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ingredients.map((ingredient) => (
-                    <tr key={ingredient.id} className="border-t border-border">
-                      <td className="px-4 py-3 text-foreground">
-                        {ingredient.name}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {formatPrice(ingredient.purchasePrice)} /{' '}
-                        {INGREDIENT_UNIT_LABELS[ingredient.purchaseUnit]}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {conversionLabel(ingredient)}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {INGREDIENT_UNIT_LABELS[ingredient.usageUnit]}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="xs"
-                            onClick={() => setEditingId(ingredient.id)}
-                          >
-                            Editar
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="xs"
-                                disabled={
-                                  remove.isPending &&
-                                  remove.variables === ingredient.id
-                                }
-                              >
-                                {remove.isPending &&
-                                remove.variables === ingredient.id
-                                  ? 'Eliminando…'
-                                  : 'Eliminar'}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  {`¿Eliminar el insumo "${ingredient.name}"?`}
-                                </AlertDialogTitle>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  variant="destructive"
-                                  onClick={() => handleDelete(ingredient)}
-                                >
-                                  Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveRecordList
+              records={ingredients}
+              columns={columns}
+              getRowKey={(i) => i.id}
+              renderCard={(i) => (
+                <IngredientCard
+                  ingredient={i}
+                  onEdit={() => setEditingId(i.id)}
+                  onDelete={() => handleDelete(i)}
+                  isDeleting={remove.isPending && remove.variables === i.id}
+                />
+              )}
+            />
           )}
       </section>
 

@@ -8,11 +8,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 export interface RecordColumn<T> {
   key: string;
   header: React.ReactNode;
+  /** Applied to the data cell only. */
   className?: string;
+  /** Applied to the header cell only, on top of the shell's muted header colour. */
+  headerClassName?: string;
   render: (record: T) => React.ReactNode;
 }
 
@@ -36,6 +40,11 @@ export interface ResponsiveRecordListProps<T> {
  * Empty-state contract: this component never special-cases an empty `records`
  * array and exposes no `emptyState` prop. The owning screen renders its own
  * empty state before mounting this list.
+ *
+ * Column styling is split on purpose: `className` styles the data cell and
+ * `headerClassName` styles the header cell. A single shared className cannot
+ * serve both, because the header row is uniformly muted while the data cells
+ * are not — forwarding one class to both would repaint part of the header.
  */
 export function ResponsiveRecordList<T>({
   records,
@@ -46,8 +55,13 @@ export function ResponsiveRecordList<T>({
 }: ResponsiveRecordListProps<T>) {
   return (
     <>
-      {/* Table's own container already provides `overflow-x-auto`. */}
-      <div className="hidden md:block">
+      {/* The Table primitive provides `overflow-x-auto` but no surface of its
+          own, so this shell supplies the surface once for every CRUD screen.
+          It mirrors the Card primitive's surface (`rounded-xl bg-card
+          ring-1 ring-foreground/10`, no separate border) so the tables look
+          like the cards do. `overflow-hidden` clips the primitive's inner
+          scrolling container to the rounded corners. */}
+      <div className="hidden md:block overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
         <Table>
           {caption ? <TableCaption>{caption}</TableCaption> : null}
           <TableHeader>
@@ -56,7 +70,10 @@ export function ResponsiveRecordList<T>({
                 <TableHead
                   key={column.key}
                   scope="col"
-                  className={column.className}
+                  className={cn(
+                    'text-muted-foreground',
+                    column.headerClassName,
+                  )}
                 >
                   {column.header}
                 </TableHead>

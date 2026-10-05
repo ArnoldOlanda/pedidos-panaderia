@@ -31,6 +31,10 @@ export interface Ingredient {
   updatedAt: string;
 }
 
+export function conversionLabel(ingredient: Ingredient): string {
+  return `1 ${INGREDIENT_UNIT_LABELS[ingredient.purchaseUnit]} = ${ingredient.conversionFactor} ${INGREDIENT_UNIT_LABELS[ingredient.usageUnit]}`;
+}
+
 export interface CreateIngredientInput {
   name: string;
   usageUnit: IngredientUnit;
