@@ -98,13 +98,26 @@ scroll de la primitiva.
 
 ### `src/components/records/form-dialog.tsx`
 
-Un solo modal para alta y edición, con `mode` decidiendo título, etiquetas, valores iniciales y handler:
+Un solo modal para alta y edición: aporta **el shell** — `DialogContent` con la cadena `flex max-h-[85svh]
+flex-col`, el encabezado, el cuerpo con scroll (`min-h-0 flex-1 overflow-y-auto`) y un footer fijado.
 
-- `open`, `onOpenChange`, `title`, `description`, `size` (`default` | `lg` → `sm:max-w-2xl`), `onSubmit`,
-  `isPending`, `children`.
-- **Cuerpo con `max-h-[70svh] overflow-y-auto`**: acá se resuelve el hueco del `DialogContent`.
-- Footer sobre `DialogFooter` (ya existe y aporta la barra `bg-muted/50`): `Cancelar` + submit deshabilitado
-  mientras `isPending`.
+**Corrección de diseño decidida el 2026-10-05, con la task 2 ya cerrada y sin consumidores todavía.** La versión
+entregada en la task 1 hacía que el shell fuera dueño del `<form>`, del botón de envío y de `isPending`. **No sirve
+para ninguna de las tres pantallas**: `IngredientForm`, `RecipeForm` y el formulario de productos ya son formas
+autocontenidas que renderizan su propio `<form onSubmit>`, tienen su propio estado y su propio botón. Con el shell
+dueño del `<form>`, los valores no llegarían al handler de la página sin convertir los tres formularios a
+componentes controlados (refactor grande y riesgoso, ~600 líneas) o sin duplicar el envío.
+
+Contrato corregido, que se implementa en la task 3 **junto con su primer consumidor** — una API compartida no se
+cambia sin consumidor en el mismo commit:
+
+- `open`, `onOpenChange`, `title`, `description?`, `size` (`default` | `lg` → `sm:max-w-2xl`), `footer?`,
+  `children`.
+- **No** es dueño del `<form>` ni del botón de envío. `children` es la forma de la pantalla, con su
+  `<form id={formId} onSubmit={...}>` y sus campos; el botón de envío vive en `footer` y se asocia al formulario
+  con el atributo nativo `form={formId}` (HTML estándar: el botón puede estar fuera del `<form>` en el DOM). Así
+  el footer queda fijado, el formulario conserva su estado interno y su validación, y no hay que levantar estado.
+- El cuerpo con scroll sigue siendo el aporte real del componente: resuelve el hueco de `DialogContent`.
 - Montaje por estado, igual que los dos `Dialog` actuales. **No** se introduce `DialogTrigger`.
 
 ## Tasks
@@ -272,3 +285,14 @@ ring-1 ring-foreground/10` a `overflow-hidden rounded-xl bg-card ring-1 ring-for
 DOM (una por rama), pero la rama oculta es `display: none` y sale del árbol de accesibilidad; Radix monta el
 `AlertDialog` cerrado solo con su trigger, y los componentes nuevos no declaran `id`/`htmlFor`/`aria-*`, así que
 no hay colisiones. No es duplicación de código. Siguiente: task 3. -->
+
+<!-- 2026-10-05: **Diseño de la task 3 revisado antes de escribir** — al planificar la task 3 se leyó cómo está
+construido `IngredientForm` y el plan de la task 1 no encaja: la forma renderiza **su propio** `<form
+onSubmit={handleSubmit}>`, arma ella misma el `CreateIngredientInput` y lo entrega con `onSubmit(input)`; sus
+botones de envío y cancelación son suyos (`submitLabel`, `busy`, `onCancel`). Es la misma forma que tienen
+`RecipeForm` y el formulario de productos. Por eso el `FormDialog` entregado en la task 1, que es dueño del
+`<form>` y del botón, **no sirve para ninguna de las tres pantallas**: los valores no llegarían al handler sin
+convertir las tres formas a componentes controlados. Se corrigió el contrato a *shell + slot de `footer`*, con el
+botón de envío asociado por `form={formId}`, y se deja anotado arriba en «Componentes compartidos». Se implementa
+en la task 3 junto con su primer consumidor, no antes. También se comprobó que `validateIngredient` lo usan los
+handlers de la página (crear y actualizar), no la forma, así que se queda donde está. -->
