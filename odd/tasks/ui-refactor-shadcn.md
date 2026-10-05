@@ -63,6 +63,7 @@ Huecos de accesibilidad que la librería cierra (o deja a la vista):
 - [x] **3 — Fase 2: pantallas de comprador** — ✅ **CERRADA**. `login` + `not-found` (`acfa146`), `catalog` + `product-detail` (`9125171`), `orders` (`57173c1`), `order-new` (`6cb2419`), shell compartido (`16ea53f`) y el fix de consistencia del enlace (`0b7f458`)
 - [x] **4 — Fase 3: pantallas de vendedor** — ✅ **CERRADA**. Cuatro pantallas en **siete** work units: `vendor/orders` (`7a91510`), `vendor/products` (`5412a63`), `vendor/ingredients` (`15b74dc`), y `recipes` en **cuatro** (`9784419`, `1d1a790`, `57ecc3b`, `cf15349`), más el retiro de `modal-shell.tsx` (`a10f6c1`)
 - [ ] **5 — Verificación independiente y cierre** — la verificación integrada read-only ya corrió sin blockers de código; falta la confirmación visual del usuario, el cierre del tracker y Engram
+- [x] **6 — Componentes compartidos** — ✅ **CERRADA** en `5ab890f` (119 líneas). `push-toggle`, `auth-bootstrap` y `protected-route` migrados; con esto **fuera de `src/components/ui/` no queda un solo archivo con colores de paleta**
 
 ## Fase 1 — hallazgos del CLI (2026-10-04, antes de escribir nada)
 
@@ -440,15 +441,11 @@ De `https://ui.shadcn.com/docs/installation/vite` (Fase 1):
 
 - `Utilidad (%)` y `Mano de obra (%)` en el formulario de recetas siguen con `step="0.1"` (misma familia del bug
   `5cf2694`): hoy el navegador rechaza `20.25 %`. Alinear a `step="0.01"`.
-- **Tres componentes compartidos no entraron en el alcance de ninguna fase** y siguen con utilidades de paleta
-  escritas a mano: `src/components/push-toggle.tsx` (74 líneas, 7 utilidades, 3 botones, sin `focus-visible`, sin
-  anuncio de carga y sin `aria-pressed`), `src/components/auth-bootstrap.tsx` (33 líneas, 6 utilidades, 1 botón,
-  sin `focus-visible` ni `role="status"`) y `src/components/protected-route.tsx` (13 líneas, 1 utilidad, su
-  `Cargando…` es un `<div>` sin región viva). Importa la ubicación: `PushToggle` se renderiza **dentro del shell
-  compartido** (`layout.tsx:58`), así que el árbol renderizado de toda pantalla autenticada todavía contiene
-  ámbar y slate escritos a mano. El refactor queda completo **a nivel de archivo de pantalla**, no de app.
-  Estimado: **una** work unit chica (~120-150 líneas), todo mapea mecánicamente a las primitivas ya
-  vendorizadas. **Es el primer candidato después de cerrar esta feature.**
+- **[CERRADO en `5ab890f`]** Los tres componentes compartidos que habían quedado fuera del alcance de todas las
+  fases (`push-toggle`, `auth-bootstrap`, `protected-route`) ya están migrados. Estaban medidos acá desde el
+  cierre de la Fase 3: 14 utilidades de paleta y 4 botones, con `PushToggle` renderizándose **dentro del shell
+  compartido** (`layout.tsx:58`), así que el árbol renderizado de toda pantalla autenticada los incluía. Con esto
+  el refactor queda completo **a nivel de app**.
 - `.codegraph/` al `.gitignore` raíz (es el único untracked que ensucia cada `git status`).
 
 ## Progress Log
@@ -753,3 +750,35 @@ alcance de ninguna fase y siguen con colores de paleta a mano (14 utilidades, 4 
 `focus-visible` y de anuncio de carga que tenían las pantallas antes de migrar). Como `PushToggle` vive dentro del
 shell compartido, el árbol renderizado de toda pantalla autenticada todavía los incluye. Estimado: una work unit
 chica. **Fin de la Fase 3.** -->
+
+<!-- 2026-10-04: **Fase 6 (componentes compartidos) CERRADA** — `5ab890f`, **119 líneas cambiadas** (79+/40−) en
+`push-toggle.tsx`, `auth-bootstrap.tsx` y `protected-route.tsx`. Era el hueco de alcance que la verificación
+integrada destapó al cerrar la Fase 3: los tres únicos archivos de `src/` que seguían con paleta a mano, y el
+primero de ellos se renderiza **dentro del shell compartido**, así que su markup estaba en pantalla en toda
+pantalla autenticada. Con este work unit **fuera de `src/components/ui/` no queda un solo archivo con colores de
+paleta** — el refactor está completo a nivel de app, no solo de archivo de pantalla.
+
+Mapeo: los tres controles de push pasaron a `Button` (`default` para activar, `secondary` para desactivar,
+`ghost` + `text-muted-foreground` para el estado de carga), el «Reintentar» de `auth-bootstrap` a la primaria de
+marca, y las dos pantallas de carga a `text-foreground`/`text-muted-foreground`. Copia visible, los dos `title`
+(con em dash), el valor del `aria-label` y todos los handlers y condiciones quedaron byte-idénticos.
+
+**Dos decisiones de a11y, ambas con razón escrita**: (1) **no** se agregó `aria-pressed`: los dos estados son dos
+botones **distintos** cuyas etiquetas visibles ya dicen la acción y el estado («Activar»/«Desactivar»), así que
+`aria-pressed` duplicaría información y describiría mal a un control que cambia de identidad en vez de reportar un
+estado presionado. (2) El `early return` de `push-toggle` que queda **antes** de los cuatro hooks se dejó donde
+estaba: es un riesgo latente de reglas de hooks (`getBrowserPushSupport()` lee constantes del contexto de
+navegación que no pueden cambiar entre renders, y no hay entrada SSR), es preexistente, y moverlo sería un cambio
+de comportamiento dentro de una migración de paridad. Queda anotado como hallazgo.
+
+**Dos correcciones más que produjo la verificación**: (1) el nombre accesible de los botones ocupados era `…`
+(U+2026) — el `title` no lo salva, porque en un `<button>` el contenido gana y el `title` degrada a descripción —,
+así que ahora llevan `aria-label={isBusy ? LOADING_LABEL : undefined}`. (2) La rama de carga tenía una región
+`role="status"` que era **inerte** (se monta ya con su texto, así que no anuncia ningún cambio) y que además
+duplicaba el nombre del botón deshabilitado en el cursor virtual: se **eliminó**. El estado de carga lo comunica el
+propio nombre accesible del botón, igual que en `HEAD`.
+
+**Es la segunda vez que el caveat de la convención 3 decide un diseño**: una región viva que se monta con su
+contenido no anuncia nada, así que agregarla donde no puede funcionar solo mete ruido (texto repetido en el árbol
+de accesibilidad) sin ganar anuncio. **Queda como pendiente el paso 5**: confirmación visual del usuario, cierre
+del tracker y Engram. -->
