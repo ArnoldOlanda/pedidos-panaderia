@@ -1,10 +1,17 @@
+import { Button } from '@/components/ui/button';
 import { getBrowserPushSupport } from '../lib/push';
 import { usePushPublicKey } from '../hooks/use-push-public-key';
 import { usePushSubscriptions } from '../hooks/use-push-subscriptions';
 import { useSubscribePush } from '../hooks/use-subscribe-push';
 import { useUnsubscribePush } from '../hooks/use-unsubscribe-push';
 
+// The busy announcement is defined once so the busy button's accessible name and
+// the live regions that announce it cannot drift apart.
+const LOADING_LABEL = 'Cargando estado de notificaciones';
+
 export function PushToggle() {
+  // Pre-existing early return kept as-is: moving it below the hooks would be a
+  // behaviour change outside this parity migration.
   const support = getBrowserPushSupport();
 
   if (!support.supported) return null;
@@ -15,15 +22,20 @@ export function PushToggle() {
   const unsubscribe = useUnsubscribePush();
 
   if (publicKeyQuery.isLoading || subsQuery.isLoading) {
+    // No live region in this branch: it mounts with its content already present, so
+    // an always-mounted region would announce nothing, and the disabled button's own
+    // accessible name is what conveys the loading state.
     return (
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="sm"
         disabled
-        className="text-sm text-slate-400"
-        aria-label="Cargando estado de notificaciones"
+        aria-label={LOADING_LABEL}
+        className="text-muted-foreground"
       >
         …
-      </button>
+      </Button>
     );
   }
 
@@ -33,43 +45,56 @@ export function PushToggle() {
   const permissionDenied =
     typeof Notification !== 'undefined' && Notification.permission === 'denied';
 
-  const baseBtn =
-    'text-sm px-3 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
-  const onBtnClass = 'bg-amber-500 text-white hover:bg-amber-600';
-  const offBtnClass = 'bg-slate-200 text-slate-800 hover:bg-slate-300';
-
   if (isSubscribed && subs[0]) {
     const endpoint = subs[0].endpoint;
     return (
-      <button
+      <>
+        {/* Always mounted and only toggling its own content, so the busy notice is
+            announced as a content change instead of announcing the pressed button. */}
+        <span role="status" className="sr-only">
+          {isBusy ? LOADING_LABEL : ''}
+        </span>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          aria-label={isBusy ? LOADING_LABEL : undefined}
+          title={
+            permissionDenied
+              ? 'Permiso bloqueado — habilítalo en la configuración de tu navegador'
+              : undefined
+          }
+          disabled={isBusy || permissionDenied}
+          onClick={() => unsubscribe.mutate(endpoint)}
+        >
+          {isBusy ? '…' : `Desactivar notificaciones${subs.length > 1 ? ` (${subs.length})` : ''}`}
+        </Button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {/* Always mounted and only toggling its own content, so the busy notice is
+          announced as a content change instead of announcing the pressed button. */}
+      <span role="status" className="sr-only">
+        {isBusy ? LOADING_LABEL : ''}
+      </span>
+      <Button
         type="button"
+        variant="default"
+        size="sm"
+        aria-label={isBusy ? LOADING_LABEL : undefined}
         title={
           permissionDenied
             ? 'Permiso bloqueado — habilítalo en la configuración de tu navegador'
             : undefined
         }
         disabled={isBusy || permissionDenied}
-        onClick={() => unsubscribe.mutate(endpoint)}
-        className={`${baseBtn} ${offBtnClass}`}
+        onClick={() => subscribe.mutate()}
       >
-        {isBusy ? '…' : `Desactivar notificaciones${subs.length > 1 ? ` (${subs.length})` : ''}`}
-      </button>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      title={
-        permissionDenied
-          ? 'Permiso bloqueado — habilítalo en la configuración de tu navegador'
-          : undefined
-      }
-      disabled={isBusy || permissionDenied}
-      onClick={() => subscribe.mutate()}
-      className={`${baseBtn} ${onBtnClass}`}
-    >
-      {isBusy ? '…' : 'Activar notificaciones'}
-    </button>
+        {isBusy ? '…' : 'Activar notificaciones'}
+      </Button>
+    </>
   );
 }

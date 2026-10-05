@@ -2,16 +2,22 @@ import { Link, useParams } from 'react-router-dom';
 import { useProduct } from '../hooks/use-product';
 import { closesInLabel, formatCloseTimeLima, formatPrice } from '../lib/format';
 import { toApiError } from '../lib/api';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function DetailSkeleton() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-3">
-      <div className="h-7 w-2/3 rounded bg-slate-200 animate-pulse" />
-      <div className="h-6 w-1/3 rounded bg-slate-200 animate-pulse" />
-      <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
-      <div className="h-4 w-1/3 rounded bg-slate-200 animate-pulse" />
-      <div className="h-10 w-32 rounded bg-slate-200 animate-pulse" />
-    </div>
+    <Card aria-hidden="true">
+      <CardContent className="space-y-3">
+        <Skeleton className="h-7 w-2/3" />
+        <Skeleton className="h-6 w-1/3" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-10 w-32" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -23,68 +29,74 @@ export function ProductDetailPage() {
 
   return (
     <section className="space-y-4">
-      <Link to="/catalog" className="text-sm text-amber-600 hover:text-amber-700">
+      <Link to="/catalog" className="text-sm text-primary hover:underline">
         ← Catálogo
       </Link>
 
       {isLoading && <DetailSkeleton />}
 
       {!isLoading && isNotFound && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
-          <p>No encontramos este producto</p>
-          <Link
-            to="/catalog"
-            className="mt-3 inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-          >
-            Volver al catálogo
-          </Link>
-        </div>
+        <Card>
+          <CardContent>
+            <p className="text-muted-foreground">No encontramos este producto</p>
+            <Link
+              to="/catalog"
+              className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+            >
+              Volver al catálogo
+            </Link>
+          </CardContent>
+        </Card>
       )}
 
       {!isLoading && isError && !isNotFound && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm text-slate-700">
+        <Alert variant="destructive">
           <p>No pudimos cargar este producto</p>
-          <button
+          <Button
             type="button"
+            className="mt-3"
             onClick={() => {
               void refetch();
             }}
-            className="mt-3 px-4 py-2 rounded bg-amber-500 text-white hover:bg-amber-600"
           >
             Reintentar
-          </button>
-        </div>
+          </Button>
+        </Alert>
       )}
 
       {!isLoading && !isError && data && (
-        <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-3">
-          <h1 className="text-3xl font-semibold text-slate-900">{data.name}</h1>
-          <p className="text-2xl text-amber-600">{formatPrice(data.price)}</p>
-          <p className="text-sm text-slate-700">
-            Cierra a las {formatCloseTimeLima(data.closesAt)} ·{' '}
-            {closesInLabel(data.closesAt, data.closed)}
-          </p>
-          <p className="text-sm text-slate-500">
-            Disponible: {data.availableDate.slice(0, 10)}
-          </p>
-          {data.closed || new Date(data.closesAt).getTime() <= Date.now() ? (
-            <button
-              type="button"
-              disabled
-              className="inline-block bg-slate-300 text-slate-600 px-4 py-2 rounded cursor-not-allowed"
-            >
-              Pedido cerrado
-            </button>
-          ) : (
-            <Link
-              to={`/orders/new?productId=${data.id}`}
-              className="inline-block bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600"
-            >
-              Pedir
-            </Link>
-          )}
-        </article>
+        <Card>
+          <CardHeader>
+            {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
+            <h1 className="font-heading text-3xl font-semibold tracking-tight">{data.name}</h1>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-2xl text-primary">{formatPrice(data.price)}</p>
+            <p className="text-sm text-muted-foreground">
+              Cierra a las {formatCloseTimeLima(data.closesAt)} ·{' '}
+              {closesInLabel(data.closesAt, data.closed)}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Disponible: {data.availableDate.slice(0, 10)}
+            </p>
+            {data.closed || new Date(data.closesAt).getTime() <= Date.now() ? (
+              <Button type="button" disabled>
+                Pedido cerrado
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link to={`/orders/new?productId=${data.id}`}>Pedir</Link>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       )}
+
+      {/* role=status rather than aria-live on the skeleton: a live region has to
+          pre-exist and announce its own content change, not the decorative bars. */}
+      <span role="status" className="sr-only">
+        {isLoading ? 'Cargando producto' : ''}
+      </span>
     </section>
   );
 }
