@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '../store/auth';
 import { useAuthBootstrap } from '../hooks/use-auth-bootstrap';
 
@@ -7,24 +8,30 @@ export function AuthBootstrap({ children }: { children: ReactNode }) {
   const status = useAuth((s) => s.status);
   if (infrastructureError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-slate-700 gap-3 p-6">
+      <div className="min-h-screen flex flex-col items-center justify-center text-foreground gap-3 p-6">
         <p className="text-lg">No pudimos contactar al servidor.</p>
-        <button
+        <Button
           type="button"
+          variant="default"
           onClick={() => {
             void refetch();
           }}
-          className="px-4 py-2 rounded-sm bg-amber-500 text-white hover:bg-amber-600"
         >
           Reintentar
-        </button>
-        <p className="text-xs text-slate-500">Si el problema persiste, vuelve más tarde.</p>
+        </Button>
+        <p className="text-xs text-muted-foreground">Si el problema persiste, vuelve más tarde.</p>
       </div>
     );
   }
   if (status === 'idle' || isLoading) {
+    // A live region has to pre-exist and announce its own content change. This
+    // component early-returns a different root per state, so there is no stable
+    // parent to hold the region: the loading root itself is the region.
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-500">
+      <div
+        role="status"
+        className="min-h-screen flex items-center justify-center text-muted-foreground"
+      >
         Cargando…
       </div>
     );
