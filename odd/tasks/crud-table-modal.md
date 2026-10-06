@@ -11,7 +11,7 @@ de crear o editar un registro.
 ## Status
 
 - Started: 2026-10-05
-- Current task: **3 — Insumos, alta en modal**
+- Current task: **4 — Recetas, extracción pura (IngredientRow + validateRecipe)**
 - Branch: `feat/crud-table-modal` (base `main` @ `c4fee2e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local con pasadas read-only independientes)
 - Gate automático: **`npm run typecheck` + `npm run build`**. No hay runner de tests en `pedidos-web`
@@ -131,8 +131,19 @@ cambia sin consumidor en el mismo commit:
 - [x] **2 — Insumos, lista** (2026-10-05, `907836c`): `<table>` artesanal → `ResponsiveRecordList`, con card
       mobile real. **277 líneas cambiadas** en 5 archivos, 183+/94−. Verificación read-only independiente **sin
       blockers**, con dos advisories corregidos en la misma unidad
-- [ ] **3 — Insumos, alta**: crear → `FormDialog`. Extrae `IngredientForm` a `components/ingredients/` y lo
-      reusa en los dos modos; borra el `<Card>` inline y agrega el botón «Crear insumo» en el header
+- [x] **3 — Insumos, alta en modal** (2026-10-05, `e87c00f`): `FormDialog` corregido a *shell + slot de `footer`*; `IngredientForm`
+      se mueve a `components/ingredients/ingredient-form.tsx`; nuevo `IngredientFormDialog` sirve **los dos modos** (crear
+      y editar) con el botón de envío asociado por `form={formId}`. La página: el `<Card>` inline «Crear nuevo
+      insumo»
+      se borra, se agrega el botón «Crear insumo» en el header, `EditModal` se borra y se reemplaza por
+      `IngredientFormDialog mode="edit"` con `size="lg"`. **Desviación de tamaño declarada: 450+ / 399− = 849 líneas
+      según el conteo del tracker**, cuando el plan estimó 250. El desglose: 196 son reubicación pura de
+      `IngredientForm`, 366 son borrado de código sin consumidor (el `EditModal` local ~200, el `<Card>` inline,
+      los botones internos de la forma, el `FormDialog` viejo, los imports huérfanos), 16 son la revisión de
+      `FormDialog`, 139 son el nuevo diálogo, 78 son el cableado de la página. Delta neto del código base: +44
+      líneas (737 → 781). Es un único cambio lógico y va en un commit, igual que la feature anterior aceptó su
+      sobrepaso de 25 líneas en un slice coherente. Verificación read-only independiente: abajo
+- [ ] **4 — Recetas, extracción pura**: `IngredientRow` + `validateRecipe` a `components/recipes/`
 - [ ] **4 — Recetas, extracción pura**: `IngredientRow` + `validateRecipe` a `components/recipes/`
 - [ ] **5 — Recetas, extracción pura**: `RecipeForm` a `components/recipes/recipe-form.tsx`
 - [ ] **6 — Recetas, alta y edición**: `RecipeFormDialog` para los dos modos, borra el `<Card>` inline y el
@@ -296,3 +307,13 @@ convertir las tres formas a componentes controlados. Se corrigió el contrato a 
 botón de envío asociado por `form={formId}`, y se deja anotado arriba en «Componentes compartidos». Se implementa
 en la task 3 junto con su primer consumidor, no antes. También se comprobó que `validateIngredient` lo usan los
 handlers de la página (crear y actualizar), no la forma, así que se queda donde está. -->
+
+<!-- 2026-10-05: **Task 3 — insumos, alta y edición en modal** — `e87c00f`, **849 líneas según el conteo del tracker** (450+ / 399−, 4 archivos, +44 líneas netas en el código base). Cuatro movimientos: (1) **se corrigió el contrato de `FormDialog` en la misma unidad** porque el anterior era dueño del `<form>` y del botón y no encajaba en ninguna de las tres pantallas — ahora es shell + slot de `footer`, con el cuerpo en `min-h-0 flex-1 overflow-y-auto` y `DialogContent` con `flex max-h-[85svh] flex-col`; (2) `IngredientForm` se movió a `components/ingredients/ingredient-form.tsx` perdiendo **sus** botones de envío y cancelación, `submitLabel`, `busy`, `onCancel` y la variable `canSubmit` (los botones viven en el footer del diálogo y se asocian al formulario por `form={formId}`, HTML estándar); (3) nuevo `IngredientFormDialog` sirve los dos modos (crear/editar), genera `formId` con `useId()` y conserva `idPrefix` literal (`ingredient-create`/`ingredient-edit`) para que los ids de los inputs (`#ingredient-create-name`, `#ingredient-edit-name`) sigan siendo los de HEAD; (4) la página: se borra el `<Card>` inline «Crear nuevo insumo» y el `EditModal` local, se agrega el botón «Crear insumo» en el header (al lado del link «Mis recetas →»), se montan los dos `IngredientFormDialog`, y `useUpdateIngredient`/`handleUpdate`/estado de error suben a la página.
+
+**Desviación de tamaño declarada**: 849 vs 250 estimados. Es un único cambio lógico (crear y editar comparten diálogo), coincide con el precedente de la feature anterior (slice de 425 líneas, 25 sobre) y el desglose lo explica: 196 son reubicación pura de la forma, 366 son borrado de código sin consumidor (`EditModal` ~200, el `<Card>` inline, los botones internos, el `FormDialog` viejo, los imports huérfanos), 16 son la revisión del shell, 139 son el nuevo diálogo, 78 son el cableado de la página.
+
+**Verificación read-only independiente: sin blockers**, con tres advisories sobre la primera pasada. (1) **`isSubmitting` no correspondía a la forma**: la prop quedó declarada en `IngredientForm` pero sin usar (su único consumidor en HEAD era el bloque de botones eliminado) y el diálogo la seguía pasando; las dos se borraron porque el estado de pendiente es del botón del footer, no de la forma. (2) **Texto del create perdido**: el párrafo explicativo del `<Card>` inline («Define nombre, unidades y precio de compra. El factor de conversión se calcula solo a partir del par de unidades permitido.») no se había movido a ningún lado. (3) **Comentario rancio** en la página que mencionaba el `EditModal` eliminado.
+
+**`431286d` corrigió los dos últimos**: `IngredientFormDialog` ahora acepta `description?: string` y la pasa a `FormDialog` → `DialogDescription` (que es además la `aria-describedby` canónica del contenido del diálogo). El comentario rancio se reescribió en términos del propio estado. También en este commit: se **mejoró** la copia de pendiente del create — la forma vieja siempre decía «Guardando…» incluso creando, el diálogo nuevo dice «Creando…» para crear y «Guardando…» para editar; es una mejora, no un regress.
+
+**Deltas visuales a confirmar en tu gate**: (a) la pantalla pierde el `<h2>` «Crear nuevo insumo» (aceptado: `DialogTitle` rinde un `<h2>` mientras el diálogo está abierto); (b) el create está ahora en un modal que se abre desde un botón en el header — la forma sigue scrolleando, los campos y la previsualización del factor de conversión son byte-idénticos; (c) el estado de la forma se **resetea** cada vez que se abre (Radix desmonta el contenido del diálogo al cerrar) — antes el create inline conservaba lo que el usuario hubiera escrito; (d) el edit conserva su ancho `sm:max-w-2xl` via `size="lg"`; (e) el `DialogDescription` aparece debajo del título y arriba del formulario. Siguiente: task 4 (extracción pura de `IngredientRow` + `validateRecipe` en recetas, sin cambio de comportamiento). -->
