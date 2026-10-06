@@ -152,7 +152,16 @@ cambia sin consumidor en el mismo commit:
       independiente: sin blockers; la página quedó con tres imports ahora no usados (`formatPrecisePrice`,
       `INGREDIENT_UNIT_LABELS`, el grupo `@/components/ui/select`) y se eliminaron. RecipeForm/RecipeCard/EditModal/
       VendorRecipesPage no se tocaron
-- [ ] **5 — Recetas, extracción pura**: `RecipeForm` a `components/recipes/recipe-form.tsx`
+- [x] **5 — Recetas, extracción pura** (2026-10-05, `1d6b67f`): `RecipeForm` (272 líneas) a
+      `components/recipes/recipe-form.tsx`, junto con sus helpers internos `CostBreakdown` y `calculateCost`.
+      `formatPercent` (que también usa `RecipeCard`) pasa a `lib/format.ts` para tener un único origen.
+      **659 líneas de churn** por la lectura de `git --numstat` (259 sobre el límite de 400, declarado). `recipes.tsx`
+      baja a 473 líneas (–321 netas). Verificación read-only independiente: sin blockers; la página quedó con
+      siete imports sin uso y se removieron. El writer agregó dos imports que la spec del padre había omitido
+      (`Ingredient` para la anotación `Map<string, Ingredient>` de `calculateCost`, y `Skeleton` para el estado de
+      carga del form): la spec del padre era incorrecta en el caso de `Ingredient` (la inferencia no aplica a
+      anotaciones explícitas de parámetros de función) e incompleta en el de `Skeleton`; el writer los agregó
+      en el orden `@/lib`-antes-`@/components/ui` que usa el resto de la app
 - [ ] **6 — Recetas, alta y edición**: `RecipeFormDialog` para los dos modos, borra el `<Card>` inline y el
       `EditModal` local, agrega botón «Crear receta», scroll interno del modal y **fix del `step="0.1"`** de
       Utilidad y Mano de obra (deuda que arrastra el tracker anterior y vive en este mismo archivo)
@@ -332,3 +341,17 @@ handlers de la página (crear y actualizar), no la forma, así que se queda dond
 Tres imports quedaron sin uso en la página después de la mudanza y se borraron: `formatPrecisePrice` (1 ocurrencia en la página post-move = la línea de import), `INGREDIENT_UNIT_LABELS` (0) y el grupo `@/components/ui/select` entero (0 para cada uno de los 5 símbolos). Los siete imports que sí se mantienen: `useId` (lo usa RecipeForm), `Ingredient` (lo usa calculateCost), `RecipeIngredientInput` (lo usan calculateCost, RecipeForm, EditModal y el page), `formatPrice`, `Input`, `Label`, `Button` — todos demostrados con conteos `grep`.
 
 Siguiente: task 5 (extracción pura de `RecipeForm` a `components/recipes/recipe-form.tsx`, también sin cambio de comportamiento). -->
+
+<!-- 2026-10-05: **Task 5 — recetas, extracción pura de `RecipeForm`** — `1d6b67f`, **659 líneas de churn** según `git --numstat` (259 sobre el límite de 400, declarado). Cuatro declaraciones movidas: `CostBreakdown` (interface) y `calculateCost` (función) viajan dentro del mismo archivo que `RecipeForm` porque son sus helpers internos; `formatPercent` (que también usa `RecipeCard`) se muda a `lib/format.ts` para tener un único origen — el form, el `RecipeCard` y la página la importan desde ahí. `recipe-form.tsx` queda en 321 líneas; `format.ts` en 52; `recipes.tsx` baja de 794 a 473 (–321 netas).
+
+**Verificación read-only independiente: sin blockers**, con tres advisories que la spec del padre tenía mal:
+
+1. **La spec dijo que `Ingredient` no se importara** en `recipe-form.tsx` con la justificación de que la inferencia de tipos lo resolvía. Era incorrecto: la anotación del parámetro de `calculateCost` es **explícita** (`ingredientsById: Map<string, Ingredient>`) y la función **no** está dentro del `useMemo` donde la inferencia aplicaría. El writer agregó el import y eso desbloqueó `tsc`.
+2. **La spec omitió `Skeleton`** del bloque de imports. El cuerpo del form usa `<Skeleton>` dos veces en la rama de carga. El writer lo agregó.
+3. **La spec era internamente contradictoria sobre `export` en `calculateCost`** (un bullet decía "agregá export", la frase final decía "no exportes"). El writer eligió exportar siguiendo el hard requirement #1; el padre lo corrigió a file-local para consistencia con `CostBreakdown` y con la convención del archivo (los helpers internos no se exportan). El commit documenta la corrección.
+
+**Lección que se suma a la del task 4**: al delinear imports para una spec de relocalización, hay que grepear el cuerpo por *cada* identificador en mayúscula que aparece en JSX (Skeleton, Alert, AlertDescription, etc.), no solo los obvios. La inferencia de tipos no aplica a anotaciones explícitas de parámetros de función, aunque la función se llame desde un `useMemo`. **Aplicar a la task 6 y la task 8**: grepear el cuerpo de `EditModal` y del formulario de productos y listar todo explícitamente.
+
+**Desviación de tamaño de task 5 declarada**: 659 vs 280 estimados. Es un cambio mecánico (cuerpos byte-idéntico, sin cambio de comportamiento) y la regla de 400 protege la review workload de cambios de comportamiento, no de relocalizaciones. Se acepta con declaración, igual que tasks 3 y 4.
+
+Siguiente: task 6 (modal de alta y edición para recetas con el patrón de task 3, + fix del `step="0.1"` de Utilidad y Mano de obra). -->
