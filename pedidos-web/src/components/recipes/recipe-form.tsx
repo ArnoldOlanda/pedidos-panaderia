@@ -1,4 +1,4 @@
-import { FormEvent, useId, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useIngredients } from '../../hooks/use-ingredients';
 import { formatPrice, formatPercent } from '@/lib/format';
@@ -48,25 +48,14 @@ function calculateCost(
   return { costoInsumos, igv, manoObra: costoManoObra, costoProd, precioVenta };
 }
 
-export function RecipeForm({
-  initialName,
-  initialIngredients,
-  initialIngredientNames,
-  initialUtilidad,
-  initialManoObra,
-  submitLabel,
-  busy,
-  serverError,
-  onSubmit,
-  onCancel,
-}: {
+interface RecipeFormProps {
+  formId: string;
+  idPrefix: string;
   initialName?: string;
   initialIngredients?: RecipeIngredientInput[];
   initialIngredientNames?: Record<string, string | undefined>;
   initialUtilidad?: number;
   initialManoObra?: number;
-  submitLabel: string;
-  busy: boolean;
   serverError: string | null;
   onSubmit: (input: {
     name: string;
@@ -74,8 +63,28 @@ export function RecipeForm({
     utilidad: number;
     manoObra: number;
   }) => void;
-  onCancel?: () => void;
-}) {
+}
+
+/**
+ * Recipe form body shared by the create and edit dialogs. It owns its fields,
+ * its validation and its `<form>` element, but not the submit button: the
+ * dialog renders that in its footer and associates it through `form={formId}`.
+ * `idPrefix` stays a deterministic literal so the field ids
+ * (`#recipe-create-name`, `#recipe-edit-utilidad`) remain stable across mounts,
+ * while `formId` is the dialog-generated value that links the form to that
+ * footer submit button.
+ */
+export function RecipeForm({
+  formId,
+  idPrefix,
+  initialName,
+  initialIngredients,
+  initialIngredientNames,
+  initialUtilidad,
+  initialManoObra,
+  serverError,
+  onSubmit,
+}: RecipeFormProps) {
   // The recipe references the shared insumo catalog, so the form cannot offer a
   // usable row (nor a valid submission) until the catalog is loaded.
   const ingredientsQuery = useIngredients({ refetchOnMount: 'always' });
@@ -85,12 +94,9 @@ export function RecipeForm({
     [catalog],
   );
 
-  // RecipeForm mounts twice on the same page (the create section and EditModal),
-  // so the field ids come from useId instead of literals that would duplicate.
-  const formId = useId();
-  const nameInputId = `${formId}-name`;
-  const utilidadInputId = `${formId}-utilidad`;
-  const manoObraInputId = `${formId}-mano-obra`;
+  const nameInputId = `${idPrefix}-name`;
+  const utilidadInputId = `${idPrefix}-utilidad`;
+  const manoObraInputId = `${idPrefix}-mano-obra`;
 
   // Visible and announced loading text are the same string; one constant keeps
   // them from drifting apart.
@@ -145,7 +151,7 @@ export function RecipeForm({
   };
 
   const formBody = (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form id={formId} onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
         <Label htmlFor={nameInputId}>Nombre</Label>
         <Input
@@ -162,12 +168,10 @@ export function RecipeForm({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label htmlFor={utilidadInputId}>Utilidad (%)</Label>
-          {/* step stays 0.1 on purpose: the browser rejecting 20.25 is a tracked
-              bug of its own, and fixing it here would break this slice's parity. */}
           <Input
             id={utilidadInputId}
             type="number"
-            step="0.1"
+            step="0.01"
             min="0"
             value={utilidad}
             onChange={(e) => setUtilidad(Number(e.target.value))}
@@ -179,7 +183,7 @@ export function RecipeForm({
           <Input
             id={manoObraInputId}
             type="number"
-            step="0.1"
+            step="0.01"
             min="0"
             value={manoObra}
             onChange={(e) => setManoObra(Number(e.target.value))}
@@ -252,17 +256,6 @@ export function RecipeForm({
           {serverError}
         </p>
       )}
-
-      <div className="flex gap-2">
-        <Button type="submit" disabled={busy}>
-          {busy ? 'Guardando…' : submitLabel}
-        </Button>
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-        )}
-      </div>
     </form>
   );
 

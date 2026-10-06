@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
 import { useRecipes } from '../../hooks/use-recipes';
-import { useRecipe } from '../../hooks/use-recipe';
 import { useCreateRecipe } from '../../hooks/use-create-recipe';
 import { useUpdateRecipe } from '../../hooks/use-update-recipe';
 import { useDeleteRecipe } from '../../hooks/use-delete-recipe';
 import { toApiError } from '../../lib/api';
 import { formatPrice, formatPercent } from '../../lib/format';
 import type { Recipe, RecipeIngredientInput } from '../../lib/recipes';
-import { RecipeForm } from '@/components/recipes/recipe-form';
+import { RecipeFormDialog } from '@/components/recipes/recipe-form-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
@@ -24,13 +23,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const CREATE_RECIPE_DESCRIPTION =
+  'Elige insumos del catálogo y su cantidad. Calculamos el costo y el precio sugerido al guardar.';
 
 // 400 invalid payload: the backend already names the offending insumos
 // ("ingredientes no encontrados: ...") or the duplicate line ("insumo repetido
@@ -122,144 +118,19 @@ function RecipeCard({
   );
 }
 
-function EditModal({
-  recipeId,
-  onClose,
-}: {
-  recipeId: string;
-  onClose: () => void;
-}) {
-  const recipeQuery = useRecipe(recipeId);
-  const update = useUpdateRecipe();
-  const [serverError, setServerError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setServerError(null);
-  }, [recipeId]);
-
-  const recipe = recipeQuery.data;
-
-  const errorStatus = recipeQuery.isError
-    ? toApiError(recipeQuery.error).status
-    : null;
-
-  // Convert the read lines (with nested insumo) back to the write shape the
-  // form edits. The nested name only labels a line whose insumo disappeared
-  // from the catalog, so the select can show it instead of a blank value.
-  const initialIngredients: RecipeIngredientInput[] = recipe
-    ? recipe.ingredients.map((line) => ({
-        ingredientId: line.ingredientId,
-        quantityUsed: line.quantityUsed,
-      }))
-    : [];
-  const initialIngredientNames: Record<string, string | undefined> = {};
-  if (recipe) {
-    for (const line of recipe.ingredients) {
-      initialIngredientNames[line.ingredientId] = line.ingredient?.name;
-    }
-  }
-
-  const submit = (input: {
-    name: string;
-    ingredients: RecipeIngredientInput[];
-    utilidad: number;
-    manoObra: number;
-  }) => {
-    if (!recipe) return;
-    setServerError(null);
-    update.mutate(
-      {
-        id: recipe.id,
-        input: {
-          name: input.name,
-          ingredients: input.ingredients,
-          utilidad: input.utilidad,
-          manoObra: input.manoObra,
-        },
-      },
-      {
-        onSuccess: () => {
-          onClose();
-        },
-        onError: (err) => {
-          const apiErr = toApiError(err);
-          if (apiErr.status === 400) {
-            setServerError(badRequestMessage(err));
-          } else if (apiErr.status === 403) {
-            setServerError('Solo el creador puede editar esta receta');
-          } else if (apiErr.status === 404) {
-            setServerError('La receta ya no existe');
-          } else {
-            setServerError(apiErr.message || 'No pudimos guardar los cambios');
-          }
-        },
-      },
-    );
-  };
-
-  // EditModal is mounted only while editing, so `open` is constant true and
-  // onOpenChange is what routes Escape, overlay click and the close button back
-  // to onClose. ModalShell already handled overlay click and had its own close
-  // button; what Radix adds is Escape, focus containment and focus return. The
-  // registry's own close button is kept deliberately: its sr-only label is the
-  // English "Close", an accepted deviation from ModalShell's Spanish
-  // aria-label="Cerrar", chosen over patching the vendored primitive.
-  return (
-    <Dialog
-      open
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-    >
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Editar receta</DialogTitle>
-        </DialogHeader>
-
-        {recipeQuery.isError && (
-          <p className="text-sm text-destructive" role="alert">
-            {errorStatus === 404
-              ? 'La receta ya no existe.'
-              : 'No pudimos cargar la receta.'}
-          </p>
-        )}
-
-        {!recipeQuery.isError && (recipeQuery.isLoading || !recipe) && (
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        )}
-
-        {!recipeQuery.isError && !recipeQuery.isLoading && recipe && (
-          <RecipeForm
-            initialName={recipe.name}
-            initialIngredients={initialIngredients}
-            initialIngredientNames={initialIngredientNames}
-            initialUtilidad={recipe.utilidad}
-            initialManoObra={recipe.manoObra}
-            submitLabel="Guardar cambios"
-            busy={update.isPending}
-            serverError={serverError}
-            onSubmit={submit}
-            onCancel={onClose}
-          />
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export function VendorRecipesPage() {
   const user = useAuth((s) => s.user);
   const recipesQuery = useRecipes();
   const create = useCreateRecipe();
+  const update = useUpdateRecipe();
   const remove = useDeleteRecipe();
 
   const [createServerError, setCreateServerError] = useState<string | null>(
     null,
   );
+  const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editServerError, setEditServerError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
 
@@ -268,6 +139,12 @@ export function VendorRecipesPage() {
     const timer = setTimeout(() => setFlashMessage(null), 3000);
     return () => clearTimeout(timer);
   }, [flashMessage]);
+
+  // The dialog receives the write errors as props and does not own them, so the
+  // page clears them whenever the edit target changes.
+  useEffect(() => {
+    setEditServerError(null);
+  }, [editingId]);
 
   if (user && user.role !== 'VENDEDOR') {
     return (
@@ -305,6 +182,7 @@ export function VendorRecipesPage() {
       },
       {
         onSuccess: () => {
+          setCreateOpen(false);
           setFlashMessage('Receta creada');
         },
         onError: (err) => {
@@ -317,6 +195,46 @@ export function VendorRecipesPage() {
             setCreateServerError(apiErr.message || 'Conflicto al crear la receta');
           } else {
             setCreateServerError(apiErr.message || 'No pudimos crear la receta');
+          }
+        },
+      },
+    );
+  };
+
+  const handleUpdate = (input: {
+    name: string;
+    ingredients: RecipeIngredientInput[];
+    utilidad: number;
+    manoObra: number;
+  }) => {
+    if (!editingId) return;
+    setEditServerError(null);
+    update.mutate(
+      {
+        id: editingId,
+        input: {
+          name: input.name,
+          ingredients: input.ingredients,
+          utilidad: input.utilidad,
+          manoObra: input.manoObra,
+        },
+      },
+      {
+        onSuccess: () => {
+          setEditingId(null);
+        },
+        onError: (err) => {
+          const apiErr = toApiError(err);
+          if (apiErr.status === 400) {
+            setEditServerError(badRequestMessage(err));
+          } else if (apiErr.status === 403) {
+            setEditServerError('Solo el creador puede editar esta receta');
+          } else if (apiErr.status === 404) {
+            setEditServerError('La receta ya no existe');
+          } else {
+            setEditServerError(
+              apiErr.message || 'No pudimos guardar los cambios',
+            );
           }
         },
       },
@@ -355,12 +273,17 @@ export function VendorRecipesPage() {
             <p className="text-sm text-muted-foreground">Estas recetas te pertenecen</p>
           )}
         </div>
-        <Link
-          to="/vendor/products"
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          Publicar producto →
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/vendor/products"
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Publicar producto →
+          </Link>
+          <Button type="button" onClick={() => setCreateOpen(true)}>
+            Crear receta
+          </Button>
+        </div>
       </header>
 
       {flashMessage && (
@@ -446,28 +369,27 @@ export function VendorRecipesPage() {
         </div>
       </section>
 
-      <Card>
-        <CardContent>
-          {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the section without a heading element. */}
-          <h2 className="font-heading text-lg font-semibold">Crear nueva receta</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Elige insumos del catálogo y su cantidad. Calculamos el costo y el precio
-            sugerido al guardar.
-          </p>
-          <div className="mt-4">
-            <RecipeForm
-              submitLabel="Crear receta"
-              busy={create.isPending}
-              serverError={createServerError}
-              onSubmit={handleCreate}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {editingId && (
-        <EditModal recipeId={editingId} onClose={() => setEditingId(null)} />
-      )}
+      <RecipeFormDialog
+        mode="create"
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        description={CREATE_RECIPE_DESCRIPTION}
+        isSubmitting={create.isPending}
+        serverError={createServerError}
+        onSubmit={handleCreate}
+      />
+      <RecipeFormDialog
+        mode="edit"
+        open={editingId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingId(null);
+        }}
+        recipeId={editingId ?? undefined}
+        size="lg"
+        isSubmitting={update.isPending}
+        serverError={editServerError}
+        onSubmit={handleUpdate}
+      />
     </section>
   );
 }
