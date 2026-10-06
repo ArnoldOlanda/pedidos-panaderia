@@ -11,7 +11,7 @@ de crear o editar un registro.
 ## Status
 
 - Started: 2026-10-05
-- Current task: **7 — Recetas, lista (RecipeCard → ResponsiveRecordList)**
+- Current task: **8 — Productos, alta en modal**
 - Branch: `feat/crud-table-modal` (base `main` @ `c4fee2e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local con pasadas read-only independientes)
 - Gate automático: **`npm run typecheck` + `npm run build`**. No hay runner de tests en `pedidos-web`
@@ -173,7 +173,13 @@ cambia sin consumidor en el mismo commit:
       para insumos). El `description` del create lleva el párrafo explicativo que tenía el `<Card>` inline.
       **Fix del `step="0.1"`**: Utilidad y Mano de obra cambian a `step="0.01"`; el navegador ya no rechaza
       `20.25%`. El comentario rancio que documentaba el bug como «tracked bug of its own» se elimina
-- [ ] **7 — Recetas, lista**: `RecipeCard` → `ResponsiveRecordList`
+- [x] **7 — Recetas, lista** (2026-10-05, `f9593b8`): `RecipeCard` → `ResponsiveRecordList`, con card mobile real. **277 líneas
+      de churn** por `git --numstat` (dentro del límite de 400). `RecipeActions` extrae el botón «Editar» y el
+      `AlertDialog` de borrado (incluyendo el badge «Solo lectura» para recetas no propias), compartido por la
+      tabla y la card. `recipes.tsx` baja a 341 líneas (–54 netas). La card mantiene el `<h3>` (convención de task
+      2). Sin advisories del writer esta vez
+- [ ] **8 — Productos, alta en modal**: publicar → `FormDialog`, conservando el prellenado del precio sugerido en el
+      `onChange` del select y el `step="0.01"`
 - [ ] **8 — Productos, alta**: publicar → `FormDialog`, conservando el prellenado del precio sugerido en el
       `onChange` del select y el `step="0.01"`
 - [ ] **9 — Productos, lista**: `MyProductCard` → `ResponsiveRecordList`, sin columna de acciones (D5)
@@ -409,3 +415,39 @@ tasks 3, 4 y 5.
 Siguiente: task 7 (`RecipeCard` → `ResponsiveRecordList`, replica el patrón de task 2 para insumos: tabla
 desktop, cards mobile, con las acciones de Editar/Eliminar dentro; las cards usan `<h3>` por la convención
 nueva introducida en task 2). -->
+
+<!-- 2026-10-05: **Task 7 — recetas, lista** — `f9593b8`, **277 líneas de churn** según `git --numstat` (dentro del
+límite de 400, sin desviación). Replica byte-a-byte la forma de task 2 para insumos. `RecipeActions` (nuevo, 81
+líneas) extrae el botón «Editar», el `AlertDialog` de borrado, y el `Badge` «Solo lectura» para recetas no
+propias — el componente decide internamente entre las dos formas según `canManage`, igual que la forma en que
+`IngredientActions` decide entre los botones y el diálogo (sin rama `canManage` porque todos los insumos son
+propios del vendor). `RecipeCard` (nuevo, 54 líneas) es la card mobile; `recipes.tsx` baja a 341 líneas
+(–54 netas: –82 de la función local borrada, +33 del array `columns`, –5 netos de imports). La card mantiene
+el `<h3>` (convención de task 2), el plural-s `insumo/insumos`, los `formatPrice`/`formatPercent` y el
+`font-medium text-primary` del precio.
+
+**El array `columns` tiene seis entradas** (Nombre, Insumos, Utilidad, Mano de obra, Precio sugerido, Acciones).
+«Nombre» lleva `className: 'text-foreground'` (en HEAD el nombre era `text-foreground` explícito). «Insumos»,
+«Utilidad» y «Mano de obra» llevan `className: 'text-muted-foreground'` (en HEAD esos `<td>` eran muted). El shell
+pinta todos los encabezados en muted por default; «Precio sugerido» y «Acciones» llevan `headerClassName:
+'text-right'`. «Precio sugerido» además lleva `className: 'text-right text-primary font-medium'` en la celda
+para preservar el estilo del precio que tenía la card. «Acciones» no lleva `className` en la celda porque
+`RecipeActions` alinea sus hijos con `flex gap-2 justify-end` (o `flex justify-end` para el badge) — el
+`text-right` no haría nada sobre un div block-level.
+
+**Deltas visuales declarados y pendientes de tu gate** (los mismos de task 2 para insumos, repetidos por
+uniformidad): (a) el padding de celdas y encabezados adopta la densidad de la primitiva (`p-2` / `h-10 px-2`
+en vez de `px-4 py-3`) — no se intentó restaurar; (b) las filas ganan `border-b` y `hover:bg-muted/50`; (c) la
+superficie de la tabla es la del shell (`overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10`),
+calcada de la primitiva `Card`. El color de los encabezados **vuelve a la paridad** con HEAD porque la celda
+muted hereda el `text-muted-foreground` por default del shell (mismo arreglo que en task 2).
+
+**Verificación read-only independiente: sin blockers, sin advisories esta vez.** La spec del padre enumeró los
+imports de forma explícita (con la lección de task 4-5 aplicada) y la lista coincidió con el cuerpo, así que
+el writer no tuvo que agregar nada. Las pruebas de identidad de bytes del writer (diff vs HEAD del bloque
+`<h3>` + meta línea y del título del diálogo de borrado) salieron vacías. Único dato de proceso a flaggear: el
+writer usó una copia temporal de HEAD en `/tmp` para construir las pruebas de bytes — contenido sin secretos,
+fuera del repo, no removida (read-only task); el OS la limpia.
+
+Siguiente: task 8 (modalizar el alta de productos — el único flujo que tiene la feature, sin editar ni
+borrar por D5 — replicando el patrón de tasks 3 y 6). -->
