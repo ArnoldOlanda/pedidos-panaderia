@@ -331,6 +331,7 @@ export function VendorIngredientsPage() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         description={CREATE_INGREDIENT_DESCRIPTION}
+        size="lg"
         isSubmitting={create.isPending}
         validationError={createValidationError}
         serverError={createServerError}

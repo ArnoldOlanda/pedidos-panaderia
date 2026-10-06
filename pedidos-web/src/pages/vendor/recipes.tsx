@@ -320,6 +320,7 @@ export function VendorRecipesPage() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         description={CREATE_RECIPE_DESCRIPTION}
+        size="lg"
         isSubmitting={create.isPending}
         serverError={createServerError}
         onSubmit={handleCreate}
