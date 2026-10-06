@@ -145,6 +145,7 @@ export function VendorIngredientsPage() {
     }
     create.mutate(input, {
       onSuccess: () => {
+        setCreateOpen(false);
         setFlashMessage('Insumo creado');
       },
       onError: (err) => {

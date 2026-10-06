@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useUnitPairs } from '../../hooks/use-unit-pairs';
-import { formatPrice } from '@/lib/format';
+import { formatPrecisePrice } from '@/lib/format';
 import { INGREDIENT_UNITS, INGREDIENT_UNIT_LABELS } from '@/lib/ingredients';
 import type {
   CreateIngredientInput,
@@ -170,7 +170,7 @@ export function IngredientForm({
             <p>
               Costo por {usageLabel}:{' '}
               <span className="font-medium">
-                {formatPrice(purchasePrice / pair.conversionFactor)}
+                {formatPrecisePrice(purchasePrice / pair.conversionFactor)}
               </span>
             </p>
           </>
