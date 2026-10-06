@@ -21,6 +21,9 @@ import type { RecordColumn } from '@/components/records/responsive-record-list';
 
 const LOADING_LABEL = 'Cargando insumos';
 
+const CREATE_INGREDIENT_DESCRIPTION =
+  'Define nombre, unidades y precio de compra. El factor de conversión se calcula solo a partir del par de unidades permitido.';
+
 function validateIngredient(name: string, purchasePrice: number): string | null {
   if (name.length < 1 || name.length > 150) {
     return 'El nombre debe tener entre 1 y 150 caracteres';
@@ -98,8 +101,7 @@ export function VendorIngredientsPage() {
   }, [flashMessage]);
 
   // The dialog receives the write errors as props and does not own them, so the
-  // page clears them whenever the edit target changes. This replaces the effect
-  // that used to live inside the local EditModal.
+  // page clears them whenever the edit target changes.
   useEffect(() => {
     setEditValidationError(null);
     setEditServerError(null);
@@ -327,6 +329,7 @@ export function VendorIngredientsPage() {
         mode="create"
         open={createOpen}
         onOpenChange={setCreateOpen}
+        description={CREATE_INGREDIENT_DESCRIPTION}
         isSubmitting={create.isPending}
         validationError={createValidationError}
         serverError={createServerError}

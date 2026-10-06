@@ -14,6 +14,7 @@ interface IngredientFormDialogProps {
   // Required when mode === 'edit'.
   ingredientId?: string;
   size?: 'default' | 'lg';
+  description?: string;
   isSubmitting: boolean;
   validationError: string | null;
   serverError: string | null;
@@ -40,6 +41,7 @@ export function IngredientFormDialog({
   mode,
   ingredientId,
   size = 'default',
+  description,
   isSubmitting,
   validationError,
   serverError,
@@ -64,6 +66,7 @@ export function IngredientFormDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={mode === 'create' ? 'Crear nuevo insumo' : 'Editar insumo'}
+      description={description}
       size={size}
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
