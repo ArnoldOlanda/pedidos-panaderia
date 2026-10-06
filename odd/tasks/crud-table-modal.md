@@ -11,7 +11,7 @@ de crear o editar un registro.
 ## Status
 
 - Started: 2026-10-05
-- Current task: **5 — Recetas, extracción pura (RecipeForm)**
+- Current task: **7 — Recetas, lista (RecipeCard → ResponsiveRecordList)**
 - Branch: `feat/crud-table-modal` (base `main` @ `c4fee2e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local con pasadas read-only independientes)
 - Gate automático: **`npm run typecheck` + `npm run build`**. No hay runner de tests en `pedidos-web`
@@ -162,9 +162,17 @@ cambia sin consumidor en el mismo commit:
       carga del form): la spec del padre era incorrecta en el caso de `Ingredient` (la inferencia no aplica a
       anotaciones explícitas de parámetros de función) e incompleta en el de `Skeleton`; el writer los agregó
       en el orden `@/lib`-antes-`@/components/ui` que usa el resto de la app
-- [ ] **6 — Recetas, alta y edición**: `RecipeFormDialog` para los dos modos, borra el `<Card>` inline y el
-      `EditModal` local, agrega botón «Crear receta», scroll interno del modal y **fix del `step="0.1"`** de
-      Utilidad y Mano de obra (deuda que arrastra el tracker anterior y vive en este mismo archivo)
+- [x] **6 — Recetas, alta y edición** (2026-10-05, `b26e4ad`): `RecipeFormDialog` (nuevo, 154 líneas) sirve los dos
+      modos replicando el patrón de `IngredientFormDialog` (task 3): `FormDialog` con shell + `footer`, la forma
+      con su `<form id={formId}>` y el botón de envío del footer asociado por `form={formId}`. **`RecipeForm`**
+      pierde `submitLabel`, `busy`, `onCancel` y el bloque de botones inferior; gana `formId` y `idPrefix` como
+      props. **475 líneas de churn** por `git --numstat` (75 sobre el límite de 400, declarado). `recipes.tsx`
+      baja a 395 líneas (–78 netas). `EditModal` y el `<Card>` inline «Crear nueva receta» se borran; se agrega
+      el botón «Crear receta» en el header. El estado de error de edición y el `useEffect` de reset por
+      `editingId` suben a la página. **`handleCreate` cierra el diálogo al guardar** (mismo fix que `9eeea50`
+      para insumos). El `description` del create lleva el párrafo explicativo que tenía el `<Card>` inline.
+      **Fix del `step="0.1"`**: Utilidad y Mano de obra cambian a `step="0.01"`; el navegador ya no rechaza
+      `20.25%`. El comentario rancio que documentaba el bug como «tracked bug of its own» se elimina
 - [ ] **7 — Recetas, lista**: `RecipeCard` → `ResponsiveRecordList`
 - [ ] **8 — Productos, alta**: publicar → `FormDialog`, conservando el prellenado del precio sugerido en el
       `onChange` del select y el `step="0.01"`
@@ -355,3 +363,49 @@ Siguiente: task 5 (extracción pura de `RecipeForm` a `components/recipes/recipe
 **Desviación de tamaño de task 5 declarada**: 659 vs 280 estimados. Es un cambio mecánico (cuerpos byte-idéntico, sin cambio de comportamiento) y la regla de 400 protege la review workload de cambios de comportamiento, no de relocalizaciones. Se acepta con declaración, igual que tasks 3 y 4.
 
 Siguiente: task 6 (modal de alta y edición para recetas con el patrón de task 3, + fix del `step="0.1"` de Utilidad y Mano de obra). -->
+
+<!-- 2026-10-05: **Task 6 — recetas, alta y edición en modal + fix del `step="0.1"`** — `b26e4ad`, **475 líneas
+de churn** por `git --numstat` (75 sobre el límite de 400, declarado). El create y el edit ahora comparten el
+mismo `RecipeFormDialog` (nuevo, 154 líneas) que monta el `FormDialog` shell + footer y le pasa la forma con su
+`<form id={formId}>`; el botón de envío del footer se asocia por `form={formId}` (HTML estándar).
+
+`RecipeForm` pierde `submitLabel`, `busy`, `onCancel` y el bloque de botones inferior (–14 líneas de JSX) y
+gana `formId` e `idPrefix` como props. El `useId()` interno se va al diálogo. Los ids de los inputs pasan de
+`${formId}-name` a `${idPrefix}-name` (literal `recipe-create` o `recipe-edit` por modo) — decisión tomada para
+tener ids estables y significativos en debug, igual que en `IngredientForm`. El `<form>` ahora lleva
+`id={formId}`. El `Button` import se queda (la forma tiene «Agregar insumo» y «Reintentar»).
+
+`recipes.tsx` baja a 395 líneas (–78 netas). El `EditModal` local (127 líneas) y el `<Card>` inline «Crear nueva
+receta» (incluyendo el `<RecipeForm submitLabel="Crear receta" ... />`) se borran. La página ahora es dueña de
+`createOpen`, `editServerError`, el `useUpdateRecipe` con su `handleUpdate` (mapeo 400/403/404/else byte-idéntico
+al del `EditModal` viejo) y el `useEffect(() => setEditServerError(null), [editingId])`. El header gana un
+`Button` primario «Crear receta» al lado del link «Publicar producto →». **`handleCreate` cierra el diálogo
+al guardar** (mismo fix que `9eeea50` para insumos). El `description` del create lleva el párrafo explicativo
+del `<Card>` inline, vía `CREATE_RECIPE_DESCRIPTION` declarado en la página.
+
+**Fix del `step="0.1"`** (deuda del tracker anterior, mismo archivo): los inputs de Utilidad y Mano de obra
+cambian `step="0.1"` → `step="0.01"`. El navegador ya no rechaza `20.25%`. El comentario rancio que documentaba
+el bug como «tracked bug of its own, and fixing it here would break this slice's parity» se elimina (esa
+paridad ya no aplica, es exactamente este slice el que la arregla). **Mejora de UX colateral**: las etiquetas
+de pendiente del create y el edit ahora son distintas — «Creando…» para create, «Guardando…» para edit (la
+forma vieja siempre decía «Guardando…» independientemente del modo).
+
+**Verificación read-only independiente: sin blockers**, con dos advisories sobre la spec del padre:
+
+1. **`useId` ya estaba importado y usado** en el `RecipeForm` original: la spec dijo que el form no lo importaba
+   y que el cuerpo no lo llamaba. Era incorrecto: la línea 1 traía `import { FormEvent, useId, useMemo,
+   useState } from 'react';` y el cuerpo tenía `const formId = useId();`. El writer removió el import y la
+   llamada sin tocar nada más (la firma ya recibía `formId` por prop).
+2. **`useUpdateRecipe` ya estaba importado en su propia línea** en la página (no agrupado con
+   `useCreateRecipe`/`useDeleteRecipe`). La spec dijo «edit the existing import to add useUpdateRecipe», pero
+   no había nada que editar — la importación ya estaba y se consume ahora con `const update =
+   useUpdateRecipe();`.
+
+**Desviación de tamaño de task 6 declarada**: 475 vs el ~400 implícito por la regla. La página cayó 78 líneas
+netas, no las 140 que la spec había estimado (las adiciones pesaron más de lo previsto: ~74 de
+handleUpdate, estado, effect, header button y dos mounts de diálogo). Se acepta con declaración, igual que
+tasks 3, 4 y 5.
+
+Siguiente: task 7 (`RecipeCard` → `ResponsiveRecordList`, replica el patrón de task 2 para insumos: tabla
+desktop, cards mobile, con las acciones de Editar/Eliminar dentro; las cards usan `<h3>` por la convención
+nueva introducida en task 2). -->
