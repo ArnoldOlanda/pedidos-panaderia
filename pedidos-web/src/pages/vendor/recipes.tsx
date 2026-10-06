@@ -9,18 +9,11 @@ import { toApiError } from '../../lib/api';
 import { formatPrice, formatPercent } from '../../lib/format';
 import type { Recipe, RecipeIngredientInput } from '../../lib/recipes';
 import { RecipeFormDialog } from '@/components/recipes/recipe-form-dialog';
+import { RecipeCard } from '@/components/recipes/recipe-card';
+import { RecipeActions } from '@/components/recipes/recipe-actions';
+import { ResponsiveRecordList } from '@/components/records/responsive-record-list';
+import type { RecordColumn } from '@/components/records/responsive-record-list';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,88 +27,6 @@ const CREATE_RECIPE_DESCRIPTION =
 function badRequestMessage(err: unknown): string {
   const apiErr = toApiError(err);
   return apiErr.message || 'Los datos de la receta no son válidos';
-}
-
-function RecipeCard({
-  recipe,
-  canManage,
-  onEdit,
-  onDelete,
-  isDeleting,
-}: {
-  recipe: Recipe;
-  canManage: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  isDeleting: boolean;
-}) {
-  return (
-    <article>
-      <Card>
-        <CardContent className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <h3 className="font-heading text-lg font-semibold">{recipe.name}</h3>
-            <p className="text-sm text-muted-foreground">
-              {recipe.ingredients.length} insumo
-              {recipe.ingredients.length === 1 ? '' : 's'} · Utilidad{' '}
-              {formatPercent(recipe.utilidad)} · Mano de obra{' '}
-              {formatPercent(recipe.manoObra)}
-            </p>
-          </div>
-          <div className="text-right space-y-2">
-            <p className="font-medium text-primary">
-              {formatPrice(recipe.suggestedPrice)}
-            </p>
-            {canManage ? (
-              <div className="flex gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="xs"
-                  onClick={onEdit}
-                >
-                  Editar
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="xs"
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? 'Eliminando…' : 'Eliminar'}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {`¿Eliminar la receta "${recipe.name}"?`}
-                      </AlertDialogTitle>
-                    </AlertDialogHeader>
-                    {/* Cancelar and Eliminar are the visible controls that replace
-                        the browser's own confirm chrome; the title keeps the exact
-                        question the native dialog used to ask. */}
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        variant="destructive"
-                        onClick={onDelete}
-                      >
-                        Eliminar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            ) : (
-              <Badge variant="secondary">Solo lectura</Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </article>
-  );
 }
 
 export function VendorRecipesPage() {
@@ -263,6 +174,39 @@ export function VendorRecipesPage() {
   const isOwner = (recipe: Recipe) =>
     Boolean(user && recipe.createdById === user.id);
 
+  const columns: RecordColumn<Recipe>[] = [
+    { key: 'name', header: 'Nombre', className: 'text-foreground', render: (recipe) => recipe.name },
+    {
+      key: 'ingredients',
+      header: 'Insumos',
+      className: 'text-muted-foreground',
+      render: (recipe) => `${recipe.ingredients.length} insumo${recipe.ingredients.length === 1 ? '' : 's'}`,
+    },
+    { key: 'utilidad', header: 'Utilidad', className: 'text-muted-foreground', render: (recipe) => formatPercent(recipe.utilidad) },
+    { key: 'manoObra', header: 'Mano de obra', className: 'text-muted-foreground', render: (recipe) => formatPercent(recipe.manoObra) },
+    {
+      key: 'price',
+      header: 'Precio sugerido',
+      className: 'text-right text-primary font-medium',
+      headerClassName: 'text-right',
+      render: (recipe) => formatPrice(recipe.suggestedPrice),
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      headerClassName: 'text-right',
+      render: (recipe) => (
+        <RecipeActions
+          recipe={recipe}
+          canManage={isOwner(recipe)}
+          onEdit={() => setEditingId(recipe.id)}
+          onDelete={() => handleDelete(recipe)}
+          isDeleting={remove.isPending && remove.variables === recipe.id}
+        />
+      ),
+    },
+  ];
+
   return (
     <section className="space-y-6">
       <header className="flex items-center justify-between gap-3">
@@ -353,18 +297,20 @@ export function VendorRecipesPage() {
           )}
 
           {!recipesQuery.isLoading && !recipesQuery.isError && sortedRecipes.length > 0 && (
-            <div className="space-y-3">
-              {sortedRecipes.map((recipe) => (
+            <ResponsiveRecordList
+              records={sortedRecipes}
+              columns={columns}
+              getRowKey={(recipe) => recipe.id}
+              renderCard={(recipe) => (
                 <RecipeCard
-                  key={recipe.id}
                   recipe={recipe}
                   canManage={isOwner(recipe)}
                   onEdit={() => setEditingId(recipe.id)}
                   onDelete={() => handleDelete(recipe)}
                   isDeleting={remove.isPending && remove.variables === recipe.id}
                 />
-              ))}
-            </div>
+              )}
+            />
           )}
         </div>
       </section>
