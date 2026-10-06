@@ -11,7 +11,7 @@ de crear o editar un registro.
 ## Status
 
 - Started: 2026-10-05
-- Current task: **4 — Recetas, extracción pura (IngredientRow + validateRecipe)**
+- Current task: **5 — Recetas, extracción pura (RecipeForm)**
 - Branch: `feat/crud-table-modal` (base `main` @ `c4fee2e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local con pasadas read-only independientes)
 - Gate automático: **`npm run typecheck` + `npm run build`**. No hay runner de tests en `pedidos-web`
@@ -144,7 +144,14 @@ cambia sin consumidor en el mismo commit:
       líneas (737 → 781). Es un único cambio lógico y va en un commit, igual que la feature anterior aceptó su
       sobrepaso de 25 líneas en un slice coherente. Verificación read-only independiente: abajo
 - [ ] **4 — Recetas, extracción pura**: `IngredientRow` + `validateRecipe` a `components/recipes/`
-- [ ] **4 — Recetas, extracción pura**: `IngredientRow` + `validateRecipe` a `components/recipes/`
+- [x] **4 — Recetas, extracción pura** (2026-10-05, `d8439f6`): `IngredientRow` (165 líneas) y `validateRecipe` (35) a
+      `src/components/recipes/`. **433 líneas de churn** por la lectura de `git --numstat` (33 por encima del límite de
+      400); Git no puede colapsar un cambio de un-archivo-a-dos en un rename, así que la reubicación aparece como
+      add+delete. El cuerpo de las dos declaraciones es **byte-idéntico** a HEAD; el único cambio en los bytes
+      movidos es la palabra `export`. La página reimporta y baja a 794 líneas (–208). Verificación read-only
+      independiente: sin blockers; la página quedó con tres imports ahora no usados (`formatPrecisePrice`,
+      `INGREDIENT_UNIT_LABELS`, el grupo `@/components/ui/select`) y se eliminaron. RecipeForm/RecipeCard/EditModal/
+      VendorRecipesPage no se tocaron
 - [ ] **5 — Recetas, extracción pura**: `RecipeForm` a `components/recipes/recipe-form.tsx`
 - [ ] **6 — Recetas, alta y edición**: `RecipeFormDialog` para los dos modos, borra el `<Card>` inline y el
       `EditModal` local, agrega botón «Crear receta», scroll interno del modal y **fix del `step="0.1"`** de
@@ -317,3 +324,11 @@ handlers de la página (crear y actualizar), no la forma, así que se queda dond
 **`431286d` corrigió los dos últimos**: `IngredientFormDialog` ahora acepta `description?: string` y la pasa a `FormDialog` → `DialogDescription` (que es además la `aria-describedby` canónica del contenido del diálogo). El comentario rancio se reescribió en términos del propio estado. También en este commit: se **mejoró** la copia de pendiente del create — la forma vieja siempre decía «Guardando…» incluso creando, el diálogo nuevo dice «Creando…» para crear y «Guardando…» para editar; es una mejora, no un regress.
 
 **Deltas visuales a confirmar en tu gate**: (a) la pantalla pierde el `<h2>` «Crear nuevo insumo» (aceptado: `DialogTitle` rinde un `<h2>` mientras el diálogo está abierto); (b) el create está ahora en un modal que se abre desde un botón en el header — la forma sigue scrolleando, los campos y la previsualización del factor de conversión son byte-idénticos; (c) el estado de la forma se **resetea** cada vez que se abre (Radix desmonta el contenido del diálogo al cerrar) — antes el create inline conservaba lo que el usuario hubiera escrito; (d) el edit conserva su ancho `sm:max-w-2xl` via `size="lg"`; (e) el `DialogDescription` aparece debajo del título y arriba del formulario. Siguiente: task 4 (extracción pura de `IngredientRow` + `validateRecipe` en recetas, sin cambio de comportamiento). -->
+
+<!-- 2026-10-05: **Task 4 — recetas, extracción pura** — `d8439f6`, **433 líneas de churn** según `git --numstat`, 33 por encima del límite de 400 (declarado, Git no puede colapsar un cambio de un-archivo-a-dos en un rename). Dos declaraciones movidas byte-identical: `IngredientRow` (165 líneas, `pages/vendor/recipes.tsx:98-262`) y `validateRecipe` (35 líneas, `:264-298`). La página reimporta y baja de 1002 a 794 líneas (–208 netas). RecipeForm, RecipeCard, EditModal y VendorRecipesPage no se tocaron; RecipeForm resuelve los dos símbolos por la importación del page module, así que tampoco necesitó cambio.
+
+**Verificación read-only independiente: sin blockers**, con un recordatorio que el padre corrigió en el mismo commit. La lista de imports que el padre dio al worker para `ingredient-row.tsx` estaba incompleta: el cuerpo byte-identical usa `Button` (el botón «Quitar» de la fila), `formatPrice` (el precio de compra de la línea) y `formatPrecisePrice` (el precio por unidad de uso y el costo parcial) — ninguno de los tres estaba en el bloque de imports. Sin ellos el archivo no compila; el worker agregó exactamente esos tres en el orden `@/lib`-antes-`@/components/ui` que usa el resto de los componentes de la app. Adicionalmente, el barrido de imports no usados de la página omitió `formatPrecisePrice`; la verificación habría fallado con `noUnusedLocals: true`, y el worker lo removió. Lección: las formas en este repo siempre terminan tocando `formatPrecisePrice` además de `formatPrice`, por sub-céntimo; y los `Button` importan por casi cualquier forma.
+
+Tres imports quedaron sin uso en la página después de la mudanza y se borraron: `formatPrecisePrice` (1 ocurrencia en la página post-move = la línea de import), `INGREDIENT_UNIT_LABELS` (0) y el grupo `@/components/ui/select` entero (0 para cada uno de los 5 símbolos). Los siete imports que sí se mantienen: `useId` (lo usa RecipeForm), `Ingredient` (lo usa calculateCost), `RecipeIngredientInput` (lo usan calculateCost, RecipeForm, EditModal y el page), `formatPrice`, `Input`, `Label`, `Button` — todos demostrados con conteos `grep`.
+
+Siguiente: task 5 (extracción pura de `RecipeForm` a `components/recipes/recipe-form.tsx`, también sin cambio de comportamiento). -->
