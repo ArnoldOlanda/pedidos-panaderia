@@ -6,6 +6,8 @@ import { formatPrice } from '@/lib/format';
 import type { Recipe } from '../../lib/recipes';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -57,6 +59,33 @@ function parseYmd(ymd: string): Date | null {
   return parsed;
 }
 
+/**
+ * The form's date fields are yyyy-MM-dd and yyyy-MM-ddThh:mm strings in Lima
+ * time, but the shadcn date pickers speak Date. The two converters below turn
+ * each Lima wall-clock string into a Date whose limaParts() round-trips back
+ * to the same string, regardless of the browser's local timezone. Lima has no
+ * DST, so a fixed UTC-5 offset is correct year-round.
+ */
+const LIMA_OFFSET_HOURS = 5;
+
+function ymdToDate(ymd: string): Date | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
+  if (!m) return undefined;
+  const [, y, mo, d] = m;
+  return new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d), LIMA_OFFSET_HOURS));
+}
+
+function ymdhmToDate(ymdhm: string): Date | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(ymdhm);
+  if (!m) return undefined;
+  const [, y, mo, d, h, mi] = m;
+  return new Date(
+    Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h) + LIMA_OFFSET_HOURS, Number(mi)),
+  );
+}
+
+const todayYmd = (): string => limaParts(new Date()).ymd;
+
 interface ProductFormProps {
   formId: string;
   idPrefix: string;
@@ -91,6 +120,8 @@ export function ProductForm({
   const [price, setPrice] = useState('');
   const [availableDate, setAvailableDate] = useState(defaultAvailableDate);
   const [closesAtLocal, setClosesAtLocal] = useState(defaultClosesAt);
+  const availableDateObj = ymdToDate(availableDate);
+  const closesAtObj = ymdhmToDate(closesAtLocal);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // A 404 means the selected recipe disappeared between load and submit. The
@@ -230,23 +261,33 @@ export function ProductForm({
 
       <div className="space-y-1">
         <Label htmlFor={`${idPrefix}-available-date`}>Fecha disponible</Label>
-        <Input
+        <DatePicker
           id={`${idPrefix}-available-date`}
-          type="date"
-          required
-          value={availableDate}
-          onChange={(e) => setAvailableDate(e.target.value)}
+          value={availableDateObj}
+          onChange={(d) => {
+            if (d) {
+              setAvailableDate(limaParts(d).ymd);
+            }
+          }}
+          placeholder="Selecciona la fecha"
+          disabled={(d) => {
+            const ymd = limaParts(d).ymd;
+            return ymd < todayYmd();
+          }}
         />
       </div>
 
       <div className="space-y-1">
         <Label htmlFor={`${idPrefix}-closes-at`}>Hora de cierre</Label>
-        <Input
+        <DateTimePicker
           id={`${idPrefix}-closes-at`}
-          type="datetime-local"
-          required
-          value={closesAtLocal}
-          onChange={(e) => setClosesAtLocal(e.target.value)}
+          value={closesAtObj}
+          onChange={(d) => {
+            if (d) {
+              setClosesAtLocal(limaParts(d).ymdhm);
+            }
+          }}
+          placeholder="Selecciona fecha y hora"
         />
       </div>
 

@@ -62,6 +62,7 @@ export function DatePicker({
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
+          timeZone="America/Lima"
           selected={value}
           onSelect={onChange}
           disabled={disabled}
