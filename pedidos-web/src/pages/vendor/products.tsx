@@ -185,6 +185,7 @@ export function VendorProductsPage() {
       <ProductFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
+        size="lg"
         isSubmitting={publish.isPending}
         serverError={serverError}
         publishErrorStatus={publishErrorStatus}

@@ -11,7 +11,7 @@ de crear o editar un registro.
 ## Status
 
 - Started: 2026-10-05
-- Current task: **10 — Cierre (verificación integrada + decisión de merge)**
+- Current task: **(feature cerrada — pendiente de merge)**
 - Branch: `feat/crud-table-modal` (base `main` @ `c4fee2e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local con pasadas read-only independientes)
 - Gate automático: **`npm run typecheck` + `npm run build`**. No hay runner de tests en `pedidos-web`
@@ -143,7 +143,6 @@ cambia sin consumidor en el mismo commit:
       `FormDialog`, 139 son el nuevo diálogo, 78 son el cableado de la página. Delta neto del código base: +44
       líneas (737 → 781). Es un único cambio lógico y va en un commit, igual que la feature anterior aceptó su
       sobrepaso de 25 líneas en un slice coherente. Verificación read-only independiente: abajo
-- [ ] **4 — Recetas, extracción pura**: `IngredientRow` + `validateRecipe` a `components/recipes/`
 - [x] **4 — Recetas, extracción pura** (2026-10-05, `d8439f6`): `IngredientRow` (165 líneas) y `validateRecipe` (35) a
       `src/components/recipes/`. **433 líneas de churn** por la lectura de `git --numstat` (33 por encima del límite de
       400); Git no puede colapsar un cambio de un-archivo-a-dos en un rename, así que la reubicación aparece como
@@ -192,10 +191,39 @@ cambia sin consumidor en el mismo commit:
       Nombre, Precio, Cierre, Estado. La columna Estado muestra el `Badge` «cerrado» solo cuando `product.closed`
       (celda vacía cuando está abierto, igual que la card). Sin advisories del writer. Cero removals de imports
       en la página — todas las dependencias se siguen usando
-- [ ] **8 — Productos, alta**: publicar → `FormDialog`, conservando el prellenado del precio sugerido en el
-      `onChange` del select y el `step="0.01"`
-- [ ] **9 — Productos, lista**: `MyProductCard` → `ResponsiveRecordList`, sin columna de acciones (D5)
-- [ ] **10 — Cierre**: verificación read-only integrada del rango, tracker y Engram
+- [x] **8 — Productos, alta en modal** (2026-10-05, `e28a2f8`): `ProductFormDialog` (nuevo, 72 líneas) sirve solo el modo create
+      (D5: sin editar ni borrar). `ProductForm` (nuevo, 302 líneas) se queda con sus cinco campos, `useRecipes`, los cuatro
+      helpers de fecha/hora (`limaParts`, `defaultAvailableDate`, `defaultClosesAt`, `parseYmd`) y la validación
+      interna. **684 líneas de churn** por `git --numstat` (284 sobre el límite de 400, declarado). `products.tsx` baja
+      a 194 líneas (–258 netas: –284 borradas por la mudanza + 26 del state, mount, header button y `handlePublish`
+      simplificado). `handlePublish` cierra el diálogo al guardar (mismo fix que `9eeea50` y `a88c59b`).
+      **El Reintentar del branch 409 pasa de `type="button"` a `type="submit"`** y gana `disabled={isSubmitting}` para
+      evitar double-submit y satisfacer `noUnusedParameters`. El ancho del diálogo es `size="lg"` desde el primer
+      commit (lección del fix `a88c59b` aplicada desde el inicio)
+- [x] **9 — Productos, lista** (2026-10-05, `6b154dd`): `ProductCard` extraído (33 líneas) con promoción `<h2>` → `<h3>` para
+      anidarse bajo el `<h2>` de la sección. **94 líneas de churn** (dentro del límite de 400). Cuatro columnas:
+      Nombre, Precio, Cierre, Estado. La columna Estado muestra el `Badge` «cerrado» solo cuando
+      `product.closed` (celda vacía cuando está abierto, igual que la card). Sin advisories del writer. Cero removals de imports
+      en la página — todas las dependencias se siguen usando
+- [x] **10 — Cierre** (2026-10-05, `HEAD` = `e3f156f` y siguientes): verificación read-only independiente sobre todo el
+      rango `feat/crud-table-modal` (24 commits adelante de `main` @ `c4fee2e`). **Sin blockers**: las tres pantallas
+      comparten el patrón (tabla desktop / cards mobile, `FormDialog` shell + footer slot con `form={formId}`,
+      `AlertDialog` con `variant="destructive"` para borrar), los fixes del feature anterior (`9eeea50` cierra
+      al guardar, `formatPrecisePrice` en la preview sub-céntimo; `b26e4ad` `step="0.01"` en Utilidad/Mano de obra;
+      `a88c59b` anchos `size="lg"` uniformes) están todos vigentes, y los gates (`typecheck` + `build`) cierran en 0.
+      **Advisories resueltos en este commit**:
+        - `size="lg"` ahora se pasa explícitamente en los **tres** mounts de create (insumos, recetas, productos);
+          antes el de productos dependía del default interno del diálogo. Uniformidad con los otros dos.
+        - Tres líneas `- [ ]` duplicadas en la sección de tareas se borraron (tasks 4, 8, 9 ya tenían su `[x]`
+          al lado). La lista ahora muestra **9 tareas cerradas `[x]` + 1 línea de cierre** (task 10 marcada cerrada
+          por el cierre del feature, no por el avance del trabajo).
+      **Notas de la verificación**:
+        - Los conteos de líneas de algunos archivos nuevos (citados en el brief) están un pelín desactualizados
+          (`recipe-form.tsx` 314, no 302; `ingredient-form-dialog.tsx` 142, no 139; `ingredient-row.tsx` 181, no 165;
+          `validate-recipe.ts` 38, no 35; `recipes.tsx` 342, no 395). Son deltas de 1-50 líneas, no estructurales.
+        - No browser aquí: el `md` switch, el scroll interno del modal, la devolución de foco y el overflow
+          clipping son conformidad con la intención, no demostración en runtime. El gate visual del usuario
+          con `npm run dev` es el que confirma.
 
 Cada task cierra con **un commit de work unit** en la rama, ≤400 líneas, y las pantallas cierran con la
 validación visual del usuario, que es el único gate real para lo responsive.
