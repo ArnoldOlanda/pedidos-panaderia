@@ -65,7 +65,7 @@ export function Layout() {
       <footer className="text-center text-xs text-muted-foreground py-4">
         Pedidos Panadería · MVP
       </footer>
-      <Toaster richColors closeButton position="top-right" />
+      <Toaster richColors closeButton position="top-center" />
     </div>
   );
 }
