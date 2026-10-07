@@ -12,34 +12,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProductFormDialog } from '@/components/products/product-form-dialog';
+import { ProductCard } from '@/components/products/product-card';
+import { ResponsiveRecordList } from '@/components/records/responsive-record-list';
+import type { RecordColumn } from '@/components/records/responsive-record-list';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const LOADING_LABEL = 'Cargando productos';
-
-function MyProductCard({ product }: { product: Product }) {
-  return (
-    <article>
-      <Card>
-        <CardContent>
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the card without a heading element. */}
-              <h2 className="font-heading text-lg font-semibold">{product.name}</h2>
-              <p className="text-sm text-muted-foreground">
-                Cierra a las {formatCloseTimeLima(product.closesAt)} ·{' '}
-                {closesInLabel(product.closesAt, product.closed)}
-              </p>
-            </div>
-            <div className="text-right space-y-1">
-              <p className="text-primary font-medium">{formatPrice(product.price)}</p>
-              {product.closed && <Badge variant="secondary">cerrado</Badge>}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </article>
-  );
-}
 
 function MyProductSkeleton() {
   return (
@@ -75,6 +53,28 @@ export function VendorProductsPage() {
     if (!todayProducts.data) return [];
     return [...todayProducts.data].sort((a, b) => a.closesAt.localeCompare(b.closesAt));
   }, [todayProducts.data]);
+
+  const columns: RecordColumn<Product>[] = [
+    { key: 'name', header: 'Nombre', className: 'text-foreground', render: (product) => product.name },
+    {
+      key: 'price',
+      header: 'Precio',
+      className: 'text-right text-primary font-medium',
+      headerClassName: 'text-right',
+      render: (product) => formatPrice(product.price),
+    },
+    {
+      key: 'close',
+      header: 'Cierre',
+      className: 'text-muted-foreground',
+      render: (product) => `Cierra a las ${formatCloseTimeLima(product.closesAt)} · ${closesInLabel(product.closesAt, product.closed)}`,
+    },
+    {
+      key: 'status',
+      header: 'Estado',
+      render: (product) => (product.closed ? <Badge variant="secondary">cerrado</Badge> : null),
+    },
+  ];
 
   const handlePublish = (input: PublishProductInput) => {
     setServerError(null);
@@ -173,11 +173,12 @@ export function VendorProductsPage() {
         )}
 
         {!todayProducts.isLoading && !todayProducts.isError && sortedToday.length > 0 && (
-          <div className="space-y-3">
-            {sortedToday.map((product) => (
-              <MyProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <ResponsiveRecordList
+            records={sortedToday}
+            columns={columns}
+            getRowKey={(product) => product.id}
+            renderCard={(product) => <ProductCard product={product} />}
+          />
         )}
       </section>
 
