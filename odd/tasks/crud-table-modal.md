@@ -11,7 +11,7 @@ de crear o editar un registro.
 ## Status
 
 - Started: 2026-10-05
-- Current task: **9 — Productos, lista (MyProductCard → ResponsiveRecordList)**
+- Current task: **10 — Cierre (verificación integrada + decisión de merge)**
 - Branch: `feat/crud-table-modal` (base `main` @ `c4fee2e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local con pasadas read-only independientes)
 - Gate automático: **`npm run typecheck` + `npm run build`**. No hay runner de tests en `pedidos-web`
@@ -187,7 +187,11 @@ cambia sin consumidor en el mismo commit:
       **El Reintentar del branch 409 pasa de `type="button"` a `type="submit"`** y gana `disabled={isSubmitting}` para
       evitar double-submit y satisfacer `noUnusedParameters`. El ancho del diálogo es `size="lg"` desde el primer
       commit (lección del fix `a88c59b` aplicada desde el inicio)
-- [ ] **9 — Productos, lista**: `MyProductCard` → `ResponsiveRecordList`
+- [x] **9 — Productos, lista** (2026-10-05, `6b154dd`): `ProductCard` extraído (33 líneas) con promoción `<h2>` → `<h3>`
+      para anidarse bajo el `<h2>` de la sección. **94 líneas de churn** (dentro del límite de 400). Cuatro columnas:
+      Nombre, Precio, Cierre, Estado. La columna Estado muestra el `Badge` «cerrado» solo cuando `product.closed`
+      (celda vacía cuando está abierto, igual que la card). Sin advisories del writer. Cero removals de imports
+      en la página — todas las dependencias se siguen usando
 - [ ] **8 — Productos, alta**: publicar → `FormDialog`, conservando el prellenado del precio sugerido en el
       `onChange` del select y el `step="0.01"`
 - [ ] **9 — Productos, lista**: `MyProductCard` → `ResponsiveRecordList`, sin columna de acciones (D5)
@@ -513,3 +517,43 @@ Siguiente: task 9 (`MyProductCard` → `ResponsiveRecordList`, replica tasks 2 y
 desktop, cards mobile, con las cards usando `<h3>` por la convención nueva; acciones de «Gestionar
 recetas» o enlace al producto si hubiera — D5: sin acciones de editar/borrar en el row porque la API
 no las tiene). -->
+
+<!-- 2026-10-05: **Task 9 — productos, lista** — `6b154dd`, **94 líneas de churn** según `git --numstat` (dentro del
+límite de 400, sin desviación). La mitad de la task 7: como D5 dice que no hay editar ni borrar para productos,
+la página no necesita `ProductActions` (no hay acciones que extraer), solo `ProductCard` (33 líneas, antes era
+`MyProductCard` de 26 líneas en la página). El rename es para consistencia con `IngredientCard` y `RecipeCard` que
+tampoco llevan prefijo. **Una sola mejora estructural, además del move**: el título de la card pasa de `<h2>` a
+`<h3>` para anidarse bajo el `<h2>Tus productos de hoy</h2>` de la sección (convención de task 2; las otras
+dos cards ya la aplican, esta era la última en violarla).
+
+Cuatro columnas, **cero acciones**:
+- `Nombre` — `product.name` con `className: 'text-foreground'`.
+- `Precio` — `formatPrice(product.price)` con `className: 'text-right text-primary font-medium'`,
+  `headerClassName: 'text-right'`. Mismo estilo que la card.
+- `Cierre` — template string `` `Cierra a las ${formatCloseTimeLima(product.closesAt)} · ${closesInLabel(product.closesAt, product.closed)}` ``,
+  byte-idéntico al meta line de la card. `className: 'text-muted-foreground'`.
+- `Estado` — `product.closed ? <Badge variant="secondary">cerrado</Badge> : null`. La celda queda **vacía**
+  cuando está abierto, igual que la card (que solo muestra el badge cuando `product.closed`).
+
+**Verificación read-only independiente: sin blockers, sin advisories**. La spec del padre enumeró los imports
+de forma explícita y la lista coincidió con el cuerpo. Cero removals de imports en la página — todos se
+siguen usando (el writer lo verificó con `grep -c` para cada símbolo). Las pruebas de bytes de la columna
+derecha y del cierre salieron vacías. Dato de proceso a flaggear: la página **creció una línea** (194 → 195),
+no cayó las 30 que la spec había estimado — el array `columns` de 22 líneas casi compensa exactamente la card
+borrada, y los 3 imports + 1 línea de la lista neta se quedan con +1. El límite de 400 protege el review
+workload, no la cuenta de líneas; el cambio es honesto y la cifra real es lo que el `git diff --numstat`
+muestra.
+
+**Deltas visuales a confirmar en tu gate** (idénticos a tasks 2 y 7): padding de celdas y encabezados adopta
+la densidad de la primitiva; filas con `border-b` y `hover`; superficie calcada de `Card`; encabezados en muted
+por default del shell. Lo único nuevo en este task es que la columna Estado puede quedar **vacía** para
+productos abiertos, igual que la card original.
+
+**Convención consolidada**: `IngredientCard` (task 2), `RecipeCard` (task 7) y ahora `ProductCard` (task 9)
+son la familia de cards mobile de la feature. Las tres tienen la misma forma (root `article` → `Card` →
+`CardContent`, con `<h3>` para el título). Los archivos viven en `src/components/{ingredients,recipes,products}/`
+respectivamente, y todos son byte-idénticos a sus versiones inline previas, excepto `ProductCard` que también
+corrige la promoción `<h2>` → `<h3>`.
+
+Siguiente: task 10 (cierre — verificación read-only integrada del rango completo `feat/crud-table-modal`,
+reconciliación del tracker, decisión de merge a `main`). -->
