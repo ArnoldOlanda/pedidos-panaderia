@@ -4,7 +4,6 @@ import { useAuth } from '../../store/auth';
 import { useMyTodayProducts } from '../../hooks/use-my-today-products';
 import { useOrdersByProduct } from '../../hooks/use-orders-by-product';
 import { useUpdateOrderStatus } from '../../hooks/use-update-order-status';
-import { toApiError } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
 import type { Order } from '../../lib/orders';
 import { STATUS_BADGE, STATUS_LABEL, TIME_FORMAT } from '../../lib/order-status';
@@ -37,12 +36,6 @@ function OrderRow({
 
   const isThisPending =
     updateStatus.isPending && updateStatus.variables?.orderId === order.id;
-  const thisError =
-    !updateStatus.isPending &&
-    updateStatus.isError &&
-    updateStatus.variables?.orderId === order.id
-      ? toApiError(updateStatus.error)
-      : null;
 
   const trigger = (status: 'LISTO' | 'ENTREGADO') => {
     updateStatus.mutate({ orderId: order.id, status });
@@ -76,13 +69,13 @@ function OrderRow({
             </div>
           </div>
 
-          {!isThisPending && !thisError && order.status === 'PENDIENTE' && (
+          {!isThisPending && order.status === 'PENDIENTE' && (
             <Button type="button" className="mt-3" onClick={() => trigger('LISTO')}>
               Marcar LISTO
             </Button>
           )}
 
-          {!isThisPending && !thisError && order.status === 'LISTO' && (
+          {!isThisPending && order.status === 'LISTO' && (
             <Button
               type="button"
               className="mt-3 bg-success text-success-foreground hover:bg-success/90"
@@ -90,28 +83,6 @@ function OrderRow({
             >
               Marcar ENTREGADO
             </Button>
-          )}
-
-          {thisError && (
-            <Alert variant="destructive" className="mt-3">
-              <AlertTitle>
-                {thisError.status === 400
-                  ? thisError.message
-                  : 'No pudimos actualizar este pedido. Reintenta'}
-              </AlertTitle>
-              <AlertDescription>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const next = order.status === 'PENDIENTE' ? 'LISTO' : 'ENTREGADO';
-                    trigger(next);
-                  }}
-                >
-                  Reintentar
-                </Button>
-              </AlertDescription>
-            </Alert>
           )}
         </CardContent>
       </Card>

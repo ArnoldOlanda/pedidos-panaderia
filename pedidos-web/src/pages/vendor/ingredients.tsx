@@ -53,25 +53,6 @@ function writeErrorMessage(err: unknown): string {
   return apiErr.message || 'No pudimos guardar el insumo';
 }
 
-// 403 non-vendor write; 404 missing; 409 in-use conflict (backend message
-// shown verbatim so the vendor reads the recipe reference reason).
-function deleteErrorMessage(err: unknown): string {
-  const apiErr = toApiError(err);
-  if (apiErr.status === 403) {
-    return 'Solo los vendedores pueden eliminar insumos';
-  }
-  if (apiErr.status === 404) {
-    return 'El insumo ya no existe';
-  }
-  if (apiErr.status === 409) {
-    return (
-      apiErr.message ||
-      'No se puede eliminar el insumo porque está en uso por una receta'
-    );
-  }
-  return apiErr.message || 'No pudimos eliminar el insumo';
-}
-
 export function VendorIngredientsPage() {
   const user = useAuth((s) => s.user);
   const ingredientsQuery = useIngredients();
@@ -91,7 +72,6 @@ export function VendorIngredientsPage() {
     null,
   );
   const [editServerError, setEditServerError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // The dialog receives the write errors as props and does not own them, so the
   // page clears them whenever the edit target changes.
@@ -165,12 +145,7 @@ export function VendorIngredientsPage() {
   };
 
   const handleDelete = (ingredient: Ingredient) => {
-    setDeleteError(null);
-    remove.mutate(ingredient.id, {
-      onError: (err) => {
-        setDeleteError(deleteErrorMessage(err));
-      },
-    });
+    remove.mutate(ingredient.id);
   };
 
   const columns: RecordColumn<Ingredient>[] = [
@@ -231,12 +206,6 @@ export function VendorIngredientsPage() {
           </Button>
         </div>
       </header>
-
-      {deleteError && (
-        <Alert variant="destructive">
-          <AlertTitle>{deleteError}</AlertTitle>
-        </Alert>
-      )}
 
       <section className="space-y-3">
         {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the section without a heading element. */}
