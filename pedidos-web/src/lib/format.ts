@@ -41,3 +41,12 @@ export function closesInLabel(closesAtIso: string, closed: boolean, now = Date.n
   const m = min % 60;
   return m === 0 ? `cierra en ${h} h` : `cierra en ${h} h ${m} min`;
 }
+
+// A recipe response may omit the labor column an older backend does not return.
+// Rendering must survive that (there is no error boundary around this route), so
+// a non-finite value shows the neutral placeholder instead of throwing on
+// value.toFixed(2). Never fabricate a default percentage here.
+export function formatPercent(value: number): string {
+  if (!Number.isFinite(value)) return '—';
+  return `${value.toFixed(2)}%`;
+}
