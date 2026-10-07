@@ -11,7 +11,7 @@ de crear o editar un registro.
 ## Status
 
 - Started: 2026-10-05
-- Current task: **8 — Productos, alta en modal**
+- Current task: **9 — Productos, lista (MyProductCard → ResponsiveRecordList)**
 - Branch: `feat/crud-table-modal` (base `main` @ `c4fee2e`), creada y con este tracker commiteado
 - RDD: off en este clon (review local con pasadas read-only independientes)
 - Gate automático: **`npm run typecheck` + `npm run build`**. No hay runner de tests en `pedidos-web`
@@ -178,8 +178,16 @@ cambia sin consumidor en el mismo commit:
       `AlertDialog` de borrado (incluyendo el badge «Solo lectura» para recetas no propias), compartido por la
       tabla y la card. `recipes.tsx` baja a 341 líneas (–54 netas). La card mantiene el `<h3>` (convención de task
       2). Sin advisories del writer esta vez
-- [ ] **8 — Productos, alta en modal**: publicar → `FormDialog`, conservando el prellenado del precio sugerido en el
-      `onChange` del select y el `step="0.01"`
+- [x] **8 — Productos, alta en modal** (2026-10-05, `e28a2f8`): `ProductFormDialog` (nuevo, 72 líneas) sirve solo el modo create
+      (D5: sin editar ni borrar). `ProductForm` (nuevo, 302 líneas) se queda con sus cinco campos, `useRecipes`, los cuatro
+      helpers de fecha/hora (`limaParts`, `defaultAvailableDate`, `defaultClosesAt`, `parseYmd`) y la validación
+      interna. **684 líneas de churn** por `git --numstat` (284 sobre el límite de 400, declarado). `products.tsx` baja
+      a 194 líneas (–258 netas: –284 borradas por la mudanza + 26 del state, mount, header button y `handlePublish`
+      simplificado). `handlePublish` cierra el diálogo al guardar (mismo fix que `9eeea50` y `a88c59b`).
+      **El Reintentar del branch 409 pasa de `type="button"` a `type="submit"`** y gana `disabled={isSubmitting}` para
+      evitar double-submit y satisfacer `noUnusedParameters`. El ancho del diálogo es `size="lg"` desde el primer
+      commit (lección del fix `a88c59b` aplicada desde el inicio)
+- [ ] **9 — Productos, lista**: `MyProductCard` → `ResponsiveRecordList`
 - [ ] **8 — Productos, alta**: publicar → `FormDialog`, conservando el prellenado del precio sugerido en el
       `onChange` del select y el `step="0.01"`
 - [ ] **9 — Productos, lista**: `MyProductCard` → `ResponsiveRecordList`, sin columna de acciones (D5)
@@ -451,3 +459,57 @@ fuera del repo, no removida (read-only task); el OS la limpia.
 
 Siguiente: task 8 (modalizar el alta de productos — el único flujo que tiene la feature, sin editar ni
 borrar por D5 — replicando el patrón de tasks 3 y 6). -->
+
+<!-- 2026-10-05: **Task 8 — productos, alta en modal** — `e28a2f8`, **684 líneas de churn** según `git --numstat`
+(284 sobre el límite de 400, declarado). El create es el único flujo de productos (D5, sin editar ni borrar
+porque la API no lo tiene). Mismo patrón que tasks 3 y 6: el `<Card>` inline con la forma se borra, se
+agrega el botón «Publicar producto» en el header, y se monta un `ProductFormDialog` que envuelve el
+`FormDialog` con el footer.
+
+**Dos mudanzas en una**:
+- `ProductForm` (302 líneas) absorbe **cinco cosas** que antes vivían en la página: los cinco `useState` de
+  los campos, la `validate`, la `handleRecipeChange` (prefill del precio sugerido con `recipe.suggestedPrice.toFixed(2)`
+  — la deuda de `6018b3e`), el `useRecipes` para popular el Select, y los cuatro helpers de fecha/hora
+  (`limaParts`, `defaultAvailableDate`, `defaultClosesAt`, `parseYmd`). La página los pierde todos.
+- `ProductFormDialog` (72 líneas) es el shell. `formId` por `useId()`, `idPrefix="vendor-products"` literal,
+  `size="lg"` por default (lección del fix `a88c59b` aplicada desde el inicio, sin pasar por la
+  versión estrecha), footer con `Cancelar` + submit `form={formId}` con label `Publicar producto`/`Publicando…`.
+
+**La página baja a 194 líneas (–258 netas)**: 26 se agregan (`createOpen`, derivación de `publishErrorStatus`,
+`handlePublish` simplificado, botón del header, mount del diálogo) y 284 se borran (la forma inline + los
+cuatro helpers + los imports huérfanos).
+
+**`handlePublish` simplificado**: la página ya no arma el `PublishProductInput` ni valida — la forma le
+pasa el input ya construido y validado. La página solo muta y cierra el diálogo al éxito (el mismo fix
+de `9eeea50` para insumos y `b26e4ad` para recetas). El **404 clear-recipeId** se muda a un `useEffect`
+en la forma (`useEffect(() => { if (publishErrorStatus === 404) setRecipeId(''); }, [publishErrorStatus])`),
+porque `recipeId` ahora es estado interno de la forma y solo ella puede limpiarlo.
+
+**Dos correcciones del writer, ambas defensivas y declaradas**:
+1. **Reintentar pasa de `type="button"` + `onClick={handleSubmit()}` a `type="submit"`**: ahora la forma es
+dueña de su propio handler de submit, y el botón simplemente dispara el submit nativo (mismo flujo que
+cualquier otro submit del form). El copy «Reintentar» queda byte-idéntico.
+2. **Reintentar gana `disabled={isSubmitting}`**: defensa contra double-submit mientras está pending. El
+lado práctico es que sin este uso del prop `isSubmitting` la forma fallaba `noUnusedParameters: true`
+de `tsc`. La decisión es mejora de UX y cumplimiento del linter.
+
+**Lección del fix `a88c59b` aplicada desde el inicio**: el diálogo arranca con `size="lg"` por default
+en el propio `ProductFormDialog`. No se cometió el error de tasks 3 y 6 de dejar el create en el default
+estrecho para que después el usuario tuviera que reportarlo.
+
+**Verificación read-only independiente: sin blockers**, sin advisories sobre la spec del padre. La
+lección de tasks 4-5-6 (enumerar los imports del cuerpo de forma explícita en la spec, sin asumir) se
+mantuvo esta vez: la lista de 19 imports del writer coincidió con el cuerpo, y la prueba de identidad de
+bytes de los cuatro helpers salió vacía en los tres (`limaParts`, `defaultAvailableDate`, `defaultClosesAt`,
+`parseYmd`). Único dato de proceso: el `useMemo` se quedó en la página porque `sortedToday` lo usa
+para la lista — el writer lo verificó con `grep -c "useMemo"` y no lo removió.
+
+**Desviación de tamaño de task 8 declarada**: 684 vs el ~520-550 que la spec había estimado. La forma
+real son 302 líneas (vs ~190): la spec subestimó el peso de los 19 imports + los 40 de los helpers
+byte-idénticos + los ~85 de estado y effects + los ~130 de markup (5 campos + caja de previsualización
++ display de error de 4 ramas). Se acepta con declaración, igual que tasks 3, 4, 5 y 6.
+
+Siguiente: task 9 (`MyProductCard` → `ResponsiveRecordList`, replica tasks 2 y 7 para productos: tabla
+desktop, cards mobile, con las cards usando `<h3>` por la convención nueva; acciones de «Gestionar
+recetas» o enlace al producto si hubiera — D5: sin acciones de editar/borrar en el row porque la API
+no las tiene). -->
