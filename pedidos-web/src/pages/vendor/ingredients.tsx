@@ -92,13 +92,6 @@ export function VendorIngredientsPage() {
   );
   const [editServerError, setEditServerError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [flashMessage, setFlashMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!flashMessage) return;
-    const timer = setTimeout(() => setFlashMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, [flashMessage]);
 
   // The dialog receives the write errors as props and does not own them, so the
   // page clears them whenever the edit target changes.
@@ -146,7 +139,6 @@ export function VendorIngredientsPage() {
     create.mutate(input, {
       onSuccess: () => {
         setCreateOpen(false);
-        setFlashMessage('Insumo creado');
       },
       onError: (err) => {
         setCreateServerError(writeErrorMessage(err));
@@ -175,9 +167,6 @@ export function VendorIngredientsPage() {
   const handleDelete = (ingredient: Ingredient) => {
     setDeleteError(null);
     remove.mutate(ingredient.id, {
-      onSuccess: () => {
-        setFlashMessage('Insumo eliminado');
-      },
       onError: (err) => {
         setDeleteError(deleteErrorMessage(err));
       },
@@ -242,15 +231,6 @@ export function VendorIngredientsPage() {
           </Button>
         </div>
       </header>
-
-      {flashMessage && (
-        <div
-          role="status"
-          className="rounded-lg bg-success px-4 py-3 text-sm text-success-foreground"
-        >
-          {flashMessage}
-        </div>
-      )}
 
       {deleteError && (
         <Alert variant="destructive">

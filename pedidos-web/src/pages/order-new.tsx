@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useProduct } from '../hooks/use-product';
 import { usePlaceOrder } from '../hooks/use-place-order';
@@ -55,17 +55,9 @@ export function OrderNewPage() {
     return { buyerDni: initialDni, buyerName: '', buyerApellidos: '', buyerCarrera: '' };
   });
   const [orderError, setOrderError] = useState<{ status: number; message: string } | null>(null);
-  const [flashMessage, setFlashMessage] = useState<string | null>(null);
 
   const placeOrder = usePlaceOrder();
   const pending = placeOrder.isPending;
-
-  // Auto-fade the success flash after 3s
-  useEffect(() => {
-    if (!flashMessage) return;
-    const timer = setTimeout(() => setFlashMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, [flashMessage]);
 
   const productIsClosed = Boolean(data?.closed) || (data ? new Date(data.closesAt).getTime() <= Date.now() : false);
 
@@ -98,7 +90,6 @@ export function OrderNewPage() {
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem(LAST_DNI_KEY, buyer.buyerDni);
           }
-          setFlashMessage('Pedido confirmado');
           setTimeout(() => navigate(`/orders?dni=${encodeURIComponent(buyer.buyerDni)}`), 1500);
         },
         onError: (err) => {
@@ -114,15 +105,6 @@ export function OrderNewPage() {
       <Link to="/catalog" className="text-sm text-primary hover:underline">
         ← Catálogo
       </Link>
-
-      {flashMessage && (
-        <div
-          role="status"
-          className="rounded-lg bg-success px-4 py-3 text-sm text-success-foreground"
-        >
-          {flashMessage}
-        </div>
-      )}
 
       {isLoading && <NewOrderSkeleton />}
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
 import { useMyTodayProducts } from '../../hooks/use-my-today-products';
@@ -39,13 +39,6 @@ export function VendorProductsPage() {
 
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [flashMessage, setFlashMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!flashMessage) return;
-    const timer = setTimeout(() => setFlashMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, [flashMessage]);
 
   const publishErrorStatus = publish.error ? toApiError(publish.error).status : null;
 
@@ -81,7 +74,6 @@ export function VendorProductsPage() {
     publish.mutate(input, {
       onSuccess: () => {
         setCreateOpen(false);
-        setFlashMessage('Producto publicado');
       },
       onError: (err) => {
         setServerError(toApiError(err).message || 'No pudimos publicar el producto');
@@ -121,15 +113,6 @@ export function VendorProductsPage() {
           Publicar producto
         </Button>
       </header>
-
-      {flashMessage && (
-        <div
-          role="status"
-          className="rounded-lg bg-success px-4 py-3 text-sm text-success-foreground"
-        >
-          {flashMessage}
-        </div>
-      )}
 
       <section className="space-y-3">
         <h2 className="font-heading text-lg font-semibold">Tus productos de hoy</h2>
