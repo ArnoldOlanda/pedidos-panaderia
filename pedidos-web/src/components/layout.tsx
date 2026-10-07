@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate, type NavLinkRenderProps } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../store/auth';
 import { logoutRequest } from '../lib/auth';
@@ -64,6 +65,7 @@ export function Layout() {
       <footer className="text-center text-xs text-muted-foreground py-4">
         Pedidos Panadería · MVP
       </footer>
+      <Toaster richColors closeButton position="top-right" />
     </div>
   );
 }
