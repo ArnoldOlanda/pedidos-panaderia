@@ -15,6 +15,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import type { JwtUser } from '../auth/strategies/jwt.strategy';
 import { ProductsService } from './products.service';
+import type { VendorTodayProduct } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Product } from './product.entity';
 
@@ -29,6 +30,13 @@ export class ProductsController {
   @Get('today')
   listToday(): Promise<unknown[]> {
     return this.service.listTodayPublic();
+  }
+
+  @Get('today/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('VENDEDOR')
+  listTodayAll(): Promise<VendorTodayProduct[]> {
+    return this.service.listTodayAll();
   }
 
   @Get('mine/today')

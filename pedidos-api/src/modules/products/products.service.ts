@@ -9,6 +9,25 @@ import { Product } from './product.entity';
 import { Recipe } from '../recipes/recipe.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 
+/**
+ * Product shape for the shared vendor board.
+ *
+ * Deliberately not the `Product` entity: it adds the publisher's name while
+ * keeping the `User` row (dni, pushSub, createdAt) out of the response.
+ */
+export interface VendorTodayProduct {
+  id: string;
+  recipeId: string;
+  name: string;
+  price: number;
+  availableDate: string;
+  closesAt: Date;
+  closed: boolean;
+  createdById: string;
+  createdAt: Date;
+  createdByName: string;
+}
+
 @Injectable()
 export class ProductsService {
   constructor(
@@ -44,6 +63,35 @@ export class ProductsService {
       where: { availableDate: this.todayString(), createdById },
       order: { closesAt: 'ASC' },
     });
+  }
+
+  /**
+   * Today's products from every vendor, for the shared vendor board.
+   *
+   * Vendor-only: the publisher's name must not reach the public catalog, so
+   * this is a separate method and endpoint from `listTodayPublic`. The rows
+   * are mapped field by field instead of returned as entities, because
+   * returning them would serialise the eager-loaded `createdBy` User
+   * (dni, pushSub, createdAt) into the response.
+   */
+  async listTodayAll(): Promise<VendorTodayProduct[]> {
+    const rows = await this.repo.find({
+      where: { availableDate: this.todayString() },
+      relations: { createdBy: true },
+      order: { closesAt: 'ASC' },
+    });
+    return rows.map((p) => ({
+      id: p.id,
+      recipeId: p.recipeId,
+      name: p.name,
+      price: p.price,
+      availableDate: p.availableDate,
+      closesAt: p.closesAt,
+      closed: p.closed,
+      createdById: p.createdById,
+      createdAt: p.createdAt,
+      createdByName: p.createdBy?.name ?? '',
+    }));
   }
 
   async findOnePublic(id: string): Promise<Product> {
