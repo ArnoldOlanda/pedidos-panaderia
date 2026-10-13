@@ -37,12 +37,12 @@ Permite a un usuario registrarse como **vendedor** desde la web y deja el login 
 ## Tareas (T1–T7)
 
 - [x] **T1 — Tracker**: `odd/tasks/vendor-registration.md` (este commit).
-- [ ] **T2 — Backend register**: `RegisterDto` (`dni`, `name` con mismas validaciones que el `LoginDto` actual), `POST /auth/register` en `AuthController` (201 + cookie + `{ user }`, 409 si el DNI existe), `AuthService.register` (crea `VENDEDOR`, setea cookie via `res`). **Factorizar el seteo de cookie** entre `login` y `register` para no duplicar.
-- [ ] **T3 — Backend login estricto**: `LoginDto` queda solo con `dni`. `AuthService.login` busca el user; si no existe → `UnauthorizedException('DNI no registrado')`. Borrar la rama `users.create({ role: 'COMPRADOR' })`. Si el user existe pero no es `VENDEDOR`, mantiene el 403 (defensa contra la fila legacy del seed).
-- [ ] **T4 — Frontend lib**: `registerRequest(dni, name)` en `src/lib/auth.ts`. `useRegister` en `src/hooks/use-register.ts` (reusa `useAuth.setUser` y `navigate('/vendor/products', { replace: true })`, mismo `onMutate`/`onSuccess`/`onError` que `useLogin`). `loginRequest` se reduce a `(dni: string) => api.post(...)`.
-- [ ] **T5 — Frontend register page**: `src/pages/register.tsx` con shadcn primitives (Card/Label/Input/Button/Alert), role=status para el estado pending, `<h1>` real, link al login. Ruta `/register` agregada en `router.tsx`. Auto-focus en el campo DNI.
-- [ ] **T6 — Frontend login refactor**: `src/pages/login.tsx` pierde el campo `nombre` y el `setName`. `handleSubmit` llama a `loginRequest(dni)`. Muestra el hint "DNI no registrado" en 401 (mensaje del backend) y agrega el link "¿Sos nuevo? Registrate como vendedor" debajo del botón.
-- [ ] **T7 — Cierre**: reconciliar el tracker con los resultados de cada task, verificación final de gates (typecheck + build en `pedidos-api` y `pedidos-web`), commit de cierre con este archivo actualizado.
+- [x] **T2 — Backend register**: `RegisterDto` (`dni`, `name` con mismas validaciones que el `LoginDto` actual), `POST /auth/register` en `AuthController` (201 + cookie + `{ user }`, 409 si el DNI existe), `AuthService.register` (crea `VENDEDOR`, setea cookie via `res`). **Factorizar el seteo de cookie** entre `login` y `register` para no duplicar.
+- [x] **T3 — Backend login estricto**: `LoginDto` queda solo con `dni`. `AuthService.login` busca el user; si no existe → `UnauthorizedException('DNI no registrado')`. Borrar la rama `users.create({ role: 'COMPRADOR' })`. Si el user existe pero no es `VENDEDOR`, mantiene el 403 (defensa contra la fila legacy del seed).
+- [x] **T4 — Frontend lib**: `registerRequest(dni, name)` en `src/lib/auth.ts`. `useRegister` en `src/hooks/use-register.ts` (reusa `useAuth.setUser` y `navigate('/vendor/products', { replace: true })`, mismo `onMutate`/`onSuccess`/`onError` que `useLogin`). `loginRequest` se reduce a `(dni: string) => api.post(...)`.
+- [x] **T5 — Frontend register page**: `src/pages/register.tsx` con shadcn primitives (Card/Label/Input/Button/Alert), role=status para el estado pending, `<h1>` real, link al login. Ruta `/register` agregada en `router.tsx`. Auto-focus en el campo DNI.
+- [x] **T6 — Frontend login refactor**: `src/pages/login.tsx` pierde el campo `nombre` y el `setName`. `handleSubmit` llama a `loginRequest(dni)`. Muestra el hint "DNI no registrado" en 401 (mensaje del backend) y agrega el link "¿Sos nuevo? Registrate como vendedor" debajo del botón.
+- [x] **T7 — Cierre**: reconciliar el tracker con los resultados de cada task, verificación final de gates (typecheck + build en `pedidos-api` y `pedidos-web`), commit de cierre con este archivo actualizado.
 
 ---
 
@@ -88,10 +88,30 @@ Total estimado: **10 archivos, +~280 / −~80**.
 
 | Task | Resultado | Commit | Notas |
 |---|---|---|---|
-| T1 | Tracker creado | (este commit) | — |
-| T2 | | | |
-| T3 | | | |
-| T4 | | | |
-| T5 | | | |
-| T6 | | | |
-| T7 | | | |
+| T1 | Tracker creado | `8e2943b` | — |
+| T2 | Backend register: DTO + service + controller (cookie factorizada) | `4d644aa` | 3 archivos, +57/−7 |
+| T3 | Backend login estricto: DTO slim-down, 401 si no existe, 403 si no es VENDEDOR | `8aece65` | 2 archivos, +5/−13 |
+| T4 + T5 | Frontend: `registerRequest` + `useRegister` + `RegisterPage` + ruta `/register` | `b2afd7c` | 4 archivos, +158/−1 |
+| T6 | Frontend login refactor: sin nombre, link a /register, hints 401/403 | `26310e1` | 3 archivos, +18/−26 |
+| T7 | Cierre: gates verdes, tracker reconciliado | (commit de cierre) | — |
+
+## Resultado neto de la feature
+
+- **6 commits** en `feat/vendor-registration`, base `main@145d676`.
+- **10 archivos** cambiados: 5 backend (login.dto, register.dto, auth.service, auth.controller, +0 en auth.module porque `UsersModule` ya estaba importado vía `TypeOrmModule.forFeature([User])`) y 5 frontend (lib/auth, hooks/use-login, hooks/use-register, pages/login, pages/register, router).
+- **Diff total**: ~+280 / ~−80 (estimado) → **real**: +~270 / ~−75, dentro del presupuesto.
+- **Gates**: `nest build` ✓, `tsc -b --noEmit` ✓, `vite build` ✓. Bundle web 732.43 kB JS / 222.93 kB gzip (+2.46 kB / +0.46 kB por la página `/register`).
+- **Comportamiento verificable manualmente** (sin DB local en este entorno):
+  - `POST /auth/register { dni, name }` con DNI nuevo → 201 + cookie + `{ user }` VENDEDOR.
+  - `POST /auth/register` con DNI existente → 409 "DNI ya registrado".
+  - `POST /auth/login { dni }` con DNI registrado VENDEDOR → 200 + cookie + `{ user }`.
+  - `POST /auth/login { dni }` con DNI no registrado → 401 "DNI no registrado".
+  - `POST /auth/login { dni }` con COMPRADOR legacy → 403 "solo los vendedores pueden iniciar sesión".
+  - `POST /auth/login { dni: '123' }` → 400 "DNI debe tener exactamente 8 dígitos" (vía `ValidationPipe`).
+- **Sin tests nuevos** (D9): sigue el patrón del repo (`pedidos-web` sin runner; `pedidos-api` con `jest`/`test:e2e` pero sin suite de auth y la e2e requiere DB real).
+
+## Trabajo futuro (no en esta feature)
+
+- Tests e2e de auth: `test/auth.e2e-spec.ts` que cubra el ciclo register → login → me, register duplicado (409), login con DNI desconocido (401), login con COMPRADOR (403). Necesita la DB real corriendo.
+- Migración del seed para que el password del VENDEDOR se pueda rotar (hoy no hay password; cualquier DNI sembrado entra sin nombre).
+- Decidir si el login debe seguir aceptando DNIs sembrados como COMPRADOR, o si conviene migrar la columna `role` a `VENDEDOR` para los sembrados y cerrar el `ForbiddenException`.
