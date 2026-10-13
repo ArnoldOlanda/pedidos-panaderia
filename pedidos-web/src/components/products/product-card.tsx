@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { closesInLabel, formatCloseTimeLima, formatPrice } from '@/lib/format';
+import { PRODUCT_STATUS_BADGE, PRODUCT_STATUS_LABEL, productStatus } from '@/lib/product-status';
 import type { Product } from '../../lib/products';
 
 interface ProductCardProps {
@@ -8,6 +9,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const status = productStatus(product);
   return (
     <article>
       <Card>
@@ -16,6 +18,11 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="space-y-1">
               {/* A real h3, not CardTitle: CardTitle renders a div, which would leave the card without a heading element. h3 nests it under the section's h2 heading. */}
               <h3 className="font-heading text-lg font-semibold">{product.name}</h3>
+              {product.createdByName && (
+                <p className="text-sm text-muted-foreground">
+                  Publicado por {product.createdByName}
+                </p>
+              )}
               <p className="text-sm text-muted-foreground">
                 Cierra a las {formatCloseTimeLima(product.closesAt)} ·{' '}
                 {closesInLabel(product.closesAt, product.closed)}
@@ -23,7 +30,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
             <div className="text-right space-y-1">
               <p className="text-primary font-medium">{formatPrice(product.price)}</p>
-              {product.closed && <Badge variant="secondary">cerrado</Badge>}
+              <Badge {...PRODUCT_STATUS_BADGE[status]}>{PRODUCT_STATUS_LABEL[status]}</Badge>
             </div>
           </div>
         </CardContent>

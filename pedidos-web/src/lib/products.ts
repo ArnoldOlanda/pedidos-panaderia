@@ -10,10 +10,17 @@ export interface Product {
   createdById: string;
   recipeId: string;
   createdAt: string;
+  /** Only present on the vendor board response (`GET /products/today/all`). */
+  createdByName?: string;
 }
 
 export async function listTodayProducts(): Promise<Product[]> {
   const { data } = await api.get<Product[]>('/products/today');
+  return data;
+}
+
+export async function listAllTodayProducts(): Promise<Product[]> {
+  const { data } = await api.get<Product[]>('/products/today/all');
   return data;
 }
 

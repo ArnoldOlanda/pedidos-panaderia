@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
-import { useMyTodayProducts } from '../../hooks/use-my-today-products';
+import { useAllTodayProducts } from '../../hooks/use-all-today-products';
 import { usePublishProduct } from '../../hooks/use-publish-product';
 import type { PublishProductInput } from '../../hooks/use-publish-product';
 import { toApiError } from '../../lib/api';
 import { closesInLabel, formatCloseTimeLima, formatPrice } from '../../lib/format';
+import { PRODUCT_STATUS_BADGE, PRODUCT_STATUS_LABEL, productStatus } from '../../lib/product-status';
 import type { Product } from '../../lib/products';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,7 @@ export function VendorProductsPage() {
   const user = useAuth((s) => s.user);
   const isVendor = user?.role === 'VENDEDOR';
 
-  const todayProducts = useMyTodayProducts();
+  const todayProducts = useAllTodayProducts();
   const publish = usePublishProduct();
 
   const [createOpen, setCreateOpen] = useState<boolean>(false);
@@ -49,6 +50,12 @@ export function VendorProductsPage() {
 
   const columns: RecordColumn<Product>[] = [
     { key: 'name', header: 'Nombre', className: 'text-foreground', render: (product) => product.name },
+    {
+      key: 'createdByName',
+      header: 'Publicado por',
+      className: 'text-muted-foreground',
+      render: (product) => product.createdByName ?? '—',
+    },
     {
       key: 'price',
       header: 'Precio',
@@ -65,7 +72,10 @@ export function VendorProductsPage() {
     {
       key: 'status',
       header: 'Estado',
-      render: (product) => (product.closed ? <Badge variant="secondary">cerrado</Badge> : null),
+      render: (product) => {
+        const status = productStatus(product);
+        return <Badge {...PRODUCT_STATUS_BADGE[status]}>{PRODUCT_STATUS_LABEL[status]}</Badge>;
+      },
     },
   ];
 
@@ -115,7 +125,7 @@ export function VendorProductsPage() {
       </header>
 
       <section className="space-y-3">
-        <h2 className="font-heading text-lg font-semibold">Tus productos de hoy</h2>
+        <h2 className="font-heading text-lg font-semibold">Productos publicados hoy</h2>
 
         {/* role=status rather than aria-live on the skeleton: a live region has to
             pre-exist and announce its own content change, not the decorative bars. */}
@@ -132,7 +142,7 @@ export function VendorProductsPage() {
 
         {!todayProducts.isLoading && todayProducts.isError && (
           <Alert variant="destructive">
-            <AlertTitle>No pudimos cargar tus productos</AlertTitle>
+            <AlertTitle>No pudimos cargar los productos de hoy</AlertTitle>
             <AlertDescription>
               <Button
                 type="button"
@@ -150,7 +160,7 @@ export function VendorProductsPage() {
         {!todayProducts.isLoading && !todayProducts.isError && sortedToday.length === 0 && (
           <Card className="text-muted-foreground">
             <CardContent>
-              <p>Hoy no has publicado productos.</p>
+              <p>Todavía no hay productos publicados hoy.</p>
             </CardContent>
           </Card>
         )}
