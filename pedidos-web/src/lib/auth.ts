@@ -5,7 +5,7 @@ interface MeResponse {
   id: string;
   dni: string;
   name: string;
-  role: 'VENDEDOR' | 'COMPRADOR';
+  role: 'VENDEDOR';
   createdAt: string;
   updatedAt: string;
 }
