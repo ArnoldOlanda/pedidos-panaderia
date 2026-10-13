@@ -10,12 +10,17 @@ interface MeResponse {
   updatedAt: string;
 }
 
-interface LoginResponse {
+interface AuthResponse {
   user: MeResponse;
 }
 
-export async function loginRequest(dni: string, name: string): Promise<AuthUser> {
-  const { data } = await api.post<LoginResponse>('/auth/login', { dni, name });
+export async function loginRequest(dni: string): Promise<AuthUser> {
+  const { data } = await api.post<AuthResponse>('/auth/login', { dni });
+  return { id: data.user.id, name: data.user.name, role: data.user.role };
+}
+
+export async function registerRequest(dni: string, name: string): Promise<AuthUser> {
+  const { data } = await api.post<AuthResponse>('/auth/register', { dni, name });
   return { id: data.user.id, name: data.user.name, role: data.user.role };
 }
 

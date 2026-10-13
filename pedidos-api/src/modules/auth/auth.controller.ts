@@ -14,6 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { AuthService, AUTH_COOKIE_NAME, JwtPayload } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
@@ -32,13 +33,7 @@ export class AuthController {
     private readonly config: ConfigService,
   ) {}
 
-  @Post('login')
-  @HttpCode(200)
-  async login(
-    @Body() dto: LoginDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<{ user: unknown }> {
-    const { user, token } = await this.auth.login(dto);
+  private setAuthCookie(res: Response, token: string): void {
     const isProd = this.config.get<string>('NODE_ENV') === 'production';
     res.cookie(AUTH_COOKIE_NAME, token, {
       httpOnly: true,
@@ -47,6 +42,26 @@ export class AuthController {
       path: '/',
       maxAge: SEVEN_DAYS_MS,
     });
+  }
+
+  @Post('login')
+  @HttpCode(200)
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ user: unknown }> {
+    const { user, token } = await this.auth.login(dto);
+    this.setAuthCookie(res, token);
+    return { user };
+  }
+
+  @Post('register')
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ user: unknown }> {
+    const { user, token } = await this.auth.register(dto);
+    this.setAuthCookie(res, token);
     return { user };
   }
 

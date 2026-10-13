@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useLogin } from '../hooks/use-login';
 import { toApiError } from '../lib/auth';
 import { Alert } from '@/components/ui/alert';
@@ -9,7 +10,6 @@ import { Label } from '@/components/ui/label';
 
 export function LoginPage() {
   const [dni, setDni] = useState('');
-  const [name, setName] = useState('');
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const login = useLogin();
@@ -22,13 +22,15 @@ export function LoginPage() {
     setServerMessage(null);
     setHint(null);
     login.mutate(
-      { dni, name },
+      { dni },
       {
         onError: (err) => {
           const apiErr = toApiError(err);
           setServerMessage(apiErr.message || 'No pudimos iniciar sesión');
-          if (apiErr.status === 400) {
-            setHint('DNI o nombre inválido');
+          if (apiErr.status === 401) {
+            setHint('DNI no registrado');
+          } else if (apiErr.status === 403) {
+            setHint('Este DNI no corresponde a un vendedor');
           } else if (apiErr.status === 500) {
             setHint('Error del servidor');
           }
@@ -45,7 +47,7 @@ export function LoginPage() {
             {/* A real h1, not CardTitle: CardTitle renders a div, which would leave the page without a heading element. */}
             <h1 className="font-heading text-xl font-semibold tracking-tight">Ingreso de vendedores</h1>
             <CardDescription>Este ingreso es exclusivo para vendedores.</CardDescription>
-            <CardDescription>Ingresa tu DNI y tu nombre para continuar.</CardDescription>
+            <CardDescription>Ingresá tu DNI para continuar.</CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -61,22 +63,9 @@ export function LoginPage() {
                   autoComplete="username"
                   placeholder="12345678"
                   required
+                  autoFocus
                   value={dni}
                   onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="name">Nombre</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  minLength={2}
-                  autoComplete="name"
-                  placeholder="Tu nombre"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
                 />
               </div>
             </div>
@@ -97,6 +86,13 @@ export function LoginPage() {
             <span role="status" className="sr-only">
               {pending ? submitLabel : ''}
             </span>
+
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              ¿Sos nuevo?{' '}
+              <Link to="/register" className="font-medium text-foreground underline-offset-2 hover:underline">
+                Registrate como vendedor
+              </Link>
+            </p>
           </CardContent>
         </Card>
       </form>
