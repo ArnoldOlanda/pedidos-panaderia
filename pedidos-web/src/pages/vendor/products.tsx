@@ -6,6 +6,7 @@ import { usePublishProduct } from '../../hooks/use-publish-product';
 import type { PublishProductInput } from '../../hooks/use-publish-product';
 import { toApiError } from '../../lib/api';
 import { closesInLabel, formatCloseTimeLima, formatPrice } from '../../lib/format';
+import { PRODUCT_STATUS_BADGE, PRODUCT_STATUS_LABEL, productStatus } from '../../lib/product-status';
 import type { Product } from '../../lib/products';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +72,10 @@ export function VendorProductsPage() {
     {
       key: 'status',
       header: 'Estado',
-      render: (product) => (product.closed ? <Badge variant="secondary">cerrado</Badge> : null),
+      render: (product) => {
+        const status = productStatus(product);
+        return <Badge {...PRODUCT_STATUS_BADGE[status]}>{PRODUCT_STATUS_LABEL[status]}</Badge>;
+      },
     },
   ];
 

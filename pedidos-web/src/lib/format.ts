@@ -31,10 +31,22 @@ export function formatPrecisePrice(price: number): string {
   }).format(price);
 }
 
+/**
+ * A product counts as closed when the stored flag is set OR its close time has
+ * already passed.
+ *
+ * The flag alone is not enough: AutoCloseService flips it from a 5-minute
+ * cron, so for up to five minutes a product whose closesAt elapsed still
+ * arrives as closed:false. Both the Cierre label and the Estado badge derive
+ * from this predicate so the two columns can never disagree.
+ */
+export function isProductClosed(closesAtIso: string, closed: boolean, now = Date.now()): boolean {
+  return closed || new Date(closesAtIso).getTime() <= now;
+}
+
 export function closesInLabel(closesAtIso: string, closed: boolean, now = Date.now()): string {
-  if (closed) return 'cerrado';
+  if (isProductClosed(closesAtIso, closed, now)) return 'cerrado';
   const diff = new Date(closesAtIso).getTime() - now;
-  if (diff <= 0) return 'cerrado';
   const min = Math.floor(diff / 60_000);
   if (min < 60) return `cierra en ${min} min`;
   const h = Math.floor(min / 60);
