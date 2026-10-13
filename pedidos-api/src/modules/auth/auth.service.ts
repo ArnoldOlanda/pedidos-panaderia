@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +11,7 @@ import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/user.entity';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 export interface JwtPayload {
   sub: string;
@@ -51,6 +53,28 @@ export class AuthService {
     };
     const token = await this.jwt.signAsync(payload);
     return { user, token };
+  }
+
+  async register(
+    dto: RegisterDto,
+  ): Promise<{ user: User; token: string }> {
+    const existing = await this.users.findOne({ where: { dni: dto.dni } });
+    if (existing) {
+      throw new ConflictException('DNI ya registrado');
+    }
+    const user = this.users.create({
+      dni: dto.dni,
+      name: dto.name,
+      role: 'VENDEDOR',
+    });
+    const saved = await this.users.save(user);
+    const payload: JwtPayload = {
+      sub: saved.id,
+      role: saved.role,
+      dni: saved.dni,
+    };
+    const token = await this.jwt.signAsync(payload);
+    return { user: saved, token };
   }
 
   async getMe(userId: string): Promise<User> {
