@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -10,13 +9,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { User } from '../users/user.entity';
+import { User, type UserRole } from '../users/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 export interface JwtPayload {
   sub: string;
-  role: 'VENDEDOR' | 'COMPRADOR';
+  role: UserRole;
   dni: string;
 }
 
@@ -36,11 +35,6 @@ export class AuthService {
     const user = await this.users.findOne({ where: { dni: dto.dni } });
     if (!user) {
       throw new UnauthorizedException('DNI no registrado');
-    }
-    if (user.role !== 'VENDEDOR') {
-      throw new ForbiddenException(
-        'solo los vendedores pueden iniciar sesión',
-      );
     }
     const payload: JwtPayload = {
       sub: user.id,

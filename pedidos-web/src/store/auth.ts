@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 
-export type AuthUser = { id: string; name: string; role: 'COMPRADOR' | 'VENDEDOR' };
+// Vestigial: the API only issues vendor sessions (buyers are anonymous and
+// their data lives on each order). Kept as a literal until the role is
+// removed end-to-end.
+export type AuthUser = { id: string; name: string; role: 'VENDEDOR' };
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
 interface AuthState {

@@ -1,7 +1,8 @@
 import { SetMetadata } from '@nestjs/common';
+import type { UserRole } from '../../users/user.entity';
 
 export const ROLES_KEY = 'roles';
 export const Roles = (
-  ...roles: Array<'VENDEDOR' | 'COMPRADOR'>
+  ...roles: UserRole[]
 ): MethodDecorator & ClassDecorator =>
   SetMetadata(ROLES_KEY, roles);

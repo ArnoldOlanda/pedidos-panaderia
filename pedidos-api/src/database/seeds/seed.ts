@@ -3,14 +3,14 @@ import { DataSource } from 'typeorm';
 import { loadAndValidateEnvSync } from '../../config/validate-env';
 import { User, UserRole } from '../../modules/users/user.entity';
 
+// Only vendors are seeded. Buyers are anonymous: their data is a snapshot on
+// each order, so there is no buyer row to create here.
 const VENDORS: Array<Pick<User, 'dni' | 'name'> & { role: UserRole }> = [
   { dni: '11111111', name: 'Ana Pastelera', role: 'VENDEDOR' },
   { dni: '33333333', name: 'Carla Vendedora', role: 'VENDEDOR' },
 ];
 
-const BUYERS: Array<Pick<User, 'dni' | 'name'> & { role: UserRole }> = [];
-
-const ALL = [...VENDORS, ...BUYERS];
+const ALL = [...VENDORS];
 
 // Synchronous top-level validation: throws aggregated EnvValidationError
 // listing every missing/invalid field at once when env is incomplete.

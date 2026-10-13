@@ -5,7 +5,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-export type UserRole = 'VENDEDOR' | 'COMPRADOR';
+export type UserRole = 'VENDEDOR';
 
 @Entity('users')
 export class User {
@@ -18,10 +18,14 @@ export class User {
   @Column({ type: 'varchar', length: 120 })
   name!: string;
 
+  // Vestigial: the product only has one user kind (vendor). Buyers are
+  // anonymous and their data lives as a snapshot on each order. The DB enum
+  // still carries the historic 'COMPRADOR' value (no migration was run);
+  // synchronize:false means TypeORM never reconciles the two.
   @Column({
     type: 'enum',
-    enum: ['VENDEDOR', 'COMPRADOR'],
-    default: 'COMPRADOR',
+    enum: ['VENDEDOR'],
+    default: 'VENDEDOR',
   })
   role!: UserRole;
 

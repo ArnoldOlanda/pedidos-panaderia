@@ -16,8 +16,6 @@ import { AuthService, AUTH_COOKIE_NAME, JwtPayload } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
-import { Roles } from './decorators/roles.decorator';
 import type { JwtUser } from './strategies/jwt.strategy';
 
 interface AuthedRequest extends Request {
@@ -81,27 +79,15 @@ export class AuthController {
       return await this.auth.getMe(req.user.id);
     } catch (err) {
       // Stale cookie: the JWT references a user that no longer exists
-      // (e.g. db reset, seed regenerated, or the seed dropped buyers).
-      // Clear the cookie so the bootstrap treats the next request as
-      // anonymous instead of failing with 404.
+      // (e.g. db reset or a regenerated seed). Clear the cookie so the
+      // bootstrap treats the next request as anonymous instead of
+      // failing with 404.
       if (err instanceof NotFoundException) {
         this.auth.logout(res);
         throw new UnauthorizedException('vendor session no longer valid');
       }
       throw err;
     }
-  }
-
-  /**
-   * Verification-only endpoint: confirms the role guard correctly
-   * accepts VENDEDOR and rejects COMPRADOR. Used by the ODD-1.3
-   * smoke check; remove once a real vendor-only route exists.
-   */
-  @Get('_vendedor-only')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('VENDEDOR')
-  _vendedorOnly(): { ok: true } {
-    return { ok: true };
   }
 }
 
