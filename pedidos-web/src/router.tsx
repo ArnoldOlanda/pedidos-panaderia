@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout';
 import { ProtectedRoute } from './components/protected-route';
 import { LoginPage } from './pages/login';
+import { RegisterPage } from './pages/register';
 import { CatalogPage } from './pages/catalog';
 import { ProductDetailPage } from './pages/product-detail';
 import { OrdersPage } from './pages/orders';
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/catalog" replace /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'register', element: <RegisterPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'catalog/:id', element: <ProductDetailPage /> },
       { path: 'orders', element: <OrdersPage /> },
