@@ -4,6 +4,8 @@
 
 Permite a un usuario registrarse como **vendedor** desde la web y deja el login estricto: solo DNI, sin auto-creación silenciosa de usuarios.
 
+> **Nota de supersesión (2026-10-13)**: el caso `403` por rol y las referencias a `COMPRADOR` del cuerpo de este tracker quedaron obsoletos con `feat/vendor-only-role` (`odd/tasks/vendor-only-role.md`), que eliminó el rol `COMPRADOR` del código. El cuerpo histórico se conserva tal como se escribió; las dos entradas afectadas están marcadas abajo.
+
 ---
 
 ## Por qué
@@ -106,12 +108,12 @@ Total estimado: **10 archivos, +~280 / −~80**.
   - `POST /auth/register` con DNI existente → 409 "DNI ya registrado".
   - `POST /auth/login { dni }` con DNI registrado VENDEDOR → 200 + cookie + `{ user }`.
   - `POST /auth/login { dni }` con DNI no registrado → 401 "DNI no registrado".
-  - `POST /auth/login { dni }` con COMPRADOR legacy → 403 "solo los vendedores pueden iniciar sesión".
+  - ~~`POST /auth/login { dni }` con COMPRADOR legacy → 403 "solo los vendedores pueden iniciar sesión"~~ **Superseded por `vendor-only-role`**: el 403 se eliminó y el caso ya no existe.
   - `POST /auth/login { dni: '123' }` → 400 "DNI debe tener exactamente 8 dígitos" (vía `ValidationPipe`).
 - **Sin tests nuevos** (D9): sigue el patrón del repo (`pedidos-web` sin runner; `pedidos-api` con `jest`/`test:e2e` pero sin suite de auth y la e2e requiere DB real).
 
 ## Trabajo futuro (no en esta feature)
 
-- Tests e2e de auth: `test/auth.e2e-spec.ts` que cubra el ciclo register → login → me, register duplicado (409), login con DNI desconocido (401), login con COMPRADOR (403). Necesita la DB real corriendo.
+- Tests e2e de auth: `test/auth.e2e-spec.ts` que cubra el ciclo register → login → me, register duplicado (409), login con DNI desconocido (401). Necesita la DB real corriendo.
 - Migración del seed para que el password del VENDEDOR se pueda rotar (hoy no hay password; cualquier DNI sembrado entra sin nombre).
-- Decidir si el login debe seguir aceptando DNIs sembrados como COMPRADOR, o si conviene migrar la columna `role` a `VENDEDOR` para los sembrados y cerrar el `ForbiddenException`.
+- ~~Decidir si el login debe seguir aceptando DNIs sembrados como COMPRADOR, o migrar la columna `role` a `VENDEDOR` y cerrar el `ForbiddenException`~~ **Resuelto por `vendor-only-role`**: el `COMPRADOR` desaparece del código; la columna `role` y el enum de Postgres quedan como vestigio (decisión D1 de esa feature: solo código, sin migración).
