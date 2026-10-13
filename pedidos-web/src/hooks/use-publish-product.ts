@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import type { Product } from '../lib/products';
+import { toast } from '../lib/toast';
 
 export interface PublishProductInput {
   recipeId: string;
@@ -20,6 +21,10 @@ export function usePublishProduct() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['products', 'mine', 'today'] });
       void qc.invalidateQueries({ queryKey: ['products', 'today'] });
+      toast.success('Producto publicado');
+    },
+    onError: (err) => {
+      toast.error(err, { fallback: 'No pudimos publicar el producto' });
     },
   });
 }

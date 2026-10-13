@@ -53,25 +53,6 @@ function writeErrorMessage(err: unknown): string {
   return apiErr.message || 'No pudimos guardar el insumo';
 }
 
-// 403 non-vendor write; 404 missing; 409 in-use conflict (backend message
-// shown verbatim so the vendor reads the recipe reference reason).
-function deleteErrorMessage(err: unknown): string {
-  const apiErr = toApiError(err);
-  if (apiErr.status === 403) {
-    return 'Solo los vendedores pueden eliminar insumos';
-  }
-  if (apiErr.status === 404) {
-    return 'El insumo ya no existe';
-  }
-  if (apiErr.status === 409) {
-    return (
-      apiErr.message ||
-      'No se puede eliminar el insumo porque está en uso por una receta'
-    );
-  }
-  return apiErr.message || 'No pudimos eliminar el insumo';
-}
-
 export function VendorIngredientsPage() {
   const user = useAuth((s) => s.user);
   const ingredientsQuery = useIngredients();
@@ -91,14 +72,6 @@ export function VendorIngredientsPage() {
     null,
   );
   const [editServerError, setEditServerError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [flashMessage, setFlashMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!flashMessage) return;
-    const timer = setTimeout(() => setFlashMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, [flashMessage]);
 
   // The dialog receives the write errors as props and does not own them, so the
   // page clears them whenever the edit target changes.
@@ -146,7 +119,6 @@ export function VendorIngredientsPage() {
     create.mutate(input, {
       onSuccess: () => {
         setCreateOpen(false);
-        setFlashMessage('Insumo creado');
       },
       onError: (err) => {
         setCreateServerError(writeErrorMessage(err));
@@ -173,15 +145,7 @@ export function VendorIngredientsPage() {
   };
 
   const handleDelete = (ingredient: Ingredient) => {
-    setDeleteError(null);
-    remove.mutate(ingredient.id, {
-      onSuccess: () => {
-        setFlashMessage('Insumo eliminado');
-      },
-      onError: (err) => {
-        setDeleteError(deleteErrorMessage(err));
-      },
-    });
+    remove.mutate(ingredient.id);
   };
 
   const columns: RecordColumn<Ingredient>[] = [
@@ -242,21 +206,6 @@ export function VendorIngredientsPage() {
           </Button>
         </div>
       </header>
-
-      {flashMessage && (
-        <div
-          role="status"
-          className="rounded-lg bg-success px-4 py-3 text-sm text-success-foreground"
-        >
-          {flashMessage}
-        </div>
-      )}
-
-      {deleteError && (
-        <Alert variant="destructive">
-          <AlertTitle>{deleteError}</AlertTitle>
-        </Alert>
-      )}
 
       <section className="space-y-3">
         {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the section without a heading element. */}

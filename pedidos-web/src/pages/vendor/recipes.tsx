@@ -42,14 +42,6 @@ export function VendorRecipesPage() {
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editServerError, setEditServerError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [flashMessage, setFlashMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!flashMessage) return;
-    const timer = setTimeout(() => setFlashMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, [flashMessage]);
 
   // The dialog receives the write errors as props and does not own them, so the
   // page clears them whenever the edit target changes.
@@ -94,7 +86,6 @@ export function VendorRecipesPage() {
       {
         onSuccess: () => {
           setCreateOpen(false);
-          setFlashMessage('Receta creada');
         },
         onError: (err) => {
           const apiErr = toApiError(err);
@@ -153,22 +144,7 @@ export function VendorRecipesPage() {
   };
 
   const handleDelete = (recipe: Recipe) => {
-    setDeleteError(null);
-    remove.mutate(recipe.id, {
-      onSuccess: () => {
-        setFlashMessage('Receta eliminada');
-      },
-      onError: (err) => {
-        const apiErr = toApiError(err);
-        if (apiErr.status === 403) {
-          setDeleteError('Solo el creador puede eliminar esta receta');
-        } else if (apiErr.status === 404) {
-          setDeleteError('La receta ya no existe');
-        } else {
-          setDeleteError(apiErr.message || 'No pudimos eliminar la receta');
-        }
-      },
-    });
+    remove.mutate(recipe.id);
   };
 
   const isOwner = (recipe: Recipe) =>
@@ -229,21 +205,6 @@ export function VendorRecipesPage() {
           </Button>
         </div>
       </header>
-
-      {flashMessage && (
-        <div
-          role="status"
-          className="rounded-lg bg-success px-4 py-3 text-sm text-success-foreground"
-        >
-          {flashMessage}
-        </div>
-      )}
-
-      {deleteError && (
-        <Alert variant="destructive">
-          <AlertTitle>{deleteError}</AlertTitle>
-        </Alert>
-      )}
 
       <section className="space-y-3">
         {/* A real h2, not CardTitle: CardTitle renders a div, which would leave the section without a heading element. */}
