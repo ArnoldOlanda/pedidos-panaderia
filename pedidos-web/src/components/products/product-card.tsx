@@ -16,6 +16,11 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="space-y-1">
               {/* A real h3, not CardTitle: CardTitle renders a div, which would leave the card without a heading element. h3 nests it under the section's h2 heading. */}
               <h3 className="font-heading text-lg font-semibold">{product.name}</h3>
+              {product.createdByName && (
+                <p className="text-sm text-muted-foreground">
+                  Publicado por {product.createdByName}
+                </p>
+              )}
               <p className="text-sm text-muted-foreground">
                 Cierra a las {formatCloseTimeLima(product.closesAt)} ·{' '}
                 {closesInLabel(product.closesAt, product.closed)}
