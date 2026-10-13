@@ -35,11 +35,11 @@ El pedido del usuario: **que todos los productos publicados sean visibles para t
 
 ## Tareas (T1–T5)
 
-- [ ] **T1 — Tracker**: `odd/tasks/shared-products-list.md` (este commit).
-- [ ] **T2 — Backend**: `ProductsService.listTodayAll()` con mapeo explícito a un tipo de respuesta (`createdByName`), y `GET /products/today/all` en `ProductsController` con `JwtAuthGuard` + `RolesGuard @Roles('VENDEDOR')`. Declarado antes de `@Get(':id')`, después de `@Get('today')`.
-- [ ] **T3 — Frontend datos**: `Product` en `lib/products.ts` gana `createdByName?: string`; nueva `listAllTodayProducts()` en el mismo archivo; nuevo hook `use-all-today-products.ts` con el mismo `staleTime`/`refetchInterval` que `use-my-today-products.ts`.
-- [ ] **T4 — Frontend vista**: `vendor/products.tsx` usa el hook nuevo, la sección pasa a "Productos publicados hoy", agrega la columna "Publicado por" (después de Nombre) y actualiza los textos de estado vacío/error. `product-card.tsx` (mobile) muestra "Publicado por {nombre}".
-- [ ] **T5 — Cierre**: gates en ambos proyectos, tracker reconciliado con los resultados reales.
+- [x] **T1 — Tracker**: `odd/tasks/shared-products-list.md` (este commit).
+- [x] **T2 — Backend**: `ProductsService.listTodayAll()` con mapeo explícito a un tipo de respuesta (`createdByName`), y `GET /products/today/all` en `ProductsController` con `JwtAuthGuard` + `RolesGuard @Roles('VENDEDOR')`. Declarado antes de `@Get(':id')`, después de `@Get('today')`.
+- [x] **T3 — Frontend datos**: `Product` en `lib/products.ts` gana `createdByName?: string`; nueva `listAllTodayProducts()` en el mismo archivo; nuevo hook `use-all-today-products.ts` con el mismo `staleTime`/`refetchInterval` que `use-my-today-products.ts`.
+- [x] **T4 — Frontend vista**: `vendor/products.tsx` usa el hook nuevo, la sección pasa a "Productos publicados hoy", agrega la columna "Publicado por" (después de Nombre) y actualiza los textos de estado vacío/error. `product-card.tsx` (mobile) muestra "Publicado por {nombre}".
+- [x] **T5 — Cierre**: gates en ambos proyectos, tracker reconciliado con los resultados reales.
 
 ---
 
@@ -86,8 +86,30 @@ Total: **6 archivos de código**, ~+60 / −15. Feature chica y contenida.
 
 | Task | Resultado | Commit | Notas |
 |---|---|---|---|
-| T1 | | | |
-| T2 | | | |
-| T3 | | | |
-| T4 | | | |
-| T5 | | | |
+| T1 | Tracker creado | `8b82ae4` | 93 líneas |
+| T2 | `listTodayAll()` + `GET /products/today/all` | `47967dd` | 2 archivos, +56/−0 |
+| T3 | `createdByName?` en `Product`, `listAllTodayProducts`, hook nuevo | `a49fcd6` | 2 archivos, +22/−0 |
+| T4 | Vista compartida + columna + card | `40cf804` | 2 archivos, +16/−5 |
+| T5 | Gates verdes, tracker cerrado | (commit de cierre) | — |
+
+## Resultado neto de la feature
+
+- **5 commits** en `feat/shared-products-list`, base `main@45e7aee`.
+- **6 archivos de código**, **+94 / −5** (1 archivo nuevo: `use-all-today-products.ts`).
+- **Gates**: `nest build` ✓, `tsc -b --noEmit` ✓, `vite build` ✓. Bundle web 732.87 kB JS / 223.05 kB gzip (**+0.44 kB / +0.12 kB** vs `main`: el hook nuevo, la columna y la línea de la card).
+- **Contrato público intacto**: `GET /products/today` y `GET /products/:id` no se tocaron; el nombre del vendedor solo existe en la respuesta vendor-only. Verificado con grep sobre `products.controller.ts`.
+- **`vendor/orders.tsx` intacto**: sigue con `useMyTodayProducts` y el `403` de propiedad del backend sigue vigente.
+- **Sin tests nuevos** (D6).
+
+## Smoke manual pendiente (usuario, con DB corriendo)
+
+1. Login como **Ana Pastelera** (`11111111`) y publicar un producto (o usar los sembrados).
+2. Login como **Carla Vendedora** (`33333333`), publicar otro producto para hoy.
+3. Como Carla, abrir `Publicar producto`: la sección "Productos publicados hoy" debe listar **ambos** productos, con la columna "Publicado por" mostrando "Ana Pastelera" y "Carla Vendedora".
+4. Redimensionar a mobile: las cards deben mostrar "Publicado por <nombre>" bajo el título.
+5. Como Carla, abrir la vista `Pedidos`: el selector de producto debe seguir mostrando **solo los productos de Carla** (ese endpoint no cambió). Intentar pedir `GET /orders/by-product/:idDeAna` debe seguir dando `403`.
+6. Sin login (o desde el catálogo compartido): `GET /products/today` no debe incluir `createdByName`.
+
+## Estado del repo al cerrar
+
+Rama `feat/shared-products-list`, árbol limpio, sin remotos. Sin mergear a `main`: lo decide el usuario.
