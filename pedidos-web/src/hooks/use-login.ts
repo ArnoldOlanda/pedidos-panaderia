@@ -9,7 +9,7 @@ export function useLogin() {
   const setStatus = useAuth((s) => s.setStatus);
   const navigate = useNavigate();
   return useMutation({
-    mutationFn: ({ dni, name }: { dni: string; name: string }) => loginRequest(dni, name),
+    mutationFn: ({ dni }: { dni: string }) => loginRequest(dni),
     onMutate: () => setStatus('loading'),
     onSuccess: (user) => {
       setUser(user);
