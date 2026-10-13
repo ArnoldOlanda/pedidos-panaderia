@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -32,14 +33,9 @@ export class AuthService {
   async login(
     dto: LoginDto,
   ): Promise<{ user: User; token: string }> {
-    let user = await this.users.findOne({ where: { dni: dto.dni } });
+    const user = await this.users.findOne({ where: { dni: dto.dni } });
     if (!user) {
-      user = this.users.create({
-        dni: dto.dni,
-        name: dto.name,
-        role: 'COMPRADOR',
-      });
-      user = await this.users.save(user);
+      throw new UnauthorizedException('DNI no registrado');
     }
     if (user.role !== 'VENDEDOR') {
       throw new ForbiddenException(
