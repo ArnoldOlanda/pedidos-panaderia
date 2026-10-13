@@ -110,6 +110,14 @@ Total: **6 archivos de código**, ~+60 / −15. Feature chica y contenida.
 5. Como Carla, abrir la vista `Pedidos`: el selector de producto debe seguir mostrando **solo los productos de Carla** (ese endpoint no cambió). Intentar pedir `GET /orders/by-product/:idDeAna` debe seguir dando `403`.
 6. Sin login (o desde el catálogo compartido): `GET /products/today` no debe incluir `createdByName`.
 
+## Correcciones post-cierre
+
+- **`4189b47` — `fix(web)`: badge de Estado en ambos estados.** La columna "Estado" no mostraba nada cuando el producto estaba abierto: el `render` devolvía `null` si `closed` era `false`, así que solo aparecía "cerrado" y el resto del tiempo la celda quedaba vacía (la card mobile tenía el mismo problema). Era un defecto **preexistente**, heredado de `5412a63` (`refactor(web): migrate the vendor products screen to the shadcn primitives`), que la revisión de esta vista destapó.
+
+  Causa de fondo: el estado se derivaba en cada punto de uso con el flag crudo, y `AutoCloseService` solo lo cambia con un cron de 5 minutos. En esa ventana, la columna "Cierre" ya decía "cerrado" (usa el reloj) mientras "Estado" no mostraba nada.
+
+  Fix: `isProductClosed` (flag **o** hora de cierre cumplida) queda como fuente única en `lib/format.ts` y `closesInLabel` delega en él; nuevo `lib/product-status.ts` mapea ambos estados a etiqueta + variante de `Badge`, espejando `lib/order-status.ts`. La tabla y la card consumen el mapa, así que no pueden volver a divergir.
+
 ## Estado del repo al cerrar
 
 Rama `feat/shared-products-list`, árbol limpio, sin remotos. Sin mergear a `main`: lo decide el usuario.
