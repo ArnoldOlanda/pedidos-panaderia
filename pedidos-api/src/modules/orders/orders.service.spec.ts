@@ -124,7 +124,7 @@ describe('OrdersService', () => {
         title: 'Tu pedido está listo',
         body: 'Pasá a recoger tu pedido de Pan de chocolate',
         tag: `order-${ORDER_ID}`,
-      });
+      }, { orderId: ORDER_ID });
     });
 
     it('does NOT call webpush on ENTREGADO transition', async () => {

@@ -1,4 +1,5 @@
 import { api } from './api';
+import { getOrCreateDeviceId } from './device';
 
 // Shape returned by GET /api/push/mine. Matches PushSubscription entity.
 export interface MySubscription {
@@ -36,6 +37,39 @@ export async function subscribeServer(
     subscription,
   );
   return data;
+}
+
+// Re-usable subscribe flow: fetch the public key, request permission if
+// still 'default', validate 'granted', then either reuse the existing
+// PushSubscription (kept alive across page reloads) or call
+// pushManager.subscribe to mint a new one, and finally persist it on the
+// backend. Used both by the user-driven subscribe mutation and by the
+// service-worker 'push-subscription-changed' message handler, which
+// re-runs the same flow when the browser rotates the endpoint.
+export async function ensurePushSubscription(): Promise<{ id: string; endpoint: string }> {
+  console.debug('[push] ensure: fetching public key');
+  const publicKey = await getPublicKey();
+  console.debug('[push] ensure: permission is', typeof Notification !== 'undefined' ? Notification.permission : 'unavailable');
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    console.debug('[push] ensure: requesting permission');
+    await Notification.requestPermission();
+    console.debug('[push] ensure: permission now', Notification.permission);
+  }
+  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+    throw new Error('Permiso de notificaciones denegado');
+  }
+  console.debug('[push] ensure: calling subscribeBrowser');
+  const browserSub = await subscribeBrowser(publicKey);
+  const json = browserSub.toJSON() as {
+    endpoint: string;
+    keys: { p256dh: string; auth: string };
+  };
+  console.debug('[push] ensure: persisting on server, endpoint =', json.endpoint.slice(0, 64));
+  return subscribeServer({
+    endpoint: json.endpoint,
+    keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+    deviceId: getOrCreateDeviceId(),
+  });
 }
 
 export async function unsubscribeServer(endpoint: string): Promise<{ removed: boolean }> {

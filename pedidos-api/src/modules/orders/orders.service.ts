@@ -106,11 +106,15 @@ export class OrdersService {
 
     if (saved.status === 'LISTO') {
       try {
-        await this.webpush.sendToDevice(saved.buyerDeviceId, {
-          title: 'Tu pedido está listo',
-          body: `Pasá a recoger tu pedido de ${saved.product.name}`,
-          tag: `order-${saved.id}`,
-        });
+        await this.webpush.sendToDevice(
+          saved.buyerDeviceId,
+          {
+            title: 'Tu pedido está listo',
+            body: `Pasá a recoger tu pedido de ${saved.product.name}`,
+            tag: `order-${saved.id}`,
+          },
+          { orderId: saved.id },
+        );
       } catch (err) {
         this.logger.error(
           `push notify failed for order ${saved.id}: ${(err as Error).message}`,

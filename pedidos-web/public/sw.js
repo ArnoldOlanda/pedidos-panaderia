@@ -1,5 +1,5 @@
 /* pedidos-panaderia service worker (vanilla JS, no build step). */
-const CACHE_NAME = 'pedidos-v2';
+const CACHE_NAME = 'pedidos-v3';
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -109,6 +109,11 @@ self.addEventListener('push', (event) => {
     icon: '/icon-192.png',
     badge: '/icon-192.png',
   };
+  // Diagnostic log so the operator can confirm in DevTools that the
+  // browser actually received the push and that the tag/title made it
+  // through the JSON parse. Without this, a missing notification looks
+  // identical to a missing push from the browser side.
+  console.log('[sw] push received', { title, tag: payload.tag, hasBody: Boolean(options.body) });
   // showNotification() throws a TypeError if the origin's notification
   // permission is not 'granted'. The DevTools "Push" button in Chromium
   // browsers dispatches a synthetic push without going through the user
