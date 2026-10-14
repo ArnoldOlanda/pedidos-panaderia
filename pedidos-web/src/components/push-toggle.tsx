@@ -61,7 +61,7 @@ export function PushToggle() {
           aria-label={isBusy ? LOADING_LABEL : undefined}
           title={
             permissionDenied
-              ? 'Permiso bloqueado — habilítalo en la configuración de tu navegador'
+              ? 'Permiso bloqueado — habilita las notificaciones desde la configuración del navegador'
               : undefined
           }
           disabled={isBusy || permissionDenied}
@@ -87,7 +87,7 @@ export function PushToggle() {
         aria-label={isBusy ? LOADING_LABEL : undefined}
         title={
           permissionDenied
-            ? 'Permiso bloqueado — habilítalo en la configuración de tu navegador'
+            ? 'Permiso bloqueado — habilita las notificaciones desde la configuración del navegador'
             : undefined
         }
         disabled={isBusy || permissionDenied}
@@ -112,10 +112,10 @@ export function PushBrowserHint() {
   return (
     <span
       className="text-xs text-muted-foreground hidden sm:inline whitespace-nowrap"
-      title={`En ${label} las notificaciones pueden no entregarse. Probá Chrome o Edge para mejor compatibilidad.`}
+      title={`En ${label} las notificaciones pueden no entregarse. Para una mejor experiencia recomendamos Chrome o Edge.`}
       role="note"
     >
-      ⚠ Probá Chrome o Edge para las notificaciones
+      ⚠ Para una mejor experiencia recomendamos Chrome o Edge
     </span>
   );
 }

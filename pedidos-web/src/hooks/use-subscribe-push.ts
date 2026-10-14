@@ -19,7 +19,7 @@ export function useSubscribePush() {
       // is what triggered the bug report that led to this fix.
       toast.error(err, {
         fallback: 'No se pudieron activar las notificaciones',
-        hint: 'Revisá los permisos del navegador o probá con otro',
+        hint: 'Verifica los permisos del navegador o prueba con otro',
       });
     },
   });

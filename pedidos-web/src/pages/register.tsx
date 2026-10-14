@@ -31,7 +31,7 @@ export function RegisterPage() {
           if (apiErr.status === 409) {
             setHint('Ese DNI ya está registrado');
           } else if (apiErr.status === 400) {
-            setHint('Revisá el DNI y el nombre');
+            setHint('Verifica el DNI (8 dígitos) y el nombre (al menos 2 caracteres)');
           } else if (apiErr.status === 500) {
             setHint('Error del servidor');
           }
@@ -110,7 +110,7 @@ export function RegisterPage() {
             </span>
 
             <p className="mt-4 text-center text-sm text-muted-foreground">
-              ¿Ya tenés cuenta?{' '}
+              ¿Ya tienes cuenta?{' '}
               <Link to="/login" className="font-medium text-foreground underline-offset-2 hover:underline">
                 Iniciar sesión
               </Link>

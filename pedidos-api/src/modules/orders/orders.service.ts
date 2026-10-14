@@ -110,7 +110,7 @@ export class OrdersService {
           saved.buyerDeviceId,
           {
             title: 'Tu pedido está listo',
-            body: `Pasá a recoger tu pedido de ${saved.product.name}`,
+            body: `Recoge tu pedido de ${saved.product.name}`,
             tag: `order-${saved.id}`,
           },
           { orderId: saved.id },
