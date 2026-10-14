@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../store/auth';
 import { logoutRequest } from '../lib/auth';
-import { PushToggle } from './push-toggle';
+import { PushToggle, PushBrowserHint } from './push-toggle';
 
 export function Layout() {
   const user = useAuth((s) => s.user);
@@ -62,8 +62,9 @@ export function Layout() {
       <main className="flex-1 px-4 py-6 max-w-4xl mx-auto w-full">
         <Outlet />
       </main>
-      <footer className="text-center text-xs text-muted-foreground py-4">
-        Pedidos Panadería · MVP
+      <footer className="flex flex-col items-center gap-2 py-4 text-xs text-muted-foreground">
+        <PushBrowserHint />
+        <div>Pedidos Panadería · MVP</div>
       </footer>
       <Toaster richColors closeButton position="top-center" />
     </div>

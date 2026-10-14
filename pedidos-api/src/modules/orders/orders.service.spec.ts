@@ -122,7 +122,7 @@ describe('OrdersService', () => {
       expect(webpush.sendToDevice).toHaveBeenCalledTimes(1);
       expect(webpush.sendToDevice).toHaveBeenCalledWith(DEVICE_ID, {
         title: 'Tu pedido está listo',
-        body: 'Pasá a recoger tu pedido de Pan de chocolate',
+        body: 'Recoge tu pedido de Pan de chocolate',
         tag: `order-${ORDER_ID}`,
       }, { orderId: ORDER_ID });
     });

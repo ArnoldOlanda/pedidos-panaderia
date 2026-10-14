@@ -114,6 +114,27 @@ export function getBrowserPushSupport(): BrowserPushSupport {
   return { supported: true };
 }
 
+// Browsers that pass getBrowserPushSupport() but ship a push service our
+// backend does not talk to: Opera routes through FCM in a way that
+// consistently returns 410 here (see pedidos-web/push-browser-compat in
+// memory), and Brave ships its own Brave-Push relay that we never
+// wired. Chrome and Edge use stock Web Push against the services we
+// already integrate with. Surfacing this in the UI lets the user switch
+// before they spend time debugging a "I activated but nothing arrives"
+// scenario.
+export type ProblematicBrowser = 'opera' | 'brave';
+
+export function detectProblematicBrowser(): ProblematicBrowser | null {
+  if (typeof navigator === 'undefined') return null;
+  const ua = navigator.userAgent;
+  // Brave reveals itself with the "Brave/" token. The order matters:
+  // Brave also reports "Chrome/" because it is Chromium-based.
+  if (/Brave\//i.test(ua)) return 'brave';
+  // Opera 15+ (Chromium-based) reports "OPR/".
+  if (/OPR\//i.test(ua)) return 'opera';
+  return null;
+}
+
 export async function subscribeBrowser(
   publicKeyB64: string,
 ): Promise<PushSubscription> {
