@@ -58,9 +58,9 @@ is already installed; no new dependency added.
 
 ## Commit log
 
-- WU-1: <hash> chore(workspace): ignore .atl Pi runtime directory
-- WU-2: <hash> feat(ui): add lucide icons to ingredient/recipe action buttons
-- WU-3: <hash> feat(ui): add icons to vendor action buttons
-- WU-4: <hash> feat(ui): add icons to catalog and product-detail public flows
-- WU-5: <hash> feat(ui): add icons to buyer order flows
-- WU-6: <hash> feat(ui): add icons to form dialogs and layout chrome
+- WU-1: fb44dc8 chore(workspace): plan icons-on-actions and ignore .atl/
+- WU-2: 6f8b320 feat(ui): add lucide icons to ingredient/recipe action buttons
+- WU-3: ae3de4c feat(ui): add icons to vendor action buttons
+- WU-4: 43e57a9 feat(ui): add icons to catalog and product-detail public flows
+- WU-5: c722898 feat(ui): add icons to buyer order flows
+- WU-6: 766d2f4 feat(ui): add icons to form dialogs and layout chrome
