@@ -1,3 +1,4 @@
+import { LogOut } from 'lucide-react';
 import { Link, NavLink, Outlet, useNavigate, type NavLinkRenderProps } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
@@ -53,6 +54,7 @@ export function Layout() {
               }}
               className="text-muted-foreground"
             >
+              <LogOut aria-hidden="true" />
               Salir
             </Button>
           )}

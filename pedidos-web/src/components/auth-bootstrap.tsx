@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../store/auth';
 import { useAuthBootstrap } from '../hooks/use-auth-bootstrap';
@@ -17,6 +18,7 @@ export function AuthBootstrap({ children }: { children: ReactNode }) {
             void refetch();
           }}
         >
+          <RefreshCw aria-hidden="true" />
           Reintentar
         </Button>
         <p className="text-xs text-muted-foreground">Si el problema persiste, vuelve más tarde.</p>

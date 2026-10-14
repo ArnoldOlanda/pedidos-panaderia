@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { Send, X } from 'lucide-react';
 import type { PublishProductInput } from '../../hooks/use-publish-product';
 import { Button } from '@/components/ui/button';
 import { FormDialog } from '@/components/records/form-dialog';
@@ -51,9 +52,11 @@ export function ProductFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
+            <X aria-hidden="true" />
             Cancelar
           </Button>
           <Button type="submit" form={formId} disabled={isSubmitting}>
+            <Send aria-hidden="true" />
             {isSubmitting ? 'Publicando…' : 'Publicar producto'}
           </Button>
         </div>
