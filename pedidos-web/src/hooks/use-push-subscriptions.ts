@@ -4,7 +4,11 @@ import { getBrowserPushSupport, listMySubscriptions } from '../lib/push';
 export function usePushSubscriptions() {
   return useQuery({
     queryKey: ['push', 'mine'],
-    queryFn: listMySubscriptions,
+    queryFn: async () => {
+      const subs = await listMySubscriptions();
+      console.debug('[push] mine fetched', subs.length, 'subscription(s)');
+      return subs;
+    },
     // The device-scoped list is only meaningful in browsers that actually
     // support it; otherwise the request would 400 because no subscription
     // could ever exist locally.

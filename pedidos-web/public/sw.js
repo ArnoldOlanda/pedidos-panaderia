@@ -1,5 +1,5 @@
 /* pedidos-panaderia service worker (vanilla JS, no build step). */
-const CACHE_NAME = 'pedidos-v1';
+const CACHE_NAME = 'pedidos-v3';
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -82,5 +82,86 @@ self.addEventListener('fetch', (event) => {
         return response;
       });
     }),
+  );
+});
+
+// Web-push handlers. Without these the browser receives the push but has
+// nothing to dispatch it to, so the message is dropped silently. The
+// backend (pedidos-api WebpushService.sendToDevice) sends a JSON payload of
+// shape { title, body, tag? }; data.url is optional and falls back to
+// `/orders`. Bumping CACHE_NAME above also forces an upgrade on existing
+// service-worker registrations so cached old SWs pick this up.
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (_err) {
+    payload = {
+      title: 'Pedidos',
+      body: event.data ? event.data.text() : '',
+    };
+  }
+  const title = payload.title || 'Pedidos';
+  const options = {
+    body: payload.body || '',
+    tag: payload.tag,
+    data: payload,
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+  };
+  // Diagnostic log so the operator can confirm in DevTools that the
+  // browser actually received the push and that the tag/title made it
+  // through the JSON parse. Without this, a missing notification looks
+  // identical to a missing push from the browser side.
+  console.log('[sw] push received', { title, tag: payload.tag, hasBody: Boolean(options.body) });
+  // showNotification() throws a TypeError if the origin's notification
+  // permission is not 'granted'. The DevTools "Push" button in Chromium
+  // browsers dispatches a synthetic push without going through the user
+  // permission flow, so the SW can receive pushes while permission is
+  // still 'default' or 'denied' (e.g. when the user has not clicked
+  // "Activar notificaciones" yet, or has revoked it from site settings).
+  // Guard explicitly so the unhandled rejection does not surface in
+  // DevTools and the push is dropped silently with a clear log line.
+  if (typeof self.Notification === 'undefined' || self.Notification.permission !== 'granted') {
+    console.warn(
+      '[sw] push received but Notification.permission is',
+      typeof self.Notification === 'undefined' ? 'unavailable' : self.Notification.permission,
+      '— showNotification skipped',
+    );
+    return;
+  }
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = event.notification.data && event.notification.data.url
+    ? event.notification.data.url
+    : '/orders';
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clients) => {
+        for (const client of clients) {
+          if ('focus' in client) return client.focus();
+        }
+        return self.clients.openWindow ? self.clients.openWindow(target) : null;
+      }),
+  );
+});
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+  // Browsers can invalidate a push subscription (e.g. on key rotation).
+  // We don't re-subscribe here because the applicationServerKey lives in
+  // the page context; we just notify open clients so the frontend can
+  // refresh the subscription.
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clients) => {
+        for (const client of clients) {
+          client.postMessage({ type: 'push-subscription-changed' });
+        }
+      }),
   );
 });

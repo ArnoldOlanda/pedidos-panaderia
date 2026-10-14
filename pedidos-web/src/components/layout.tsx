@@ -56,7 +56,7 @@ export function Layout() {
               Salir
             </Button>
           )}
-          {user && <PushToggle />}
+          {<PushToggle />}
         </nav>
       </header>
       <main className="flex-1 px-4 py-6 max-w-4xl mx-auto w-full">

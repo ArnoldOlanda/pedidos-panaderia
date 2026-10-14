@@ -56,6 +56,12 @@ describe('WebpushService', () => {
     expect(subscriptions.unsubscribe).toHaveBeenCalledWith(DEVICE, EP);
     expect(out).toEqual({ delivered: 0, removed: 1 });
   });
+  it('returns zero deliveries when the device has no live subscriptions', async () => {
+    subscriptions.listForDevice.mockResolvedValue([]);
+    const out = await service.sendToDevice(DEVICE, { title: 't', body: 'b', tag: 'order-x' }, { orderId: 'order-x' });
+    expect(send).not.toHaveBeenCalled();
+    expect(out).toEqual({ delivered: 0, removed: 0 });
+  });
   it('tolerates non-stale errors and does not delete the subscription', async () => {
     subscriptions.listForDevice.mockResolvedValue([sub()]);
     send.mockRejectedValueOnce(Object.assign(new Error('server error'), { statusCode: 500 }));
