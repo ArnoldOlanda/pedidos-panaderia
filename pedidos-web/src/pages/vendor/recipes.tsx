@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
 import { useRecipes } from '../../hooks/use-recipes';
@@ -201,6 +202,7 @@ export function VendorRecipesPage() {
             Publicar producto →
           </Link>
           <Button type="button" onClick={() => setCreateOpen(true)}>
+            <Plus aria-hidden="true" />
             Crear receta
           </Button>
         </div>

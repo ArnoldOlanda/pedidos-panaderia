@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
 import { useAllTodayProducts } from '../../hooks/use-all-today-products';
@@ -120,6 +121,7 @@ export function VendorProductsPage() {
           )}
         </div>
         <Button type="button" onClick={() => setCreateOpen(true)}>
+          <Plus aria-hidden="true" />
           Publicar producto
         </Button>
       </header>

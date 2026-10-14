@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { CheckCircle2, PackageCheck } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
 import { useMyTodayProducts } from '../../hooks/use-my-today-products';
@@ -71,6 +72,7 @@ function OrderRow({
 
           {!isThisPending && order.status === 'PENDIENTE' && (
             <Button type="button" className="mt-3" onClick={() => trigger('LISTO')}>
+              <CheckCircle2 aria-hidden="true" />
               Marcar LISTO
             </Button>
           )}
@@ -81,6 +83,7 @@ function OrderRow({
               className="mt-3 bg-success text-success-foreground hover:bg-success/90"
               onClick={() => trigger('ENTREGADO')}
             >
+              <PackageCheck aria-hidden="true" />
               Marcar ENTREGADO
             </Button>
           )}
