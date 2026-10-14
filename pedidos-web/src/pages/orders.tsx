@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { ArrowRight, RefreshCw, Search } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useOrdersByDni } from '../hooks/use-orders-by-dni';
 import { formatPrice } from '../lib/format';
@@ -98,6 +99,7 @@ export function OrdersPage() {
               />
             </div>
             <Button type="submit" disabled={!DNI_PATTERN.test(dni)}>
+              <Search aria-hidden="true" />
               Buscar pedidos
             </Button>
           </CardContent>
@@ -137,6 +139,7 @@ export function OrdersPage() {
                 void refetch();
               }}
             >
+              <RefreshCw aria-hidden="true" />
               Reintentar
             </Button>
           </AlertDescription>
@@ -149,9 +152,10 @@ export function OrdersPage() {
             <p>No encontramos pedidos para este DNI.</p>
             <Link
               to="/catalog"
-              className="inline-block text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
-              Ver catálogo →
+              Ver catálogo
+              <ArrowRight aria-hidden="true" className="size-3.5" />
             </Link>
           </CardContent>
         </Card>
