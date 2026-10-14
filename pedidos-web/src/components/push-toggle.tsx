@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { getBrowserPushSupport } from '../lib/push';
+import { detectProblematicBrowser, getBrowserPushSupport, type ProblematicBrowser } from '../lib/push';
 import { usePushPublicKey } from '../hooks/use-push-public-key';
 import { usePushSubscriptions } from '../hooks/use-push-subscriptions';
 import { useSubscribePush } from '../hooks/use-subscribe-push';
@@ -97,4 +97,29 @@ export function PushToggle() {
       </Button>
     </>
   );
+}
+
+// Sibling component rendered next to <PushToggle /> in the layout. Lets the
+// user know, before they click 'Activar', that the current browser's push
+// service is unreliable for our backend (FCM returns 410 on every new
+// Opera subscription; Brave ships its own push relay). The hint is purely
+// informational: PushToggle still renders and works for any browser that
+// passes getBrowserPushSupport, so the cost of being wrong here is zero.
+export function PushBrowserHint() {
+  const problematic = detectProblematicBrowser();
+  if (!problematic) return null;
+  const label = browserLabel(problematic);
+  return (
+    <span
+      className="text-xs text-muted-foreground hidden sm:inline whitespace-nowrap"
+      title={`En ${label} las notificaciones pueden no entregarse. Probá Chrome o Edge para mejor compatibilidad.`}
+      role="note"
+    >
+      ⚠ Probá Chrome o Edge para las notificaciones
+    </span>
+  );
+}
+
+function browserLabel(b: ProblematicBrowser): string {
+  return b === 'opera' ? 'Opera' : 'Brave';
 }

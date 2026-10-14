@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../store/auth';
 import { logoutRequest } from '../lib/auth';
-import { PushToggle } from './push-toggle';
+import { PushToggle, PushBrowserHint } from './push-toggle';
 
 export function Layout() {
   const user = useAuth((s) => s.user);
@@ -57,6 +57,7 @@ export function Layout() {
             </Button>
           )}
           {<PushToggle />}
+          <PushBrowserHint />
         </nav>
       </header>
       <main className="flex-1 px-4 py-6 max-w-4xl mx-auto w-full">
