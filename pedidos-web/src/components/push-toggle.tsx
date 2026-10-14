@@ -111,7 +111,7 @@ export function PushBrowserHint() {
   const label = browserLabel(problematic);
   return (
     <span
-      className="text-xs text-muted-foreground whitespace-normal sm:whitespace-nowrap"
+      className="text-xs text-muted-foreground"
       title={`En ${label} las notificaciones pueden no entregarse. Para una mejor experiencia recomendamos Chrome o Edge.`}
       role="note"
     >
