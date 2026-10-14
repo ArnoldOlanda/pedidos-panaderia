@@ -6,6 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "build:web": "npm --prefix ../pedidos-web run build && rm -rf public && mkdir -p public && cp -r ../pedidos-web/dist/. public/",
+    "prebuild": "npm run build:web",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
