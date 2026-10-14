@@ -52,6 +52,6 @@ Required for the Railway monolith deploy.
 
 ## Commit log
 
-- WU-1: <hash>
+- WU-1: d96a3dd
 - WU-2: <hash>
 - WU-3: <hash>
