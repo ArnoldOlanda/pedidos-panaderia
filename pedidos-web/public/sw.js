@@ -109,6 +109,22 @@ self.addEventListener('push', (event) => {
     icon: '/icon-192.png',
     badge: '/icon-192.png',
   };
+  // showNotification() throws a TypeError if the origin's notification
+  // permission is not 'granted'. The DevTools "Push" button in Chromium
+  // browsers dispatches a synthetic push without going through the user
+  // permission flow, so the SW can receive pushes while permission is
+  // still 'default' or 'denied' (e.g. when the user has not clicked
+  // "Activar notificaciones" yet, or has revoked it from site settings).
+  // Guard explicitly so the unhandled rejection does not surface in
+  // DevTools and the push is dropped silently with a clear log line.
+  if (typeof self.Notification === 'undefined' || self.Notification.permission !== 'granted') {
+    console.warn(
+      '[sw] push received but Notification.permission is',
+      typeof self.Notification === 'undefined' ? 'unavailable' : self.Notification.permission,
+      '— showNotification skipped',
+    );
+    return;
+  }
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
