@@ -1,3 +1,4 @@
+import { Pencil, Trash2, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +24,10 @@ interface RecipeActionsProps {
 /**
  * Row/card actions for a single recipe, shared by the desktop table and the
  * mobile card so the delete confirmation dialog is not duplicated. The
- * read-only badge also lives here: the component picks the shape internally.
+ * repeated row actions render as icon-only buttons (Pencil, Trash2) sized to
+ * the row height; the AlertDialog keeps icon + text for the destructive
+ * confirmation. The read-only badge also lives here: the component picks the
+ * shape internally.
  */
 export function RecipeActions({
   recipe,
@@ -42,18 +46,27 @@ export function RecipeActions({
 
   return (
     <div className="flex gap-2 justify-end">
-      <Button type="button" variant="outline" size="xs" onClick={onEdit}>
-        Editar
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-xs"
+        onClick={onEdit}
+        aria-label="Editar"
+        title="Editar"
+      >
+        <Pencil aria-hidden="true" />
       </Button>
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button
             type="button"
             variant="destructive"
-            size="xs"
+            size="icon-xs"
             disabled={isDeleting}
+            aria-label="Eliminar"
+            title="Eliminar"
           >
-            {isDeleting ? 'Eliminando…' : 'Eliminar'}
+            <Trash2 aria-hidden="true" />
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
@@ -64,13 +77,18 @@ export function RecipeActions({
           </AlertDialogHeader>
           {/* Cancelar and Eliminar are the visible controls that replace
               the browser's own confirm chrome; the title keeps the exact
-              question the native dialog used to ask. */}
+              question the native dialog used to ask. The leading icon (X /
+              Trash2) is decorative; the verb is the accessible name. */}
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>
+              <X aria-hidden="true" />
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={onDelete}
             >
+              <Trash2 aria-hidden="true" />
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

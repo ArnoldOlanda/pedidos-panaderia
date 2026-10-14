@@ -1,3 +1,4 @@
+import { Pencil, Trash2, X } from 'lucide-react';
 import type { Ingredient } from '@/lib/ingredients';
 import {
   AlertDialog,
@@ -20,7 +21,10 @@ interface IngredientActionsProps {
 
 /**
  * Row/card actions for a single ingredient, shared by the desktop table and the
- * mobile card so the delete confirmation dialog is not duplicated.
+ * mobile card so the delete confirmation dialog is not duplicated. The
+ * repeated row actions render as icon-only buttons (Pencil, Trash2) sized to
+ * the row height; the AlertDialog keeps icon + text for the destructive
+ * confirmation.
  */
 export function IngredientActions({
   ingredient,
@@ -30,18 +34,27 @@ export function IngredientActions({
 }: IngredientActionsProps) {
   return (
     <div className="flex gap-2 justify-end">
-      <Button type="button" variant="outline" size="xs" onClick={onEdit}>
-        Editar
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-xs"
+        onClick={onEdit}
+        aria-label="Editar"
+        title="Editar"
+      >
+        <Pencil aria-hidden="true" />
       </Button>
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button
             type="button"
             variant="destructive"
-            size="xs"
+            size="icon-xs"
             disabled={isDeleting}
+            aria-label="Eliminar"
+            title="Eliminar"
           >
-            {isDeleting ? 'Eliminando…' : 'Eliminar'}
+            <Trash2 aria-hidden="true" />
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
@@ -51,8 +64,12 @@ export function IngredientActions({
             </AlertDialogTitle>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>
+              <X aria-hidden="true" />
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={onDelete}>
+              <Trash2 aria-hidden="true" />
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
