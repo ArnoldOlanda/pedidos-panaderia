@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { Save, X } from 'lucide-react';
 import { useIngredient } from '../../hooks/use-ingredient';
 import { toApiError } from '../../lib/api';
 import type { CreateIngredientInput } from '@/lib/ingredients';
@@ -76,6 +77,7 @@ export function IngredientFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
+            <X aria-hidden="true" />
             Cancelar
           </Button>
           <Button
@@ -83,6 +85,7 @@ export function IngredientFormDialog({
             form={formId}
             disabled={isSubmitting || (mode === 'edit' && !loadedIngredient)}
           >
+            <Save aria-hidden="true" />
             {isSubmitting
               ? mode === 'create'
                 ? 'Creando…'

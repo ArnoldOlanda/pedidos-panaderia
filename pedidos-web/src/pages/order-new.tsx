@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { ArrowLeft, RefreshCw, Send } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useProduct } from '../hooks/use-product';
 import { usePlaceOrder } from '../hooks/use-place-order';
@@ -102,8 +103,12 @@ export function OrderNewPage() {
 
   return (
     <section className="space-y-4">
-      <Link to="/catalog" className="text-sm text-primary hover:underline">
-        ← Catálogo
+      <Link
+        to="/catalog"
+        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+      >
+        <ArrowLeft aria-hidden="true" className="size-3.5" />
+        Catálogo
       </Link>
 
       {isLoading && <NewOrderSkeleton />}
@@ -114,8 +119,9 @@ export function OrderNewPage() {
             <p>No encontramos este producto</p>
             <Link
               to="/catalog"
-              className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
+              <ArrowLeft aria-hidden="true" className="size-3.5" />
               Volver al catálogo
             </Link>
           </CardContent>
@@ -132,6 +138,7 @@ export function OrderNewPage() {
               void refetch();
             }}
           >
+            <RefreshCw aria-hidden="true" />
             Reintentar
           </Button>
         </Alert>
@@ -147,8 +154,9 @@ export function OrderNewPage() {
             <p className="text-sm">Este producto ya no acepta pedidos.</p>
             <Link
               to="/catalog"
-              className="inline-block text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
+              <ArrowLeft aria-hidden="true" className="size-3.5" />
               Volver al catálogo
             </Link>
           </CardContent>
@@ -249,12 +257,14 @@ export function OrderNewPage() {
                 <Alert variant="destructive">
                   <p>{orderError.message || 'No pudimos registrar el pedido'}</p>
                   <Button type="button" className="mt-3" onClick={() => handleSubmit()}>
+                    <RefreshCw aria-hidden="true" />
                     Reintentar
                   </Button>
                 </Alert>
               )}
 
               <Button type="submit" disabled={pending || !buyerValid}>
+                <Send aria-hidden="true" />
                 {pending ? 'Procesando…' : 'Confirmar pedido'}
               </Button>
             </CardContent>

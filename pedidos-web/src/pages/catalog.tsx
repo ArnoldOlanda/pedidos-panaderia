@@ -1,3 +1,4 @@
+import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTodayProducts } from '../hooks/use-today-products';
 import { closesInLabel, formatCloseTimeLima, formatPrice } from '../lib/format';
@@ -22,9 +23,10 @@ function ProductCard({ product }: { product: Product }) {
         </p>
         <Link
           to={`/catalog/${product.id}`}
-          className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+          className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
         >
           Ver detalle
+          <ArrowRight aria-hidden="true" className="size-3.5" />
         </Link>
       </CardContent>
     </Card>
