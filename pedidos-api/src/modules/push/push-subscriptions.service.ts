@@ -33,9 +33,28 @@ export class PushSubscriptionsService {
     });
     if (existing) {
       if (existing.deviceId !== deviceId) {
-        throw new ConflictException(
-          'endpoint already registered to another device',
-        );
+        // Re-bind instead of rejecting. The push endpoint is owned by the
+        // browser, not by us; the same browser can re-subscribe with a
+        // fresh deviceId after localStorage is cleared, an incognito
+        // window opens, or the user switches profiles. We update the
+        // existing row's owner to the new deviceId and refresh the keys
+        // (which may also have rotated on the browser side). The race
+        // path below still translates a 23505 from save() to 409, so two
+        // truly concurrent re-binds for the same endpoint still surface
+        // as a domain conflict.
+        existing.deviceId = deviceId;
+        existing.p256dh = dto.keys.p256dh;
+        existing.auth = dto.keys.auth;
+        try {
+          return await this.subs.save(existing);
+        } catch (err) {
+          if (this.isUniqueEndpointViolation(err)) {
+            throw new ConflictException(
+              'endpoint already registered to another device',
+            );
+          }
+          throw err;
+        }
       }
       existing.p256dh = dto.keys.p256dh;
       existing.auth = dto.keys.auth;

@@ -28,10 +28,25 @@ describe('PushSubscriptionsService', () => {
     const r = await svc.subscribe(DEVICE_A, { ...DTO, keys: { p256dh: 'new', auth: 'new' } });
     expect(r.p256dh).toBe('new');
   });
-  it('subscribe throws ConflictException for other-device endpoint', async () => {
-    repo.findOne.mockResolvedValue(sub({ deviceId: DEVICE_B }));
+  it('subscribe rebinds when endpoint exists for a different deviceId', async () => {
+    const existing = sub({ deviceId: DEVICE_B, p256dh: 'old', auth: 'old' });
+    repo.findOne.mockResolvedValue(existing);
+    repo.save.mockImplementation((s) => s);
+    const r = await svc.subscribe(DEVICE_A, DTO);
+    expect(r.deviceId).toBe(DEVICE_A);
+    expect(r.p256dh).toBe('p');
+    expect(r.auth).toBe('a');
+    expect(repo.save).toHaveBeenCalledTimes(1);
+  });
+  it('subscribe keeps the deviceId the same on rebind if a concurrent writer beat us', async () => {
+    // The findOne() returned DEVICE_B as owner, but by the time save()
+    // ran a parallel writer had already rebound the row to DEVICE_C.
+    // The 23505 from save() must still surface as ConflictException so
+    // the caller knows the rebind they requested did not happen.
+    const existing = sub({ deviceId: DEVICE_B });
+    repo.findOne.mockResolvedValue(existing);
+    repo.save.mockRejectedValue(err23505());
     await expect(svc.subscribe(DEVICE_A, DTO)).rejects.toBeInstanceOf(ConflictException);
-    expect(repo.save).not.toHaveBeenCalled();
   });
   it.each(['insert', 'update'])('subscribe translates 23505 on %s path to ConflictException', async (p) => {
     if (p === 'insert') {
