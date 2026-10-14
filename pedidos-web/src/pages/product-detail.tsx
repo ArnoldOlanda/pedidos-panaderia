@@ -1,3 +1,4 @@
+import { ShoppingBag } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useProduct } from '../hooks/use-product';
 import { closesInLabel, formatCloseTimeLima, formatPrice } from '../lib/format';
@@ -85,7 +86,10 @@ export function ProductDetailPage() {
               </Button>
             ) : (
               <Button asChild>
-                <Link to={`/orders/new?productId=${data.id}`}>Pedir</Link>
+                <Link to={`/orders/new?productId=${data.id}`}>
+                  <ShoppingBag aria-hidden="true" />
+                  Pedir
+                </Link>
               </Button>
             )}
           </CardContent>
