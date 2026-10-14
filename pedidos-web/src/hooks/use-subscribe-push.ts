@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPublicKey, subscribeBrowser, subscribeServer } from '../lib/push';
 import { getOrCreateDeviceId } from '../lib/device';
+import { toast } from '../lib/toast';
 
 export function useSubscribePush() {
   const qc = useQueryClient();
@@ -30,6 +31,17 @@ export function useSubscribePush() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['push', 'mine'] });
+    },
+    onError: (err) => {
+      // Surface the browser's actual reason for refusing the subscribe
+      // (e.g. NotAllowedError in Brave when Web Push is disabled, or a
+      // generic AbortError when the SW is not yet ready). Without this
+      // the user sees a silent no-op after the public-key fetch, which
+      // is what triggered the bug report that led to this fix.
+      toast.error(err, {
+        fallback: 'No se pudieron activar las notificaciones',
+        hint: 'Revisá los permisos del navegador o probá con otro',
+      });
     },
   });
 }
