@@ -54,4 +54,4 @@ Required for the Railway monolith deploy.
 
 - WU-1: d96a3dd
 - WU-2: a438d42
-- WU-3: <hash>
+- WU-3: 4cbcc45
