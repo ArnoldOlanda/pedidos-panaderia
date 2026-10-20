@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import { postgresSslOption } from '../../config/database-url';
 import { loadAndValidateEnvSync } from '../../config/validate-env';
 import { User, UserRole } from '../../modules/users/user.entity';
 
@@ -23,6 +24,7 @@ const ds = new DataSource({
   database: env.DB_DATABASE,
   username: env.DB_USERNAME,
   password: env.DB_PASSWORD,
+  ssl: postgresSslOption(env.DB_SSL),
   entities: [User],
   synchronize: false,
   logging: false,

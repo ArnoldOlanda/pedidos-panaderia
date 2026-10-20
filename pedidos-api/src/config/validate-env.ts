@@ -9,14 +9,20 @@ import {
   ValidationError,
   validateSync,
 } from 'class-validator';
+import {
+  DatabaseConfigError,
+  resolveDatabaseConfig,
+} from './database-url';
 import { EnvSchema } from './env.schema';
 
 export interface EnvValidated {
+  DATABASE_URL?: string;
   DB_HOST: string;
   DB_PORT: string;
   DB_DATABASE: string;
   DB_USERNAME: string;
   DB_PASSWORD: string;
+  DB_SSL: boolean;
   JWT_SECRET: string;
   VAPID_SUBJECT: string;
   VAPID_PUBLIC_KEY: string;
@@ -71,7 +77,32 @@ function validateRaw(raw: Record<string, unknown>): EnvValidated {
   if (errors.length > 0) {
     throw new EnvValidationError(formatErrors(errors));
   }
-  return instance as unknown as EnvValidated;
+
+  // The database group is the one cross-field rule class-validator cannot
+  // express, so it is resolved here and folded back into the DB_* names. Every
+  // consumer (data-source, seed, app.module) keeps reading DB_HOST/DB_PORT/...
+  // no matter which shape the operator configured, which keeps this a
+  // deployment concern instead of a refactor of every call site.
+  const validated = instance as unknown as EnvValidated;
+  let database;
+  try {
+    database = resolveDatabaseConfig(validated);
+  } catch (err) {
+    if (err instanceof DatabaseConfigError) {
+      throw new EnvValidationError(err.issues);
+    }
+    throw err;
+  }
+
+  return {
+    ...validated,
+    DB_HOST: database.host,
+    DB_PORT: String(database.port),
+    DB_DATABASE: database.database,
+    DB_USERNAME: database.username,
+    DB_PASSWORD: database.password,
+    DB_SSL: database.ssl,
+  };
 }
 
 /**

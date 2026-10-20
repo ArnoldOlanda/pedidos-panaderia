@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import { postgresSslOption } from '../config/database-url';
 import { loadAndValidateEnvSync } from '../config/validate-env';
 import { Ingredient } from '../modules/ingredients/ingredient.entity';
 import { Order } from '../modules/orders/order.entity';
@@ -23,6 +24,7 @@ export default new DataSource({
   database: env.DB_DATABASE,
   username: env.DB_USERNAME,
   password: env.DB_PASSWORD,
+  ssl: postgresSslOption(env.DB_SSL),
   entities: [
     User,
     Recipe,

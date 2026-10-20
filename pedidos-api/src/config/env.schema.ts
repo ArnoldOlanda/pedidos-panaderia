@@ -14,29 +14,52 @@ import {
  * the instance shape predictable for the transformer.
  */
 export class EnvSchema {
-  // Laravel-style DB connection fields. The driver is fixed to PostgreSQL
-  // in app.module.ts / data-source.ts / seed.ts — there is no
-  // DB_CONNECTION switch. DB_PORT is kept as a string because Nest's
-  // ConfigService returns env values as strings; @IsPort still validates
-  // the range 1..65535. DB_PASSWORD is required but allowed to be empty
-  // (trust-auth setups).
+  // Database connection, in two supported shapes:
+  //
+  //   - DATABASE_URL: what Railway injects from its Postgres plugin.
+  //   - DB_HOST/DB_PORT/DB_DATABASE/DB_USERNAME/DB_PASSWORD: the local WSL
+  //     Postgres, unchanged so existing .env files keep working.
+  //
+  // All of them are optional at the decorator level because "exactly one
+  // complete group" is a cross-field rule that class-validator cannot
+  // express; resolveDatabaseConfig in database-url.ts enforces it and reports
+  // every missing field at once. DB_PORT keeps its 1..65535 range check via
+  // @IsPort, and is a string because ConfigService returns env values as
+  // strings. The driver is fixed to PostgreSQL in app.module.ts /
+  // data-source.ts / seed.ts, so there is no DB_CONNECTION switch.
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  DB_HOST!: string;
+  DATABASE_URL?: string;
 
+  @IsOptional()
+  @IsString()
+  DB_HOST?: string;
+
+  @IsOptional()
   @IsPort()
-  DB_PORT!: string;
+  DB_PORT?: string;
 
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  DB_DATABASE!: string;
+  DB_DATABASE?: string;
 
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  DB_USERNAME!: string;
+  DB_USERNAME?: string;
 
+  // Allowed to be empty: trust-auth setups have no password.
+  @IsOptional()
   @IsString()
-  DB_PASSWORD!: string;
+  DB_PASSWORD?: string;
+
+  // Forces TLS on regardless of what the URL's sslmode says. Only needed when
+  // a provider injects a bare DATABASE_URL without that query parameter.
+  @IsOptional()
+  @IsString()
+  DB_SSL?: string;
 
   @IsString()
   @MinLength(16)
