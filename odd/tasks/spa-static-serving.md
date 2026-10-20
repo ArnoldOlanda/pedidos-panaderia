@@ -4,6 +4,10 @@ Goal: make NestJS serve the built SPA from `pedidos-api`, so a single Node
 process can host both the API and the catalog/orders UI on the same origin.
 Required for the Railway monolith deploy.
 
+Status: shipped and merged into `main` as `e18ed0f`. The deployment layer on
+top of it is tracked separately in `odd/tasks/railway-monolith-deploy.md`
+(`railpack.json`, `DATABASE_URL`, Pre-deploy migrations).
+
 ## Decisions (locked in)
 
 - `ServeStaticModule` from `@nestjs/serve-static` v4 (Nest 10 compatible),

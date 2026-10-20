@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './app.controller';
+import { postgresSslOption } from './config/database-url';
 import { validateEnv } from './config/validate-env';
 import { AuthModule } from './modules/auth/auth.module';
 import { Ingredient } from './modules/ingredients/ingredient.entity';
@@ -46,6 +47,7 @@ const SPA_DIR = join(process.cwd(), 'public');
         database: config.getOrThrow<string>('DB_DATABASE'),
         username: config.getOrThrow<string>('DB_USERNAME'),
         password: config.getOrThrow<string>('DB_PASSWORD'),
+        ssl: postgresSslOption(config.getOrThrow<boolean>('DB_SSL')),
         entities: [
           User,
           Recipe,

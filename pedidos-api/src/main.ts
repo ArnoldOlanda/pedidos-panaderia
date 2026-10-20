@@ -34,10 +34,21 @@ async function bootstrap(): Promise<void> {
   // the `setGlobalPrefix('api')` collision: a Nest @Get('*') would be
   // pre-prefixed into /api/*, but SPA routes own non-/api paths.
   //
+  // Registration order is load-bearing. Express evaluates middleware in the
+  // order it was added, and ServeStaticModule only registers its middleware
+  // during `app.init()` -- which `app.listen()` triggers internally. Adding
+  // this route before init put it ahead of the static handler, so *every*
+  // request matched it and returned index.html: the JS bundle, the service
+  // worker and the PWA icons all came back as HTML and the app never booted
+  // in a browser. Calling `init()` explicitly makes the ordering explicit
+  // rather than accidental; `listen()` skips the init it would otherwise do.
+  //
   // The `existsSync` guard makes dev-without-an-SPA-build a clean 404
   // rather than a crash; in production the `prebuild` script guarantees
   // the file is present.
   const expressApp = app.getHttpAdapter().getInstance();
+  await app.init();
+
   const spaIndex = join(process.cwd(), 'public', 'index.html');
   expressApp.get(/^(?!\/?api(\/|$)).*/, (req: Request, res: Response) => {
     if (!existsSync(spaIndex)) {
