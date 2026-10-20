@@ -1,6 +1,6 @@
 # Feature: pedidos-panaderia-mvp
 
-PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana horaria, push notifications, deploy Railway + Netlify.
+PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana horaria, push notifications, deploy Railway (monolito: Nest sirve la API y el build del frontend).
 
 ## Status
 
@@ -40,8 +40,8 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 - [x] **3.9** — Vendor order list + status update UI
 - [x] **3.10** — PWA manifest + service worker
 - [x] **3.11** — Push subscription manager (frontend)
-- [ ] **3.12** — Deploy backend to Railway
-- [ ] **3.13** — Deploy frontend to Netlify
+- [ ] **3.12** — Deploy a Railway (monolito). Seguimiento en `odd/tasks/railway-monolith-deploy.md`
+- [~] **3.13** — ~~Deploy frontend to Netlify~~ **SUPERADO**: el frontend se despliega como parte del mismo servicio Railway, servido por Nest (`ServeStaticModule` + fallback de SPA). No hay servicio Netlify. Ver `odd/tasks/spa-static-serving.md`.
 
 ## Open Decisions (defaults applied unless user overrides)
 
@@ -54,6 +54,7 @@ PWA para curso de panadería/pastelería: catálogo diario, pedidos con ventana 
 | D5 | Same buyer + same product | Allow multiple |
 | D6 | PWA icons | Placeholder PNGs |
 | D7 | iOS push | Document home-screen install |
+| D8 | Deploy target | **Un solo servicio en Railway.** Cambiado el 2026-10-20: el plan original era backend en Railway + frontend en Netlify. `feat/spa-static-serving` yamerged lo de servir el SPA desde Nest, así que 3.13 queda superado. Build declarado en `railpack.json`; migraciones en el Pre-deploy Command. |
 
 ## Progress Log
 
