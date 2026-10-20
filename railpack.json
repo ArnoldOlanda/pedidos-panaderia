@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "node",
+  "packages": {
+    "node": "22"
+  },
+  "caches": {
+    "npm-install": {
+      "directory": "/root/.npm",
+      "type": "shared"
+    }
+  },
+  "steps": {
+    "install": {
+      "caches": ["npm-install"],
+      "commands": [
+        "npm --prefix pedidos-web ci --include=dev",
+        "npm --prefix pedidos-api ci --include=dev"
+      ]
+    },
+    "build": {
+      "commands": [
+        "npm --prefix pedidos-api run build"
+      ]
+    }
+  },
+  "deploy": {
+    "startCommand": "cd pedidos-api && node dist/main.js"
+  }
+}
