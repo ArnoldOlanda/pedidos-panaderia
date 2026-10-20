@@ -10,7 +10,9 @@ import {
   validateSync,
 } from 'class-validator';
 import {
+  DatabaseConfig,
   DatabaseConfigError,
+  DatabaseEnvInput,
   resolveDatabaseConfig,
 } from './database-url';
 import { EnvSchema } from './env.schema';
@@ -62,6 +64,36 @@ function formatErrors(errors: ValidationError[]): string[] {
 }
 
 /**
+ * Outcome of the database phase. Kept as a value rather than thrown so a
+ * database failure cannot end the validation early the way a raised
+ * `DatabaseConfigError` used to.
+ */
+type DatabaseResolution =
+  | { ok: true; config: DatabaseConfig }
+  | { ok: false; issues: string[] };
+
+function tryResolveDatabase(env: DatabaseEnvInput): DatabaseResolution {
+  try {
+    return { ok: true, config: resolveDatabaseConfig(env) };
+  } catch (err) {
+    if (err instanceof DatabaseConfigError) {
+      return { ok: false, issues: err.issues };
+    }
+    throw err;
+  }
+}
+
+/**
+ * The field an issue is about: the segment before the first colon. Used to
+ * recognise an issue that both validation phases reported for the same
+ * variable.
+ */
+function issueField(issue: string): string {
+  const separator = issue.indexOf(':');
+  return separator === -1 ? issue : issue.slice(0, separator);
+}
+
+/**
  * Internal synchronous validator. Performs the class-validator check on a
  * raw env object and throws an aggregated error if any required field is
  * missing or invalid. Returns the validated env cast to `EnvValidated`.
@@ -74,25 +106,42 @@ function validateRaw(raw: Record<string, unknown>): EnvValidated {
     whitelist: true,
     forbidNonWhitelisted: false,
   });
-  if (errors.length > 0) {
-    throw new EnvValidationError(formatErrors(errors));
-  }
 
+  // Both phases always run and their issues are reported together. Throwing
+  // on the class-validator errors first made the database group disappear
+  // whenever an unrelated variable was also invalid — the diagnostic the
+  // pre-deploy check exists to give. On Railway a misconfigured env commonly
+  // has *both* an unset DATABASE_URL and another invalid variable, so
+  // reporting one group at a time made operators fix problems one deploy at
+  // a time.
+  //
   // The database group is the one cross-field rule class-validator cannot
   // express, so it is resolved here and folded back into the DB_* names. Every
   // consumer (data-source, seed, app.module) keeps reading DB_HOST/DB_PORT/...
   // no matter which shape the operator configured, which keeps this a
   // deployment concern instead of a refactor of every call site.
   const validated = instance as unknown as EnvValidated;
-  let database;
-  try {
-    database = resolveDatabaseConfig(validated);
-  } catch (err) {
-    if (err instanceof DatabaseConfigError) {
-      throw new EnvValidationError(err.issues);
-    }
-    throw err;
+  const schemaIssues = formatErrors(errors);
+  const resolution = tryResolveDatabase(validated);
+
+  if (!resolution.ok) {
+    // A single field can be rejected by both phases: DB_PORT=99999 fails the
+    // @IsPort range check and the resolver's own range check. Reporting it
+    // twice makes one problem look like two and buries the ones that actually
+    // need acting on, which is the opposite of what an aggregated error is
+    // for. The message cannot come out empty: when every resolver issue is a
+    // duplicate, each one corresponds to a schema issue already listed.
+    const alreadyReported = new Set(schemaIssues.map(issueField));
+    const fresh = resolution.issues.filter(
+      (issue) => !alreadyReported.has(issueField(issue)),
+    );
+    throw new EnvValidationError([...schemaIssues, ...fresh]);
   }
+
+  if (schemaIssues.length > 0) {
+    throw new EnvValidationError(schemaIssues);
+  }
+  const database = resolution.config;
 
   return {
     ...validated,

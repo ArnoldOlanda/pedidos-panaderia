@@ -103,6 +103,22 @@ describe('validateEnv — failure reporting', () => {
     );
   });
 
+  it('reports a field once even when both phases reject it', () => {
+    let issues = '';
+    try {
+      validateEnv(withDbFields({ DB_PORT: '99999' }));
+    } catch (err) {
+      issues = (err as Error).message;
+    }
+    // DB_PORT=99999 fails the @IsPort range check and the resolver's own range
+    // check. One problem must read as one line, not two.
+    const portLines = issues
+      .split('\n')
+      .filter((line) => line.includes('DB_PORT'));
+    expect(portLines).toHaveLength(1);
+    expect(issues).toContain('DB_PORT');
+  });
+
   it('still rejects a DB_PORT outside the valid range', () => {
     expect(() => validateEnv(withDbFields({ DB_PORT: '99999' }))).toThrow(
       EnvValidationError,
@@ -142,5 +158,33 @@ describe('validateEnv — failure reporting', () => {
     expect(() =>
       validateEnv(withDatabaseUrl({ DATABASE_URL: 'not-a-url' })),
     ).toThrow(EnvValidationError);
+  });
+
+  it('aggregates every missing DB_* field into one error', () => {
+    let issues = '';
+    try {
+      validateEnv({
+        ...withDatabaseUrl(),
+        DB_HOST: '127.0.0.1',
+        DB_PORT: '5432',
+        DB_DATABASE: 'pedidos',
+        DB_USERNAME: 'pedidos',
+      });
+    } catch (err) {
+      issues = (err as Error).message;
+    }
+    expect(issues).toContain('DB_PASSWORD: missing or empty');
+  });
+
+  it('reports the database group alongside other invalid variables', () => {
+    let issues = '';
+    try {
+      const { DATABASE_URL: _omitted, ...rest } = withDatabaseUrl();
+      validateEnv({ ...rest, JWT_SECRET: 'short' });
+    } catch (err) {
+      issues = (err as Error).message;
+    }
+    expect(issues).toContain('JWT_SECRET');
+    expect(issues).toContain('DB_HOST');
   });
 });
