@@ -100,11 +100,31 @@ What it established beyond the writer's own claims:
 
 Advisories considered and not acted on: `caches.npm-install.directory: "/root/.npm"` is builder-image specific and unverifiable offline (it did not interfere with a real `npm ci` during the scratch build), and a stray root-level `.ts` file shifting tsc's inferred `rootDir` became a task in the follow-up unit.
 
+### Follow-up unit — closing the verifier's findings (`15d1c08`)
+
+All four items the verifier handed back are closed. Suite is now **147 passed / 14 suites**.
+
+- `spa-fallback-order.spec.ts` boots a DB-free miniature of the `main.ts` wiring and pins *both* orderings — catch-all before init serves `/sw.js` as `text/html`; after init it serves `application/javascript` and `/catalog` still falls back. This is the regression guard `d714ed1` lacked.
+- `validateRaw()` now runs both validation phases and throws once, so the cross-group regression above is fixed and pinned.
+- A field rejected by both phases is reported once. `DB_PORT=99999` fails the `@IsPort` range check *and* the resolver's own range check; the first draft of that dedupe carried a defensive fallback that re-inserted the duplicate in exactly the case the dedupe existed to handle. The fallback was unnecessary and was removed: when every resolver issue is a duplicate, each one already corresponds to a schema issue present in the message.
+- `tsconfig.build.json` pins `"include": ["src/**/*"]`. No stray root-level `.ts` exists today, so this is hardening against a failure mode that would break the start command.
+
+**What an operator now sees**, both groups in one message and `DB_PORT` named once:
+
+```
+Invalid environment configuration:
+  - DB_PORT: DB_PORT must be a port
+  - JWT_SECRET: JWT_SECRET must be longer than or equal to 16 characters
+```
+
+**Carry-over worth remembering:** a plain ts-node harness without `import 'reflect-metadata'` produces *false* equivalence results against this validation code. The first `validateSync` call succeeds and every later one throws `Reflect.getMetadata is not a function`, which masks differences as identical. Any ad-hoc differential harness needs the shim, not just the committed specs.
+
 ## Follow-ups deliberately left out of scope
 
 - Migrate `products.closesAt` from `timestamp without time zone` to `timestamptz` and drop the `TZ` workaround. Data-affecting, so it is its own feature.
 - E2E tests for the auth cycle (inherited since 2026-10-13).
 - Prune of the `DEV` dependency set in the runtime image.
+- Extracting the SPA fallback registration out of `bootstrap()` so the ordering spec binds to production wiring instead of a replica (see the known limit above).
 
 ## Log
 
