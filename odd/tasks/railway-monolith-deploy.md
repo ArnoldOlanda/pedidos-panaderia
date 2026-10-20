@@ -24,7 +24,7 @@ ODD-3.12 (Railway) + ODD-3.13 (Netlify) split.
 | ID | Task | Specs | Route | Commit |
 |---|---|---|---|---|
 | T1 | Resolve DB config from `DATABASE_URL` with SSL toggle; keep `DB_*` working for local dev | S4 | inline | `65c9cfa` |
-| T2 | Compiled migration runner + `__dirname` migration glob; seed reachable from `dist/` | S6 | inline | pending |
+| T2 | Compiled migration runner + `__dirname` migration glob; seed reachable from `dist/` | S6 | inline | `049d16e` |
 | T3 | `railpack.json` at root describing install, build and start | S3 | inline | pending |
 | T4 | Move the SPA plan to the tracker root; supersede ODD-3.13 in the MVP tracker | S1, S2 | inline | pending |
 | T5 | Railway runbook: service setup, Postgres, env vars, pre-deploy command, healthcheck, GitHub push | S3, S4, S5 | inline | pending |
