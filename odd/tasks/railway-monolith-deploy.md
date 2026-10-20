@@ -25,9 +25,9 @@ ODD-3.12 (Railway) + ODD-3.13 (Netlify) split.
 |---|---|---|---|---|
 | T1 | Resolve DB config from `DATABASE_URL` with SSL toggle; keep `DB_*` working for local dev | S4 | inline | `65c9cfa` |
 | T2 | Compiled migration runner + `__dirname` migration glob; seed reachable from `dist/` | S6 | inline | `049d16e` |
-| T3 | `railpack.json` at root describing install, build and start | S3 | inline | pending |
-| T4 | Move the SPA plan to the tracker root; supersede ODD-3.13 in the MVP tracker | S1, S2 | inline | pending |
-| T5 | Railway runbook: service setup, Postgres, env vars, pre-deploy command, healthcheck, GitHub push | S3, S4, S5 | inline | pending |
+| T3 | `railpack.json` at root describing install, build and start | S3 | inline | `bdf972c` |
+| T4 | Move the SPA plan to the tracker root; supersede ODD-3.13 in the MVP tracker | S1, S2 | inline | `3b83836` |
+| T5 | Railway runbook: service setup, Postgres, env vars, pre-deploy command, healthcheck, GitHub push | S3, S4, S5 | inline | `bb682ae` |
 
 ### Progress
 
@@ -40,6 +40,36 @@ ODD-3.12 (Railway) + ODD-3.13 (Netlify) split.
 - **T2 defect caught by its own test**: the first `migrate()` draft called `initialize()` outside the `try`, so a failed connection left a half-open handle. The teardown is now unconditional and the test pins it.
 - **T2 verified against the real database**, not just mocks: `npm run migration:run:dist` prints `[migrate] schema already up to date.` and `npm run db:seed:dist` prints `2 total: 0 created, 2 already existed.` — the exact pair the Pre-deploy Command will run, with no data mutated. Suite now 142 passed / 13 suites.
 - **Test hygiene note**: `data-source.spec.ts` must set `DOTENV_CONFIG_PATH` to a path that does not exist. `data-source.ts` runs `import 'dotenv/config'`, which otherwise re-populates `DB_*` from the developer's real `.env` and silently wins over the URL under test.
+
+### Critical finding — the SPA was never actually served in production
+
+Found by the T3 boot smoke, not by any test. Shipped in `e18ed0f`.
+
+The Express catch-all in `main.ts` was registered immediately after `NestFactory.create()`, while `ServeStaticModule` only registers its middleware during `app.init()` — which `app.listen()` triggers internally. Express evaluates middleware in registration order, so the catch-all sat *ahead* of the static handler and matched every request.
+
+Every asset was served as `index.html`: the JS bundle, `sw.js`, `icon-192.png` and `manifest.webmanifest`. A browser would have parsed HTML as JavaScript and rendered a blank page.
+
+The reason it survived review: the previous acceptance criterion was "`node dist/main.js` serves `/`", and `/` passes either way, because the catch-all returns `index.html` too. Checking the root cannot distinguish "static handler working" from "catch-all swallowing everything". Asset content types are the only honest check.
+
+Fixed in `d714ed1` by calling `await app.init()` before adding the route, making the ordering explicit.
+
+**Why there is no unit test for this**: middleware ordering is a boot-time property of the assembled Express stack. `bootstrap()` is not exported and booting `AppModule` needs a live database, so a Jest spec could only assert it through the same HTTP surface that caught it. Verified against a booted production build instead, across seven paths:
+
+| Path | Before | After |
+|---|---|---|
+| `/api/health` | 200 `application/json` | unchanged |
+| `/` | 200 `text/html` | unchanged |
+| `/catalog` (deep link) | 200 `text/html` | unchanged, still falls back |
+| `/assets/index-*.js` | 200 `text/html` | 200 `application/javascript` |
+| `/sw.js` | 200 `text/html` | 200 `application/javascript` |
+| `/icon-192.png` | 200 `text/html` | 200 `image/png` |
+| `/manifest.webmanifest` | 200 `text/html` | 200 `application/manifest+json` |
+
+### Verification notes
+
+- **T3 verified end to end.** A pristine copy of the tree was extracted with `git archive` into a `mktemp -d` scratch directory (never committed as a test), the install and build commands were executed *as declared in `railpack.json`* rather than transcribed, and both artifacts were asserted present. The boot smoke then ran the file's own `deploy.startCommand`.
+- **Three harness failures were mine, not the code's**, and are worth not repeating: hardcoding the DB port as 5433 (it is 5432), a placeholder `VAPID_PRIVATE_KEY` that is not 32 bytes, and running the start command from the wrong working directory when it already contains `cd pedidos-api`.
+- Suite is green at 142 passed / 13 suites after every work unit.
 
 ### Task notes
 
