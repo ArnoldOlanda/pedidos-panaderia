@@ -82,6 +82,24 @@ Fixed in `d714ed1` by calling `await app.init()` before adding the route, making
 
 Items 2 and 3 — T1 changes a configuration contract (`DB_*` → `DATABASE_URL`) that `data-source.ts`, `seed.ts`, `app.module.ts` and the local dev setup all consume; T2 changes how migrations resolve. Both are observable through the public start-up path, so they carry independent verification rather than inline-only checks.
 
+### Independent verification (2026-10-20)
+
+`gentle_review` assess returned **risk=high** with an escalation naming item 3, and required an independent verifier. `gentle-ai-verify` ran read-only against `main..HEAD` and returned **PASS on all four items**, with one change-caused advisory.
+
+What it established beyond the writer's own claims:
+
+- **Backward compatibility, measured differentially.** Its own probes ran against both `main` and `HEAD`: a real local `.env` using only `DB_*` resolves identically at both (the only new field is `DB_SSL: false`), and `migration:show` lists the same 8 applied migrations at both. Every `DB_*` rule that fired on `main` still fires — empty host, out-of-range or non-numeric port, partial group — and the empty `DB_PASSWORD` that trust-auth needs is still allowed.
+- **SSL is plumbed, not merely stored.** Proven by failure rather than by reading: booting with `DB_SSL=true` against a plaintext cluster fails at all four DataSource sites with `The server does not support SSL connections` (app boot, `migration:show`, `migration:run:dist`, `db:seed:dist`). Unset, all four succeed.
+- **The middleware fix, in both directions.** It built the same binary from `main` and booted it identically: every asset returned `200 text/html`. On `HEAD` every asset carries its own content type, `/catalog/123` still falls back, and `/api/nope` still returns a JSON 404 rather than being swallowed. `d714ed1` is the sole cause.
+- **The start command's `cd` is load-bearing.** Booting the same `dist/main.js` from the repo root instead of from `pedidos-api` returns 404 for `/`, `/catalog` and `/sw.js`, because `SPA_DIR` is `process.cwd()`-relative.
+- **The baseline was not eroded.** `main` measured at 92 tests / 9 suites in the same run.
+
+**Advisory, and the one claim that turned out to be too strong:** `validateRaw()` threw on the class-validator phase before ever resolving the database, so database problems vanished from the message whenever any unrelated variable was also invalid. An env missing `JWT_SECRET` with no database config listed 11 issues on `main` and only `JWT_SECRET` on this branch. Boot still fails loudly and nothing is silently accepted, so it was non-blocking — but it degraded a diagnostic the original code deliberately provided, and the T1 commit message asserted it was preserved. It was preserved *within* the database group, not across groups. Fixed in the follow-up work unit.
+
+**Known limit of the new middleware spec**, recorded rather than papered over: it boots a miniature replica of the `main.ts` wiring, because `bootstrap()` cannot be imported and booting `AppModule` needs a live database. It pins the mechanism — after-init serves real content types, before-init swallows them — but a regression in the literal `main.ts` sequence would not fail it. Binding it to production wiring means extracting the fallback registration into its own module; that is future work, and the seven-path HTTP check remains the real guard.
+
+Advisories considered and not acted on: `caches.npm-install.directory: "/root/.npm"` is builder-image specific and unverifiable offline (it did not interfere with a real `npm ci` during the scratch build), and a stray root-level `.ts` file shifting tsc's inferred `rootDir` became a task in the follow-up unit.
+
 ## Follow-ups deliberately left out of scope
 
 - Migrate `products.closesAt` from `timestamp without time zone` to `timestamptz` and drop the `TZ` workaround. Data-affecting, so it is its own feature.
