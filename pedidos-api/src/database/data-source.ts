@@ -1,4 +1,9 @@
 import 'dotenv/config';
+// Required because the entities below are decorated. The Nest bootstrap loads
+// it too, but this file is also the entry point for the standalone TypeORM CLI
+// and for `node dist/database/migrate.js`, neither of which goes through Nest.
+import 'reflect-metadata';
+import { join } from 'path';
 import { DataSource } from 'typeorm';
 import { postgresSslOption } from '../config/database-url';
 import { loadAndValidateEnvSync } from '../config/validate-env';
@@ -34,6 +39,13 @@ export default new DataSource({
     Order,
     PushSubscription,
   ],
-  migrations: ['src/database/migrations/*.ts'],
+  // Anchored to this module rather than to the process cwd, so the same
+  // patterns resolve under ts-node (src/database/migrations/*.ts) and under the
+  // compiled output (dist/database/migrations/*.js). The deploy's Pre-deploy
+  // Command runs the compiled runner, which has no src/ tree next to it.
+  migrations: [
+    join(__dirname, 'migrations', '*.ts'),
+    join(__dirname, 'migrations', '*.js'),
+  ],
   synchronize: false,
 });

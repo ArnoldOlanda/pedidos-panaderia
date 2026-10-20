@@ -1,4 +1,7 @@
 import 'dotenv/config';
+// The User entity below is decorated; a bare `node dist/database/seeds/seed.js`
+// does not go through the Nest bootstrap that would otherwise load this.
+import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { postgresSslOption } from '../../config/database-url';
 import { loadAndValidateEnvSync } from '../../config/validate-env';
