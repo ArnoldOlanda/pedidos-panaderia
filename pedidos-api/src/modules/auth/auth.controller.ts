@@ -35,7 +35,13 @@ export class AuthController {
     const isProd = this.config.get<string>('NODE_ENV') === 'production';
     res.cookie(AUTH_COOKIE_NAME, token, {
       httpOnly: true,
-      sameSite: isProd ? 'none' : 'lax',
+      // `lax` in every environment, not just development. `none` is only
+      // needed when the SPA lives on a different origin than the API — which
+      // was the plan when this was written (Netlify + Railway). Deploying as a
+      // single service means every request is same-origin, so `lax` still
+      // carries the session, while `none` would also attach it to requests
+      // from any other site.
+      sameSite: 'lax',
       secure: isProd,
       path: '/',
       maxAge: SEVEN_DAYS_MS,
