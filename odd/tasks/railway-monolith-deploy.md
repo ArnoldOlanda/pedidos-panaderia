@@ -23,11 +23,18 @@ ODD-3.12 (Railway) + ODD-3.13 (Netlify) split.
 
 | ID | Task | Specs | Route | Commit |
 |---|---|---|---|---|
-| T1 | Resolve DB config from `DATABASE_URL` with SSL toggle; keep `DB_*` working for local dev | S4 | inline | `feat(api): resolve database config from DATABASE_URL with optional SSL` |
-| T2 | Compiled migration runner + `__dirname` migration glob; seed reachable from `dist/` | S6 | inline | `feat(api): run migrations from compiled output` |
-| T3 | `railpack.json` at root describing install, build and start | S3 | inline | `build(railway): add railpack.json for the monolith build` |
-| T4 | Move the SPA plan to the tracker root; supersede ODD-3.13 in the MVP tracker | S1, S2 | inline | `docs(odd): move the spa-static-serving plan and supersede ODD-3.13` |
-| T5 | Railway runbook: service setup, Postgres, env vars, pre-deploy command, healthcheck, GitHub push | S3, S4, S5 | inline | `docs(deploy): add the Railway runbook` |
+| T1 | Resolve DB config from `DATABASE_URL` with SSL toggle; keep `DB_*` working for local dev | S4 | inline | `65c9cfa` |
+| T2 | Compiled migration runner + `__dirname` migration glob; seed reachable from `dist/` | S6 | inline | pending |
+| T3 | `railpack.json` at root describing install, build and start | S3 | inline | pending |
+| T4 | Move the SPA plan to the tracker root; supersede ODD-3.13 in the MVP tracker | S1, S2 | inline | pending |
+| T5 | Railway runbook: service setup, Postgres, env vars, pre-deploy command, healthcheck, GitHub push | S3, S4, S5 | inline | pending |
+
+### Progress
+
+- **T1 done — `65c9cfa`.** 697 authored changed lines: this is the slice boundary. The unit was pushed over the ~400-line guidance by the two spec files (355 lines); the production code is 287 lines. The next work units are individually smaller.
+- **T1 verified**: `npx tsc --noEmit` clean, `npx nest build` clean, full suite 133 passed / 11 suites (baseline was 92 / 9). The compiled validator resolves the Railway shape end to end — `DATABASE_URL=postgresql://ana:hunter2@db.railway.app:5432/railway?sslmode=require` produces `DB_HOST=db.railway.app DB_PORT=5432 DB_DATABASE=railway DB_SSL=true`.
+- **T1 incidental proof of the precedence rule**: `npm run typeorm -- migration:show` was run with `DATABASE_URL` pointing at a dead port and still connected to the local database, reporting all 8 migrations applied — the local `.env` `DB_*` group stayed authoritative exactly as intended.
+- **T1 finding — `reflect-metadata`**: `plainToInstance` needs the Reflect shim. The app bootstrap loads it, and so does the TypeORM CLI (verified: `migration:show` runs green), but a bare `node -e` harness does not. The new `validate-env.spec.ts` needs an explicit `import 'reflect-metadata'` for the same reason.
 
 ### Task notes
 
