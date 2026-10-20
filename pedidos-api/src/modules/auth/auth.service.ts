@@ -79,7 +79,9 @@ export class AuthService {
     const isProd = this.config.get<string>('NODE_ENV') === 'production';
     res.clearCookie(AUTH_COOKIE_NAME, {
       httpOnly: true,
-      sameSite: isProd ? 'none' : 'lax',
+      // Must match how setAuthCookie sets it, or the browser keeps the
+      // original cookie. See the note there on why this is `lax` everywhere.
+      sameSite: 'lax',
       secure: isProd,
       path: '/',
     });
