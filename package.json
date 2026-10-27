@@ -1,0 +1,10 @@
+{
+  "name": "pedidos-panaderia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo root: Nest API and Vite PWA, deployed as a single Railway service.",
+  "scripts": {
+    "build": "npm --prefix pedidos-api run build",
+    "start": "cd pedidos-api && node dist/main.js"
+  }
+}
