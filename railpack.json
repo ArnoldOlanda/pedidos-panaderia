@@ -19,12 +19,14 @@
       ]
     },
     "build": {
+      "inputs": [{ "step": "install" }],
       "commands": [
         "npm --prefix pedidos-api run build"
       ]
     }
   },
   "deploy": {
+    "inputs": [{ "step": "build" }],
     "startCommand": "cd pedidos-api && node dist/main.js"
   }
 }
