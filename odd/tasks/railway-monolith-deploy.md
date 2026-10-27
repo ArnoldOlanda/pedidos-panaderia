@@ -136,6 +136,57 @@ npm error enoent Could not read package.json: ENOENT ... /app/pedidos-api/packag
 
 Also found and fixed in the service configuration: the Pre-deploy Command and the healthcheck path were both unset, and auto-deploy was disabled, so a push to `main` did not trigger a build at all.
 
+### Deployed — the monolith is live
+
+`https://pedidos-panaderia-production.up.railway.app`, one Railway service, Nest serving both the API and the SPA.
+
+Verified against the live deployment, not against a local build:
+
+| Path | Result |
+|---|---|
+| `/api/health` | 200 `application/json` |
+| `/` | 200 `text/html` (the SPA) |
+| `/catalog` | 200 `text/html`, byte-identical to `/` — the history fallback works |
+| `/assets/index-Bsd9PobI.js` | 200 `application/javascript` |
+| `/sw.js` | 200 `application/javascript` |
+| `/icon-192.png` | 200 `image/png` |
+| `/manifest.webmanifest` | 200 `application/manifest+json` |
+
+The bundle hash `index-Bsd9PobI.js` is identical to the local build, so the deployed artefact is the same one the local gates checked.
+
+Functional checks in production: `POST /api/auth/login` with a seeded DNI returns 200 and a `HttpOnly; Secure; SameSite=Lax` cookie; `GET /api/auth/me` with that cookie returns the vendor; `GET /api/products/today` reads the database; an unregistered DNI returns 401.
+
+The Pre-deploy Command did its job on the fresh database:
+
+```
+[migrate] applied 8: InitUsers, InitRecipes, InitProducts, InitOrders,
+                  InitPushSubscriptions, InitIngredients, InitRecipeIngredients,
+                  AddRecipeManoObra
+[seed] 2 total: 2 created, 0 already existed.
+```
+
+### The container started and died with an empty image
+
+The build succeeded — provider initialised, steps ran in order, image pushed — and then the container died immediately:
+
+```
+/bin/bash: line 1: cd: pedidos-api: No such file or directory
+```
+
+The build was never the problem. The **image** was empty.
+
+In `railpack.json`, `steps.<step>.inputs` and `deploy.inputs` **replace** the generated values; only the literal `"..."` keeps them. Two replacements did the damage:
+
+- `steps.build.inputs = [{step: "install"}]` replaced the default `[install, local]`, dropping the local layer that carries the repository into `/app`.
+- `deploy.inputs = [{step: "build"}]` replaced the provider's deploy layers (mise, node_modules, the build step's `/app`) with a single layer that carries **no `include` filter** — and a layer without an include copies nothing. The runtime image received an empty `/app`.
+
+The fix is to not replace them: keep the generated commands with `"..."` and append ours after, and let `deploy` go back to its defaults, which copy the whole `/app` tree into the image. `deploy.startCommand` goes back to `cd pedidos-api && node dist/main.js`, which the default layout supports — `/app/pedidos-api/dist/main.js`.
+
+Two more facts learned the hard way:
+
+- **`railpack.json` wins over the service's own settings.** A start command set through the dashboard is ignored when the config file provides one, which cost a diagnostic cycle: the container kept running the config file's command.
+- **The build plan is printed in the build log** (`▸ install` / `▸ build` / `Deploy` with the resolved commands). Reading it is the fastest way to see what the builder will actually run.
+
 ## Follow-ups deliberately left out of scope
 
 - Migrate `products.closesAt` from `timestamp without time zone` to `timestamptz` and drop the `TZ` workaround. Data-affecting, so it is its own feature.
