@@ -119,6 +119,23 @@ Invalid environment configuration:
 
 **Carry-over worth remembering:** a plain ts-node harness without `import 'reflect-metadata'` produces *false* equivalence results against this validation code. The first `validateSync` call succeeds and every later one throws `Reflect.getMetadata is not a function`, which masks differences as identical. Any ad-hoc differential harness needs the shim, not just the committed specs.
 
+### First production build — two independent causes, both in the build description (`a64d263`)
+
+The first deploy failed before the app ever started. The evidence:
+
+```
+Failed to initialize provider `node`: error reading root package.json:
+open .../snapshot-target-unpack/package.json: no such file or directory
+npm error enoent Could not read package.json: ENOENT ... /app/pedidos-api/package.json
+```
+
+1. **No root manifest.** Railpack's node provider initialises from a `package.json` at the build root. The two projects live in subdirectories with no workspaces, so the provider never came up. Fixed with a minimal root `package.json` and `package-lock.json` — no dependencies, the subprojects keep their own.
+2. **No edge in the step graph.** `steps` in `railpack.json` is a dependency graph, not a list of phases. `build` declared no `inputs`, so it had no ordering guarantee against `install`; the two started a millisecond apart and the build hit files that did not exist yet. Fixed with explicit edges: `install` → `build` → `deploy`.
+
+**The lesson that cost the most:** the scratch verification executed the commands *in the order this document chose*, so it could not have caught that the builder would run them concurrently. It validated shell syntax, not builder semantics. The graph is the thing under test and only the builder can exercise it — which is why the first real deploy is the first honest test of this file.
+
+Also found and fixed in the service configuration: the Pre-deploy Command and the healthcheck path were both unset, and auto-deploy was disabled, so a push to `main` did not trigger a build at all.
+
 ## Follow-ups deliberately left out of scope
 
 - Migrate `products.closesAt` from `timestamp without time zone` to `timestamptz` and drop the `TZ` workaround. Data-affecting, so it is its own feature.

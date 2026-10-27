@@ -31,32 +31,26 @@ Production is **one Railway service**. `pedidos-api` answers `/api/*` and also
 serves the built SPA from `pedidos-web`, so there is no second frontend host.
 The build is declared in [`railpack.json`](./railpack.json) at the repo root.
 
-### 1. Push the repository
+The repository is hosted at `github.com/ArnoldOlanda/pedidos-panaderia`, and
+Railway builds from it on every push to `main`.
 
-The repo has no remote yet. Railway builds from a connected repository:
-
-```bash
-git remote add origin <your-github-url>
-git push -u origin main
-```
-
-### 2. Create the project
+### 1. Create the project
 
 1. **New Project → Deploy from GitHub repo**, pick this repository.
 2. **Add the `Postgres` plugin** to the same project.
 3. Leave **Root Directory** at `/`. Setting it would make Railway build from a
    subdirectory and miss the second `package.json`.
 
-### 3. Environment variables
+### 2. Environment variables
 
 | Variable | Value | Notes |
 |---|---|---|
-| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` | Railway reference variable. TLS is picked up from the URL's `sslmode`. |
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` | Railway reference variable, resolved from the Postgres plugin in the same project. It points at the private network, so no TLS is involved. |
 | `JWT_SECRET` | `openssl rand -hex 32` | minimum 16 characters |
 | `VAPID_SUBJECT` | `mailto:you@example.com` | |
 | `VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` | never commit the private key |
 | `VAPID_PRIVATE_KEY` | same command | |
-| `WEB_ORIGIN` | `https://<your-domain>.up.railway.app` | same origin as the API now |
+| `WEB_ORIGIN` | `https://pedidos-panaderia-production.up.railway.app` | same origin as the API now, so CORS does not apply to it |
 | `NODE_ENV` | `production` | |
 | `TZ` | `America/Lima` | **required**, see below |
 | `PORT` | injected by Railway | do not set |
@@ -105,10 +99,34 @@ only honoured for legacy services until 2026-12-01, and `NIXPACKS` is no longer
 a valid `build.builder` at all. `railpack.json` is the builder's own
 configuration format and carries no such deadline.
 
+### Two build constraints that are easy to break
+
+Both cost a failed deploy before they were understood.
+
+**The repository root needs a `package.json`.** Railpack's node provider
+initialises from a manifest at the build root, and this repo has two projects
+in subdirectories with no workspaces. Without a root manifest the provider
+never comes up:
+
+```
+Failed to initialize provider `node`: error reading root package.json:
+open .../snapshot-target-unpack/package.json: no such file or directory
+```
+
+The root `package.json` and `package-lock.json` exist for that reason alone.
+The root manifest holds no dependencies; the two projects keep their own.
+
+**`steps` in `railpack.json` is a dependency graph, not a list of phases.** A
+step without an `inputs` edge has no ordering guarantee, so `install` and
+`build` ran a millisecond apart and the build hit files that did not exist yet.
+The edges are explicit: `install` → `build` → `deploy`.
+
 ### Troubleshooting
 
 | Symptom | Cause |
 |---|---|
+| Build fails with "Failed to initialize provider `node`" | the root `package.json` is missing or was deleted |
+| Build fails with ENOENT on a subproject manifest | the `build` step lost its `inputs` edge to `install` |
 | Blank page, API works | `pedidos-api/public/` never made it into the image; check the build log for the `prebuild` copy step |
 | "Cannot find module .../migrate.js" | the Pre-deploy Command is missing the `cd pedidos-api` |
 | Products close at the wrong hour | `TZ` is unset |
